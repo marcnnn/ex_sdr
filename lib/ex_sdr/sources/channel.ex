@@ -331,8 +331,6 @@ defmodule ExSdr.Sources.Channel do
 
   defp add_complex(a, b, f), do: a |> cadd(b) |> quantize(f)
 
-  defp cadd({a, b}, {c, d}), do: {add(a, c), add(b, d)}
-
   defp items(nil), do: 0
   defp items({re, _im}), do: re |> raw() |> Nx.axis_size(0)
   defp raw(%Fixed{t: t}), do: t
