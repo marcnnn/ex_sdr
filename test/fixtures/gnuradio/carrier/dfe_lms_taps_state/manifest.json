@@ -1,0 +1,6 @@
+{
+  "case": "dfe_lms_taps_state",
+  "case_sha256": "907033918213e1306492654c944d1d4216e5c06569049feb87e2016d0cbb8037",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

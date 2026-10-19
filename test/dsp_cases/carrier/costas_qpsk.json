@@ -1,0 +1,114 @@
+{
+  "block": {
+    "name": "costas_loop_cc",
+    "opts": {
+      "loop_bw": "loop_bw",
+      "order": "order",
+      "outputs": [
+        "freq",
+        "phase",
+        "error"
+      ]
+    }
+  },
+  "description": "costas_loop_cc order 4 on QPSK with a frequency and phase offset",
+  "fixed_vs_float": [
+    {
+      "bounds": [
+        0.002,
+        5e-05,
+        0.001,
+        0.003
+      ],
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 12,
+        "rounding": "nearest"
+      },
+      "rationale": "The NCO is a sine table of 2^lut_bits entries: a phase error of up to pi / 2^lut_bits rad per sample (7.7e-4 for 12 bits, 1.9e-4 for 14), which the loop turns into the output and error differences; the frequency estimate averages it (loop bandwidth 0.03-0.04).",
+      "skip": 0,
+      "variant": "q15_lut12"
+    },
+    {
+      "bounds": [
+        0.0004,
+        9e-06,
+        0.0002,
+        0.0006
+      ],
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 14,
+        "rounding": "nearest"
+      },
+      "rationale": "The NCO is a sine table of 2^lut_bits entries: a phase error of up to pi / 2^lut_bits rad per sample (7.7e-4 for 12 bits, 1.9e-4 for 14), which the loop turns into the output and error differences; the frequency estimate averages it (loop bandwidth 0.03-0.04).",
+      "skip": 0,
+      "variant": "q17_lut14"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "bounds": [
+      1e-05,
+      1e-05,
+      1e-05,
+      1e-05
+    ],
+    "rationale": "One recurrence in f32 on both sides; GNU Radio uses sincosf and f32 products, differences stay at a few 1e-7 (measured 2e-6 at most) and the loop does not amplify them.",
+    "skip": 0
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "loop_bw",
+        "order"
+      ],
+      "block": "digital.costas_loop_cc"
+    }
+  ],
+  "input": {
+    "source": {
+      "constellation": "digital.constellation_qpsk().base()",
+      "freq_offset": 0.004,
+      "noise_rms": 0.03,
+      "phase": 0.7,
+      "rms": 0.7,
+      "sps": 1
+    },
+    "type": "complex"
+  },
+  "lock": {
+    "after": 1000,
+    "expect": 0.025132741228718346,
+    "port": 1,
+    "tol": 0.0015
+  },
+  "name": "costas_qpsk",
+  "output": {
+    "type": "complex"
+  },
+  "outputs": [
+    {
+      "type": "complex"
+    },
+    {
+      "type": "real",
+      "word": true
+    },
+    {
+      "circular": true,
+      "type": "real",
+      "word": true
+    },
+    {
+      "type": "real"
+    }
+  ],
+  "params": {
+    "loop_bw": 0.04,
+    "order": 4
+  },
+  "samples": 2000,
+  "seed": 1195
+}

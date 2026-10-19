@@ -1,0 +1,6 @@
+{
+  "case": "equalizer_lms_train_only",
+  "case_sha256": "d39adcc1e316301cc559cce7426c6441e0a194c16f9f98d17eafdf860c7e0f82",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

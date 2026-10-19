@@ -1,0 +1,6 @@
+{
+  "case": "dfe_lms_sps2",
+  "case_sha256": "e337c25aa26dabd9c37e2debcb9567e88f6e10b0c49d681a19c2ea47be6ffcbd",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

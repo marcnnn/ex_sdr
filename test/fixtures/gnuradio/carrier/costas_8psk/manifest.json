@@ -1,0 +1,6 @@
+{
+  "case": "costas_8psk",
+  "case_sha256": "c3db11e6b24fdda34bcd8d36cd86251c5b4fbc597d2851fbce6a36dc2c3feea8",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

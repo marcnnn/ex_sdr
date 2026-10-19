@@ -1,0 +1,64 @@
+{
+ "tags": [
+  {
+   "key": "corr_start",
+   "offset": 231,
+   "value": 63.683658599853516
+  },
+  {
+   "key": "phase_est",
+   "offset": 231,
+   "value": -1.198956847190857
+  },
+  {
+   "key": "time_est",
+   "offset": 231,
+   "value": 0.001869875998085746
+  },
+  {
+   "key": "corr_est",
+   "offset": 231,
+   "value": 63.683658599853516
+  },
+  {
+   "key": "corr_start",
+   "offset": 291,
+   "value": 64.02025604248047
+  },
+  {
+   "key": "phase_est",
+   "offset": 291,
+   "value": -1.2059199810028076
+  },
+  {
+   "key": "time_est",
+   "offset": 291,
+   "value": 0.001992443555297818
+  },
+  {
+   "key": "corr_est",
+   "offset": 291,
+   "value": 64.02025604248047
+  },
+  {
+   "key": "corr_start",
+   "offset": 831,
+   "value": 64.12373352050781
+  },
+  {
+   "key": "phase_est",
+   "offset": 831,
+   "value": -1.1991692781448364
+  },
+  {
+   "key": "time_est",
+   "offset": 831,
+   "value": 0.0012112601708653692
+  },
+  {
+   "key": "corr_est",
+   "offset": 831,
+   "value": 64.12373352050781
+  }
+ ]
+}

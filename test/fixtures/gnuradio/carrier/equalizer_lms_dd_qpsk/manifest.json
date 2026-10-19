@@ -1,0 +1,6 @@
+{
+  "case": "equalizer_lms_dd_qpsk",
+  "case_sha256": "c643b0f19ba14295a9673941b3e6c33e9a28254e4ebd9518996c081b9f81a70e",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

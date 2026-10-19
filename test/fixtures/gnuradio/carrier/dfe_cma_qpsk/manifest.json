@@ -1,0 +1,6 @@
+{
+  "case": "dfe_cma_qpsk",
+  "case_sha256": "3eed42fccf17c63c12589cfc6b1f06b1e8b802d60c0e22d7a56fff6b503d1359",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

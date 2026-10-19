@@ -1,0 +1,6 @@
+{
+  "case": "probe_mpsk_snr_est_svr",
+  "case_sha256": "8dd9d09e3f8f8293f01142323add2c9b4bae5946919d0267c2d0cd7bf7bcce13",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

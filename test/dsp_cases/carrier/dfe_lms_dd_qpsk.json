@@ -1,0 +1,109 @@
+{
+  "block": {
+    "name": "decision_feedback_equalizer",
+    "opts": {
+      "adapt_after_training": "adapt",
+      "algorithm": "lms",
+      "constellation": {
+        "name": "qpsk",
+        "scale": 0.25
+      },
+      "mu": "mu",
+      "num_taps_feedback": 2,
+      "num_taps_forward": 9,
+      "outputs": [],
+      "sps": "sps"
+    }
+  },
+  "description": "decision_feedback_equalizer with LMS decision directed from the start",
+  "fixed_vs_float": [
+    {
+      "bounds": [
+        6e-05
+      ],
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 12,
+        "rounding": "nearest"
+      },
+      "rationale": "As linear_equalizer, plus the decisions in the feedback taps rounded to the sample format (half an LSB, up to 1.5e-5 at Q15) before they enter the filter; the weights absorb it.",
+      "skip": 0,
+      "variant": "q15_lut12"
+    },
+    {
+      "bounds": [
+        2e-05
+      ],
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 14,
+        "rounding": "nearest"
+      },
+      "rationale": "As linear_equalizer, plus the decisions in the feedback taps rounded to the sample format (half an LSB, up to 1.5e-5 at Q15) before they enter the filter; the weights absorb it.",
+      "skip": 0,
+      "variant": "q17_lut14"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "bounds": [
+      1e-05
+    ],
+    "rationale": "As linear_equalizer: the same recurrence in f32, the decisions are exact constellation points on both sides (3e-7 measured).",
+    "skip": 0
+  },
+  "gnuradio": [
+    {
+      "args": [
+        9,
+        2,
+        "sps",
+        "digital.adaptive_algorithm_lms(scaled(digital.constellation_qpsk(), 0.25), mu)",
+        "adapt",
+        "[]",
+        "''"
+      ],
+      "block": "digital.decision_feedback_equalizer"
+    }
+  ],
+  "input": {
+    "source": {
+      "constellation": "scaled(digital.constellation_qpsk(), 0.25)",
+      "multipath": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.1,
+          0.05
+        ]
+      ],
+      "noise_rms": 0.01,
+      "rms": 0.5,
+      "rolloff": 0.35,
+      "sps": 1
+    },
+    "type": "complex"
+  },
+  "name": "dfe_lms_dd_qpsk",
+  "output": {
+    "type": "complex"
+  },
+  "outputs": [
+    {
+      "type": "complex"
+    }
+  ],
+  "params": {
+    "adapt": true,
+    "head": [],
+    "modulus": 0.25,
+    "mu": 0.01,
+    "num_taps": 9,
+    "sps": 1
+  },
+  "samples": 1500,
+  "seed": 1567
+}

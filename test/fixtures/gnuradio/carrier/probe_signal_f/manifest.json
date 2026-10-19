@@ -1,0 +1,6 @@
+{
+  "case": "probe_signal_f",
+  "case_sha256": "1e898da228988cbf03fb93ba47f0371f922079a23487f96c1473092af8b6b6c5",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

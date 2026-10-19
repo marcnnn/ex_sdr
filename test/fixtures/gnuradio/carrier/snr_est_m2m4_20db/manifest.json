@@ -1,0 +1,6 @@
+{
+  "case": "snr_est_m2m4_20db",
+  "case_sha256": "d66ebde06ec6ac67fe3200439e0c98843c88a913d19d1ec947c533338fa16209",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}
