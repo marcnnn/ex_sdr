@@ -87,11 +87,13 @@ defmodule ExSdr.Digital.Framing do
   # -- packet headers ---------------------------------------------------------------------
 
   @doc """
-  GNU Radio's `header_format_default` / `header_format_counter` as data.
-  `kind` is `:default` or `:counter`; `bps` only matters for `:counter`
-  (it is a header field). The state of `header/3` is the packet counter.
+  GNU Radio's `header_format_default` / `header_format_counter` /
+  `header_format_crc` as data. `kind` is `:default`, `:counter` or `:crc`
+  (which ignores the access code); `bps` only matters for `:counter` (it is a
+  header field). The state of `header/3` is the packet counter.
   """
-  def header_format(kind, access_code, threshold, bps \\ 1) when kind in [:default, :counter] do
+  def header_format(kind, access_code, threshold, bps \\ 1)
+      when kind in [:default, :counter, :crc] do
     bits = if is_binary(access_code), do: for(<<c <- access_code>>, do: c - ?0), else: access_code
     %{kind: kind, access_code: bits, threshold: threshold, bps: bps}
   end
@@ -100,9 +102,22 @@ defmodule ExSdr.Digital.Framing do
   The header bytes for a payload of `nbytes` bytes: the access code (as
   GNU Radio does, only its last `8 * div(len, 8)` bits are written), the
   payload length as 16 bits twice, and for `:counter` the bits per symbol
-  and the packet counter (16 bits each). Returns `{header, counter}`.
+  and the packet counter (16 bits each). `:crc` gives 4 bytes: length (12
+  bits) and packet number (12 bits) least significant bit first, and a CRC-8
+  (polynomial 7, initial value 0xFF) of both as 16 bit little-endian words.
+  Returns `{header, counter}`.
   """
-  def header(%{kind: kind} = f, nbytes, counter \\ 0) do
+  def header(f, nbytes, counter \\ 0)
+
+  def header(%{kind: :crc}, nbytes, counter) do
+    num = counter &&& 0xFFF
+    len = nbytes &&& 0xFFF
+    crc = CRC.new(width: 8, poly: 0x07, init: 0xFF)
+    check = CRC.compute(crc, <<len::little-16, num::little-16>>)
+    {<<len &&& 255, (num &&& 15) <<< 4 ||| len >>> 8, num >>> 4, check>>, counter + 1}
+  end
+
+  def header(%{kind: kind} = f, nbytes, counter) do
     code = Enum.reduce(f.access_code, 0, &(&2 <<< 1 ||| &1))
     n = 8 * div(length(f.access_code), 8)
     base = <<code::size(n), nbytes::16, nbytes::16>>

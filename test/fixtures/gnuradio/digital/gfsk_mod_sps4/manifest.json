@@ -1,0 +1,6 @@
+{
+  "case": "gfsk_mod_sps4",
+  "case_sha256": "368eafeea1fd0f008f3620870cbac151814e159ac37e96ee84923bf00bc3103b",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

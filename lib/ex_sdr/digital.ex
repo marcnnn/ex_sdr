@@ -43,6 +43,18 @@ defmodule ExSdr.Digital do
   defp flatten_items(%NxFixed.Fixed{t: t} = x), do: %{x | t: Nx.reshape(t, {:auto})}
   defp flatten_items(t), do: Nx.reshape(t, {:auto})
 
+  @blocks ~w(chunks_to_symbols_bf chunks_to_symbols_bc constellation_decoder_cb
+             constellation_soft_decoder_cf map_bb binary_slicer_fb diff_encoder_bb
+             diff_decoder_bb diff_phasor_cc scrambler_bb descrambler_bb additive_scrambler_bb
+             multiply_const_cc interp_fir_filter_fff interp_fir_filter_ccf
+             frequency_modulator_fc generic_mod psk_mod qam_mod gfsk_mod gmsk_mod crc32_bb
+             crc_append crc_check crc32_async_bb crc16_async_bb correlate_access_code_bb
+             correlate_access_code_tag_bb protocol_formatter_bb hdlc_framer_pb
+             hdlc_deframer_bp)a
+
+  @doc "The names `block/2` knows."
+  def blocks, do: @blocks
+
   @impl NxFixed.Block
   def block(name, opts \\ [])
 
@@ -198,7 +210,7 @@ defmodule ExSdr.Digital do
   def block(name, opts) when name in [:generic_mod, :psk_mod, :qam_mod] do
     opts =
       case name do
-        :generic_mod -> opts
+        :generic_mod -> Keyword.put(opts, :constellation, constellation(opts))
         :psk_mod -> psk_opts(opts)
         :qam_mod -> qam_opts(opts)
       end
@@ -266,7 +278,7 @@ defmodule ExSdr.Digital do
     f =
       Framing.header_format(
         Keyword.get(opts, :kind, :default),
-        Keyword.fetch!(opts, :access_code),
+        Keyword.get(opts, :access_code, ""),
         Keyword.get(opts, :threshold, 0),
         Keyword.get(opts, :bps, 1)
       )
@@ -314,7 +326,7 @@ defmodule ExSdr.Digital do
       name: :frequency_modulator_fc,
       kind: :stream,
       fun: &K.frequency_modulate/3,
-      init: if(f.kind == :float, do: Nx.tensor(0.0, type: :f32), else: Nx.tensor(0, type: :u16)),
+      init: if(f.kind == :float, do: Nx.tensor(0.0, type: :f32), else: Nx.tensor(0, type: :s64)),
       opts: [format: f, sensitivity: Keyword.fetch!(opts, :sensitivity)],
       item: {:real, :complex},
       hardware: :feedback,

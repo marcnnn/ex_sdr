@@ -1,0 +1,49 @@
+{
+  "name": "gfsk_mod_sps4",
+  "description": "gfsk_mod, 4 samples per symbol, BT 0.35",
+  "samples": 40,
+  "seed": 103,
+  "input": {
+    "type": "bytes",
+    "modulus": 256
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {},
+  "block": {
+    "name": "gfsk_mod",
+    "opts": {
+      "samples_per_symbol": 4,
+      "sensitivity": 0.5,
+      "bt": 0.35
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.gfsk_mod",
+      "args": [
+        4,
+        0.5,
+        0.35
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_abs": 0.0001,
+    "rationale": "Float32 phase accumulation wrapped to [-pi, pi) and cos/sin on both sides, after a Gaussian FIR in float32: errors of a few ulps of the phase (1e-7 rad per step) accumulate over about 1000 samples like a random walk; measured 2e-5."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12",
+      "format": {
+        "bits": 16,
+        "frac": 14,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "max_abs": 0.002,
+      "rationale": "Gaussian taps and NRZ values in Q14, the phase in 32 bits, a 4096 entry sine table rounded to the nearest: phase error pi/4096 = 7.7e-4 rad plus the amplitude gain and tap rounding (about 1e-4): under 2e-3 in magnitude."
+    }
+  ]
+}

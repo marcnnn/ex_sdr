@@ -1,0 +1,6 @@
+{
+  "case": "generic_mod_dqpsk_sps2",
+  "case_sha256": "e9691e92ced7bbc34f645ff3b8eb005bea063f8d7600e2584c37f35981d06632",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

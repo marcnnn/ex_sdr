@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""GNU Radio reference data for the digital family's framing blocks, which
+"""GNU Radio reference data for the digital family's objects and blocks that
 golden.py's plain stream chain cannot drive: tagged-stream blocks
 (crc32_bb, protocol_formatter_bb), PDU blocks (crc_append, crc_check,
-hdlc_framer_pb, hdlc_deframer_bp) and the access code correlators.
+hdlc_framer_pb, hdlc_deframer_bp), the access code correlators, the
+constellation objects and the firdes tap generators.
 
 Usage: digital_framing_golden.py <output file>
 
@@ -252,6 +253,13 @@ def formatter_cases():
                     "headers": [hexs(h) for h in hdrs],
                 }
             )
+    lens = [1, 10, 255, 256, 1500, 3, 4095, 7]
+    f = digital.header_format_crc("packet_len", "packet_num")
+    hdrs = run_tagged(digital.protocol_formatter_bb(f, "packet_len"), [[7] * n for n in lens])
+    out.append(
+        {"kind": "crc", "access_code": "", "threshold": 0, "bps": 1, "payload_lengths": lens,
+         "headers": [hexs(h) for h in hdrs]}
+    )
     return out
 
 
@@ -320,6 +328,54 @@ def hdlc_cases():
     return {"framer": framer, "deframer": deframer}
 
 
+def constellation_cases():
+    out = {}
+    objs = {
+        "bpsk": digital.constellation_bpsk(),
+        "qpsk": digital.constellation_qpsk(),
+        "dqpsk": digital.constellation_dqpsk(),
+        "psk8": digital.constellation_8psk(),
+        "psk8_natural": digital.constellation_8psk_natural(),
+        "qam16": digital.constellation_16qam(),
+    }
+    for m, code, diff in [(2, "none", True), (4, "gray", True), (4, "gray", False), (8, "gray", True),
+                          (8, "gray", False), (8, "none", True), (16, "gray", True)]:
+        objs[f"psk_{m}_{code}_{'diff' if diff else 'plain'}"] = digital.psk_constellation(m, code, diff)
+    for m, diff, code in [(4, True, "none"), (16, True, "none"), (16, False, "none"), (16, False, "gray"),
+                          (64, True, "none"), (64, False, "gray"), (256, False, "gray")]:
+        objs[f"qam_{m}_{'diff' if diff else 'plain'}_{code}"] = digital.qam_constellation(m, diff, code)
+    for name, c in objs.items():
+        out[name] = {
+            "points": [[p.real, p.imag] for p in c.points()],
+            "pre_diff_code": [int(x) for x in c.pre_diff_code()],
+            "apply_pre_diff_code": bool(c.apply_pre_diff_code()),
+            "bits_per_symbol": int(c.bits_per_symbol()),
+            "rotational_symmetry": int(c.rotational_symmetry()),
+        }
+    # constellations built from point lists
+    pts = [1 + 1j, 3 + 1j, -3 + 1j, -1 - 1j]
+    for nm, kind in (("amplitude", digital.constellation.AMPLITUDE_NORMALIZATION),
+                     ("power", digital.constellation.POWER_NORMALIZATION),
+                     ("none", digital.constellation.NO_NORMALIZATION)):
+        c = digital.constellation_rect(pts, [0, 1, 3, 2], 4, 2, 2, 2, 2, kind)
+        out[f"rect_{nm}"] = {"input": [[p.real, p.imag] for p in pts], "points": [[p.real, p.imag] for p in c.points()],
+                             "pre_diff_code": [0, 1, 3, 2]}
+    return out
+
+
+def tap_cases():
+    from gnuradio import filter as gfilter
+    out = {"rrc": [], "gaussian": []}
+    for gain, fs, sr, alpha, ntaps in [(1, 4, 1.0, 0.35, 41), (32, 32, 1.0, 0.35, 32 * 11 * 4), (1, 8, 1.0, 0.2, 64),
+                                       (2, 2, 1.0, 1.0, 21), (1, 4, 1.0, 0.5, 33)]:
+        t = gfilter.firdes.root_raised_cosine(gain, fs, sr, alpha, ntaps)
+        out["rrc"].append({"args": [gain, fs, sr, alpha, ntaps], "taps": [float(x) for x in t]})
+    for gain, spb, bt, ntaps in [(1.0, 4, 0.35, 16), (1.0, 2, 0.35, 8), (2.0, 8, 0.5, 32), (1.0, 4, 0.2, 17)]:
+        t = gfilter.firdes.gaussian(gain, spb, bt, ntaps)
+        out["gaussian"].append({"args": [gain, spb, bt, ntaps], "taps": [float(x) for x in t]})
+    return out
+
+
 def main(path, only=None):
     sections = {
         "crc": crc_cases,
@@ -329,6 +385,8 @@ def main(path, only=None):
         "correlate": correlate_cases,
         "formatter": formatter_cases,
         "hdlc": hdlc_cases,
+        "constellations": constellation_cases,
+        "taps": tap_cases,
     }
     out = {"gnuradio": gr.version()}
     for name, fun in sections.items():

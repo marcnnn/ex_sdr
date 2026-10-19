@@ -10,6 +10,7 @@ defmodule ExSdr.Digital.Kernels do
   """
   import Nx.Defn
   import NxFixed.Num
+  import Bitwise
 
   alias NxFixed.Fixed
   alias NxFixed.Num.Format
@@ -147,8 +148,10 @@ defmodule ExSdr.Digital.Kernels do
   defn scale_complex(x, state, opts \\ []) do
     opts = keyword!(opts, [:format, :gain])
     f = opts[:format]
-    {quantize(cscale(x, constant(opts[:gain], f)), f), state}
+    {quantize(cscale(x, scalar(opts[:gain], f)), f), state}
   end
+
+  deftransformp scalar(value, f), do: constant(value, f)
 
   # -- differential coding -----------------------------------------------------------------
 
@@ -290,19 +293,21 @@ defmodule ExSdr.Digital.Kernels do
 
     acc =
       case hd(accs) do
-        %Fixed{frac: frac} -> %Fixed{t: accs |> Enum.map(& &1.t) |> Nx.stack(), frac: frac}
-        _ -> Nx.stack(accs)
+        %Fixed{frac: frac} -> %Fixed{t: concat(Enum.map(accs, & &1.t)), frac: frac}
+        _ -> concat(accs)
       end
 
     {acc, next}
   end
 
+  # the width check knows concatenate, not stack
+  defp concat(list), do: list |> Enum.map(&Nx.reshape(&1, {1})) |> Nx.concatenate()
+
   @doc """
   `frequency_modulator_fc`: `phase += sensitivity * x` (radians), output
   `exp(j * phase)`. Float: the state is the phase in radians wrapped to
-  [-pi, pi). Fixed point: the state is a `u16` phase word (full circle 65536),
-  the increment is rounded to whole phase words and cos/sin come from the
-  format's sine table (`NxFixed.Num.oscillator/3`).
+  [-pi, pi). Fixed point: the state is a phase word in an `s64` (0 to 2^32 - 1) (full circle 2^32), cos/sin come from the
+  format's sine table addressed by its top 16 bits, like `NxFixed.Num.oscillator/3`.
   """
   defn frequency_modulate(x, phase, opts \\ []) do
     opts = keyword!(opts, [:format, :sensitivity])
@@ -318,11 +323,23 @@ defmodule ExSdr.Digital.Kernels do
   end
 
   deftransformp fm_step(%Fixed{t: t, frac: frac}, phase, sensitivity, %Format{kind: :fixed} = f) do
-    # phase words per unit of x, with 8 fractional bits
-    k = round(sensitivity * 65536 / (2 * :math.pi()) * 256)
-    inc = t |> Nx.as_type(:s64) |> Nx.multiply(k) |> P.shift_round(frac + 8)
-    {nco, next} = oscillator(phase, P.wrap(inc, :u16), f)
-    {nco, next}
+    # phase accumulator of 32 bits (full circle 2^32): the increment keeps
+    # 2^-32 of a turn, the sine table sees the top bits
+    k = round(sensitivity / (2 * :math.pi()) * 4_294_967_296)
+    inc = t |> Nx.as_type(:s64) |> Nx.multiply(k) |> P.shift_round(frac)
+    # modulo 2^32 by masking (two's complement); the state is an s64 in [0, 2^32)
+    mask = Nx.tensor(0xFFFFFFFF, type: :s64)
+    next = phase |> Nx.bitwise_and(mask) |> Nx.add(inc) |> Nx.bitwise_and(mask)
+    top = next |> Nx.right_shift(16) |> Nx.as_type(:u16)
+
+    {c, s} =
+      P.lut_sincos_q15(top,
+        bits: f.lut_bits,
+        amplitude: (1 <<< f.frac) - 1,
+        round: f.rounding == :nearest
+      )
+
+    {{%Fixed{t: c, frac: f.frac}, %Fixed{t: s, frac: f.frac}}, next}
   end
 
   defp container(bits) when bits <= 8, do: :s8

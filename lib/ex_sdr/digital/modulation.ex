@@ -73,8 +73,9 @@ defmodule ExSdr.Digital.Modulation do
   Options: `:constellation`, `:samples_per_symbol`, `:taps` (pulse at the
   output rate, default `rrc_pulse(sps, excess_bw)`), `:excess_bw` (0.35),
   `:differential` (false), `:pre_diff_code` (true; only used if the
-  constellation applies it), `:gain` (0.999, GNU Radio's output
-  attenuation, folded into the taps) and `:format`.
+  constellation applies it), `:gain` (1.0, folded into the taps) and
+  `:format`. GNU Radio's `truncate` option (dropping the filter's delay
+  from the output) is not offered.
   """
   def generic_mod(name, opts) do
     c = Keyword.fetch!(opts, :constellation)
@@ -85,7 +86,7 @@ defmodule ExSdr.Digital.Modulation do
     taps =
       Keyword.get_lazy(opts, :taps, fn -> rrc_pulse(sps, Keyword.get(opts, :excess_bw, 0.35)) end)
 
-    gain = Keyword.get(opts, :gain, 0.999)
+    gain = Keyword.get(opts, :gain, 1.0)
     differential = Keyword.get(opts, :differential, false)
     bps = c.bits_per_symbol
     pre = Keyword.get(opts, :pre_diff_code, true) and c.apply_pre_diff_code

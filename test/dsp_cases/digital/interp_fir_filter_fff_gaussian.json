@@ -1,0 +1,77 @@
+{
+  "name": "interp_fir_filter_fff_gaussian",
+  "description": "interpolating FIR on real samples (gaussian pulse of gfsk_mod, sps 4)",
+  "samples": 1024,
+  "seed": 81,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.011,
+        "amp": 0.6,
+        "phase": 0.2
+      }
+    ],
+    "noise_rms": 0.2
+  },
+  "output": {
+    "type": "real"
+  },
+  "params": {
+    "taps": [
+      6.037667e-06,
+      0.00010880162,
+      0.00123972243,
+      0.009286895377,
+      0.046304080596,
+      0.156336189489,
+      0.367039057808,
+      0.622434095026,
+      0.797244661269,
+      0.797244661269,
+      0.622434095026,
+      0.367039057808,
+      0.156336189489,
+      0.046304080596,
+      0.009286895377,
+      0.00123995179,
+      0.00010903098,
+      6.267027e-06,
+      2.2936e-07
+    ],
+    "sps": 4
+  },
+  "block": {
+    "name": "interp_fir_filter_fff",
+    "opts": {
+      "taps": "$taps",
+      "interpolation": "$sps"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "filter.interp_fir_filter_fff",
+      "args": [
+        "sps",
+        "taps"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_abs": 1e-06,
+    "rationale": "Same float taps, a handful of products summed in float32 in different order: a few ulps of values below 1."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q16_14_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 14,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_abs": 0.0002,
+      "rationale": "The taps (sum of each polyphase branch is 1) are rounded to Q14: error at most 2^-15 each, 4 per branch (4 sps, 16 taps): 4 * 2^-15 = 1.2e-4 per unit input plus output rounding 2^-15."
+    }
+  ]
+}

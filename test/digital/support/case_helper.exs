@@ -35,6 +35,8 @@ defmodule ExSdr.Digital.CaseHelper do
     Enum.find(family, fn {c, _} -> c["name"] == name end)
   end
 
+  @packed_input ~w(psk_mod qam_mod generic_mod gfsk_mod gmsk_mod)
+
   def format(nil), do: Num.float()
   def format("float"), do: Num.float()
 
@@ -55,14 +57,16 @@ defmodule ExSdr.Digital.CaseHelper do
   defp value(_, %{"constellation" => name}, _),
     do: apply(Constellation, String.to_atom(name), []).points
 
-  defp value("constellation", name, _), do: String.to_atom(name)
+  defp value(k, name, _) when k in ["constellation", "mod_code"], do: String.to_atom(name)
   defp value(_, v, _), do: v
 
   # GNU Radio input (ints: bytes, or Q15) as block input
   def input(case, data, format) do
     case case["input"]["type"] do
       "bytes" ->
-        Nx.tensor(data.input, type: :u8)
+        if case["block"]["name"] in @packed_input,
+          do: :binary.list_to_bin(data.input),
+          else: Nx.tensor(data.input, type: :u8)
 
       "real" ->
         samples(data.input, format)

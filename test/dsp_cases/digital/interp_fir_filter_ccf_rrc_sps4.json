@@ -1,0 +1,123 @@
+{
+  "name": "interp_fir_filter_ccf_rrc_sps4",
+  "description": "interpolating FIR (x4, 49 root raised cosine taps) on complex samples",
+  "samples": 1024,
+  "seed": 80,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.013,
+        "amp": 0.45,
+        "phase": 0.3
+      },
+      {
+        "freq": -0.071,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.25
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {
+    "taps": [
+      -0.005858821361,
+      -0.004493019688,
+      0.002750902057,
+      0.009192114292,
+      0.0075046709,
+      -0.002378413855,
+      -0.011629770786,
+      -0.010273444669,
+      0.002043563253,
+      0.013323875282,
+      0.00957497306,
+      -0.009551667433,
+      -0.025460577832,
+      -0.014779169554,
+      0.025621941595,
+      0.065362117607,
+      0.057134798426,
+      -0.02207862167,
+      -0.13520077698,
+      -0.188684226895,
+      -0.08471323637,
+      0.206927316481,
+      0.607938463853,
+      0.957385580374,
+      1.095931008262,
+      0.957385580374,
+      0.607938463853,
+      0.206927316481,
+      -0.08471323637,
+      -0.188684226895,
+      -0.13520077698,
+      -0.02207862167,
+      0.057134798426,
+      0.065362117607,
+      0.025621941595,
+      -0.014779169554,
+      -0.025460577832,
+      -0.009551667433,
+      0.00957497306,
+      0.013323875282,
+      0.002043563253,
+      -0.010273444669,
+      -0.011629770786,
+      -0.002378413855,
+      0.0075046709,
+      0.009192114292,
+      0.002750902057,
+      -0.004493019688,
+      -0.005858821361
+    ],
+    "sps": 4
+  },
+  "block": {
+    "name": "interp_fir_filter_ccf",
+    "opts": {
+      "taps": "$taps",
+      "interpolation": "$sps"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "filter.interp_fir_filter_ccf",
+      "args": [
+        "sps",
+        "taps"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_abs": 2e-06,
+    "rationale": "Same float taps; GNU Radio sums each output in float32 SIMD order, we in the Nx order: 13 term sums of values below 1.2 (float32 ulp 1.2e-7): a few ulps; 2e-6 as complex magnitude."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q14_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 14,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_abs": 0.0008,
+      "rationale": "The pulse peaks at 1.09, so it needs one integer bit: Q2.14 taps, each rounded by at most 2^-15; 13 taps per output and inputs below 1 per component: 4e-4. The Q15 input is floored to Q14 (2^-14 times the sum of |taps| of a branch, under 1.6: 1e-4), the output rounded (3e-5): 5.3e-4 per component, 7.5e-4 as magnitude."
+    },
+    {
+      "variant": "q16_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 16,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_abs": 0.0002,
+      "rationale": "Q2.16: a quarter of the tap error (1e-4), input floor 2.4e-5, rounding 8e-6: 1.3e-4 per component, 1.8e-4 as magnitude."
+    }
+  ]
+}
