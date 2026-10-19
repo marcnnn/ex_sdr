@@ -36,7 +36,8 @@ defmodule ExSdr.Filters do
 
   @fir ~w(fir_filter_fff fir_filter_ccf fir_filter_ccc fir_filter_fcc
           fft_filter_fff fft_filter_ccf fft_filter_ccc)a
-  @interp ~w(interp_fir_filter_fff interp_fir_filter_ccf interp_fir_filter_ccc interp_fir_filter_fcc)a
+  @interp ~w(interp_fir_filter_fff interp_fir_filter_ccf interp_fir_filter_ccc interp_fir_filter_fcc
+            pfb_interpolator_ccf)a
   @resamp ~w(rational_resampler_fff rational_resampler_ccf rational_resampler_ccc rational_resampler_fcc)a
   @xlating ~w(freq_xlating_fir_filter_ccf freq_xlating_fir_filter_ccc
               freq_xlating_fir_filter_fcf freq_xlating_fir_filter_fcc)a
@@ -47,7 +48,7 @@ defmodule ExSdr.Filters do
       @interp ++
       @resamp ++
       @xlating ++
-      ~w(hilbert_fc dc_blocker_ff dc_blocker_cc single_pole_iir_filter_ff
+      ~w(pfb_decimator_ccf hilbert_fc dc_blocker_ff dc_blocker_cc single_pole_iir_filter_ff
          single_pole_iir_filter_cc iir_filter_ffd)a
   end
 
@@ -125,6 +126,42 @@ defmodule ExSdr.Filters do
       item: item,
       hardware: :feed_forward,
       gnuradio: gr_name(name)
+    }
+  end
+
+  def block(:pfb_decimator_ccf = name, opts) do
+    f = Keyword.get(opts, :format, Num.float())
+    taps = Keyword.fetch!(opts, :taps)
+    d = Keyword.fetch!(opts, :decimation)
+    channel = Keyword.get(opts, :channel, 0)
+
+    # Branch p (taps p, p + d, ...) filters input stream d - 1 - p of the
+    # stream-to-streams split, rotated by e^(j 2 pi channel p / d): one
+    # decimating FIR with those complex taps, sampled at k * d + d - 1.
+    ctaps =
+      if channel == 0 do
+        taps
+      else
+        for {t, i} <- Enum.with_index(taps) do
+          a = 2 * :math.pi() * channel * rem(i, d) / d
+          {t * :math.cos(a), t * :math.sin(a)}
+        end
+      end
+
+    n = length(Kernels.pad_taps(ctaps))
+
+    %Block{
+      name: name,
+      kind: :frame,
+      fun: &Kernels.fir_frame/3,
+      init: line(f, {:complex, :complex}, n - 1),
+      opts: [format: f, taps: ctaps, tap_frac: opts[:tap_frac], decimation: d, offset: d - 1],
+      rate: {d, 1},
+      latency: div(group_delay(taps), d),
+      warmup: n - 1,
+      item: {:complex, :complex},
+      hardware: :feed_forward,
+      gnuradio: "filter.pfb_decimator_ccf"
     }
   end
 

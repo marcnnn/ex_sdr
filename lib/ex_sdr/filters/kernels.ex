@@ -54,10 +54,11 @@ defmodule ExSdr.Filters.Kernels do
   FIR filter with decimation on a frame: output `k` is `y[k * decimation]`
   of the full-rate filter, counted from the start of the stream (the first
   output uses the first input). Options: `:format`, `:taps`, `:tap_frac`,
-  `:decimation` (default 1). The frame length is a multiple of `:decimation`.
+  `:decimation` (default 1), `:offset` (default 0, below the decimation:
+  output `k` is `y[k * decimation + offset]`). The frame length is a multiple of `:decimation`.
   """
   defn fir_frame(x, line, opts \\ []) do
-    opts = keyword!(opts, [:format, :taps, :tap_frac, decimation: 1])
+    opts = keyword!(opts, [:format, :taps, :tap_frac, decimation: 1, offset: 0])
     fir_frame_impl(x, line, opts)
   end
 
@@ -145,7 +146,7 @@ defmodule ExSdr.Filters.Kernels do
 
   deftransformp fir_frame_impl(x, line, opts) do
     taps = pad_taps(opts[:taps])
-    fir_core(x, line, taps, opts[:decimation], opts[:format], tap_frac(opts))
+    fir_core(x, line, taps, opts[:decimation], opts[:format], tap_frac(opts), opts[:offset])
   end
 
   deftransformp interp_frame_impl(x, line, opts) do
@@ -218,7 +219,7 @@ defmodule ExSdr.Filters.Kernels do
 
   # -- FIR core ---------------------------------------------------------------------------
 
-  defp fir_core(x, line, taps, decimation, f, tf) do
+  defp fir_core(x, line, taps, decimation, f, tf, offset \\ 0) do
     n = size(x)
 
     if rem(n, decimation) != 0,
@@ -226,7 +227,7 @@ defmodule ExSdr.Filters.Kernels do
         raise(ArgumentError, "frame of #{n} items is not a multiple of decimation #{decimation}")
 
     {win, next} = window(x, line)
-    y = apply_taps(win, taps, length(taps) - 1, div(n, decimation), decimation, f, tf)
+    y = apply_taps(win, taps, length(taps) - 1 + offset, div(n, decimation), decimation, f, tf)
     {Num.quantize(y, f), next}
   end
 
