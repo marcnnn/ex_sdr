@@ -1,0 +1,64 @@
+{
+  "name": "sample_and_hold_ff",
+  "description": "sample_and_hold_ff, float data and a random 0/1 byte control",
+  "samples": 2048,
+  "seed": 2060,
+  "inputs": [
+    {
+      "type": "real",
+      "tones": [
+        {
+          "freq": 0.013,
+          "amp": 0.6,
+          "phase": 0.0
+        }
+      ],
+      "noise_rms": 0.01
+    },
+    {
+      "type": "bytes",
+      "modulus": 2
+    }
+  ],
+  "params": {},
+  "block": {
+    "name": "sample_and_hold_ff"
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.sample_and_hold_ff",
+      "args": []
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.01,
+    "snr_db_min": 120,
+    "rationale": "A latch: both sides copy the data sample while control is not 0 and hold it otherwise, so the output is equal (measured 0)."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "max_error_lsb": 0.01,
+      "snr_db_min": 120,
+      "rationale": "Data on the Q15 grid is copied, nothing is rounded (measured 0)."
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "max_error_lsb": 0.01,
+      "snr_db_min": 120,
+      "rationale": "Data is exact in Q17 too (measured 0)."
+    }
+  ]
+}
