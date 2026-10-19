@@ -1,0 +1,6 @@
+{
+  "case": "dfe_lms_train_qpsk",
+  "case_sha256": "435d2cc1f68462745d467c75871d7b837cbd37b042d59b5bffaf8d071be5078d",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

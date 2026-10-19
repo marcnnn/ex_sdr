@@ -160,7 +160,7 @@ defmodule ExSdr.Carrier.Equalizer do
     training_now = Nx.equal(ts2, @training)
     active = Nx.logical_and(emit, Nx.not_equal(ts2, @idle))
 
-    e = error(opts[:algorithm], ye, ts2, tc2, training_now, f, ef, opts)
+    {e, _} = error(opts[:algorithm], ye, ts2, tc2, training_now, f, ef, opts)
     w_new = update(opts[:algorithm], w, win, e, f, wf, opts)
     w_next = sel(active, w_new, w)
 
@@ -205,7 +205,9 @@ defmodule ExSdr.Carrier.Equalizer do
   end
 
   # LMS and NLMS: desired minus output; CMA: the constant modulus error.
-  defp error(:cma, ye, _ts, _tc, _training_now, f, ef, opts), do: cma_error(ye, f, ef, opts)
+  # Returns `{error, desired}`: `desired` is the training symbol or the decision (zero for CMA).
+  defp error(:cma, ye, _ts, _tc, _training_now, f, ef, opts),
+    do: {cma_error(ye, f, ef, opts), {Num.zeros({}, ef), Num.zeros({}, ef)}}
 
   defp error(_alg, ye, _ts, tc, training_now, f, ef, opts) do
     points = opts[:points]
@@ -229,7 +231,7 @@ defmodule ExSdr.Carrier.Equalizer do
       end
 
     _ = f
-    Num.csub(desired, ye)
+    {Num.csub(desired, ye), desired}
   end
 
   # y (|y|^2 - modulus), each component clipped to +-1 (gr::clip)
@@ -303,6 +305,103 @@ defmodule ExSdr.Carrier.Equalizer do
     q = Nx.quotient(Nx.left_shift(t, 30), m)
     %Fixed{t: Nx.clip(q, i64(-(1 <<< 40)), i64(1 <<< 40)), frac: 30}
   end
+
+  # -- decision feedback equalizer ----------------------------------------------------------------
+
+  @doc """
+  The initial state of `decision_feedback_equalizer`: `{line, decisions, weights, control}`.
+  """
+  def dfe_init(opts) do
+    f = opts[:format]
+    nf = opts[:num_taps_forward]
+    nb = opts[:num_taps_feedback]
+    wf = weight_format(opts)
+    line = {Num.zeros({nf - 1}, f), Num.zeros({nf - 1}, f)}
+    dh = {Num.zeros({nb}, f), Num.zeros({nb}, f)}
+    w = initial_weights(Keyword.put(opts, :num_taps, nf + nb), nf + nb, wf)
+    training? = Keyword.get(opts, :training, []) != []
+    ts = if training?, do: @idle, else: @dd
+
+    ctl =
+      {Nx.tensor(ts, type: :u8), Nx.tensor(0, type: :s32), Nx.tensor(0, type: :s32),
+       Nx.tensor(0, type: :u8)}
+
+    {line, dh, w, ctl}
+  end
+
+  @doc """
+  One input item of `decision_feedback_equalizer` (options as for `step/3`,
+  with `:num_taps_forward` and `:num_taps_feedback` instead of `:num_taps`).
+
+  The filter input is the last `num_taps_feedback` decisions (oldest first;
+  the training symbol while training, the constellation point decided on
+  while decision directed, zero while idle and for CMA) followed by the last
+  `num_taps_forward` samples; `w[i]` multiplies item `i` of that vector. The
+  decisions are kept in the sample format (a point is rounded to it, up to
+  half an LSB). The output instant is the *last* sample of each group of
+  `sps` (GNU Radio's window ends at `j + sps - 1`), so a training flag
+  anywhere in the group counts, exactly as GNU Radio's tag window `[j, j + sps)`.
+  """
+  def dfe_step(input, {line, dh, w, ctl}, opts) do
+    f = opts[:format]
+    sps = Keyword.get(opts, :sps, 1)
+    training = Keyword.get(opts, :training, [])
+
+    {x, flag} = if training != [], do: input, else: {input, nil}
+    x = K.bound(x, f)
+    wf = weight_format(opts)
+    ef = error_format(f, opts)
+
+    win = K.cmap2(K.cmap(line, &quantize(&1, f)), x, &K.append/2)
+    next_line = K.cmap(win, &K.drop_first/1)
+    dh = K.cmap(dh, &quantize(&1, f))
+    buf = K.cmap2(dh, win, &concat_vec/2)
+    w = bound_w(w, wf)
+
+    ye = quantize(cdot(w, buf), ef)
+    y = quantize(ye, f)
+
+    {ts0, tc0, ph0, pending} = bound_ctl4(ctl, training, sps)
+    emit = Nx.equal(ph0, sps - 1)
+
+    set = if flag, do: Nx.not_equal(flag, 0), else: Nx.tensor(0, type: :u8)
+    seen = Nx.logical_or(Nx.not_equal(pending, 0), set)
+
+    {ts2, tc2} = training_state(Nx.as_type(seen, :u8), ts0, tc0, training, opts)
+    training_now = Nx.equal(ts2, @training)
+    active = Nx.logical_and(emit, Nx.not_equal(ts2, @idle))
+
+    {e, desired} = error(opts[:algorithm], ye, ts2, tc2, training_now, f, ef, opts)
+    w_new = update(opts[:algorithm], w, buf, e, f, wf, opts)
+    w_next = sel(active, w_new, w)
+
+    # idle and CMA push a zero decision
+    decision = quantize(zero_where(Nx.equal(ts2, @idle), desired), f)
+    dh_next = sel(emit, K.cmap2(dh, decision, &K.shift_in/2), dh)
+
+    tc3 = Nx.select(Nx.logical_and(emit, training_now), Nx.add(tc2, 1), tc2)
+    ts_next = Nx.select(emit, ts2, ts0)
+    tc_next = Nx.select(emit, tc3, tc0)
+    pending_next = Nx.logical_and(seen, Nx.logical_not(emit))
+    ph_next = if sps == 1, do: ph0, else: Nx.remainder(Nx.add(ph0, 1), sps)
+
+    ctl_next =
+      {Nx.as_type(ts_next, :u8), Nx.as_type(tc_next, :s32), Nx.as_type(ph_next, :s32),
+       Nx.as_type(pending_next, :u8)}
+
+    next = {next_line, dh_next, w_next, ctl_next}
+    {output(y, w, ts0, emit, sps, opts), next}
+  end
+
+  defp bound_ctl4({ts, tc, ph, pending}, training, sps) do
+    {ts, tc, ph} = bound_ctl({ts, tc, ph}, training, sps)
+    {ts, tc, ph, Nx.clip(pending, 0, 1)}
+  end
+
+  defp concat_vec(%Fixed{t: a, frac: f}, %Fixed{t: b}),
+    do: %Fixed{t: Nx.concatenate([a, Nx.as_type(b, Nx.type(a))]), frac: f}
+
+  defp concat_vec(a, b), do: Nx.concatenate([a, b])
 
   # -- output ------------------------------------------------------------------------------
 

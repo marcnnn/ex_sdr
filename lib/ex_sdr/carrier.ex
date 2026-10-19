@@ -27,7 +27,7 @@ defmodule ExSdr.Carrier do
   alias NxFixed.Num
 
   @names ~w(costas_loop_cc fll_band_edge_cc constellation_receiver_cb linear_equalizer
-            cma_equalizer_cc lms_dd_equalizer_cc corr_est_cc mpsk_snr_est_cc
+            cma_equalizer_cc lms_dd_equalizer_cc decision_feedback_equalizer corr_est_cc mpsk_snr_est_cc
             probe_mpsk_snr_est_c probe_density_b probe_signal)a
 
   @doc "The block names `block/2` knows."
@@ -150,6 +150,43 @@ defmodule ExSdr.Carrier do
     equalizer_block(:linear_equalizer, o, "digital.linear_equalizer")
   end
 
+  def block(:decision_feedback_equalizer, opts) do
+    {_f, o} =
+      common(opts,
+        num_taps_forward: :required,
+        num_taps_feedback: :required,
+        algorithm: :required,
+        mu: :required,
+        sps: 1,
+        modulus: 1.0,
+        adapt_after_training: true
+      )
+
+    unless o[:num_taps_forward] >= 2 and o[:num_taps_feedback] >= 1,
+      do: raise(ArgumentError, "decision_feedback_equalizer: need 2 forward and 1 feedback taps")
+
+    o =
+      o
+      |> prepare_equalizer()
+      |> Keyword.put(:num_taps, o[:num_taps_forward] + o[:num_taps_feedback])
+
+    training? = Keyword.get(o, :training, []) != []
+
+    %Block{
+      name: :decision_feedback_equalizer,
+      kind: :stream,
+      fun: &Equalizer.dfe_step/3,
+      init: Equalizer.dfe_init(o),
+      opts: o,
+      rate: if(o[:sps] == 1, do: {1, 1}, else: {:variable, 1}),
+      item: {if(training?, do: :complex_flag, else: :complex), out_item(:complex, o)},
+      latency: o[:sps] - 1,
+      hardware: :feedback,
+      warmup: :unbounded,
+      gnuradio: "digital.decision_feedback_equalizer"
+    }
+  end
+
   def block(:cma_equalizer_cc, opts) do
     {_f, o} = common(opts, num_taps: :required, mu: :required, modulus: 1.0, sps: 1)
     o = Keyword.put(o, :algorithm, :cma)
@@ -250,8 +287,7 @@ defmodule ExSdr.Carrier do
 
   def block(name, _opts), do: raise(ArgumentError, "unknown carrier block #{inspect(name)}")
 
-  defp equalizer_block(name, o, gnuradio) do
-    unless o[:num_taps] >= 2, do: raise(ArgumentError, "#{name}: num_taps must be at least 2")
+  defp prepare_equalizer(o) do
     unless o[:algorithm] in [:lms, :nlms, :cma], do: raise(ArgumentError, "unknown algorithm")
 
     o =
@@ -259,7 +295,12 @@ defmodule ExSdr.Carrier do
         do: o,
         else: Keyword.put(o, :points, points(o[:constellation]))
 
-    o = Keyword.delete(o, :constellation)
+    Keyword.delete(o, :constellation)
+  end
+
+  defp equalizer_block(name, o, gnuradio) do
+    unless o[:num_taps] >= 2, do: raise(ArgumentError, "#{name}: num_taps must be at least 2")
+    o = prepare_equalizer(o)
     training? = Keyword.get(o, :training, []) != []
     sps = o[:sps]
 
