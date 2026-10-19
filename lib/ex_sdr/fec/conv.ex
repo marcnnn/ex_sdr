@@ -162,6 +162,11 @@ defmodule ExSdr.FEC.Conv do
   def latency(%{kind: :decoder, frame_size: f, conf: %{mode: :streaming}}), do: f
   def latency(_), do: 0
 
+  @impl true
+  def warmup(%{kind: :encoder, conf: %{mode: :streaming, k: k}}), do: k - 1
+  def warmup(%{kind: :decoder, conf: %{mode: :streaming}}), do: :unbounded
+  def warmup(_), do: 0
+
   # GNU Radio's decoder removes the padding bits from the frame size here
   @impl true
   def set_frame_size(%{kind: :decoder, conf: %{mode: :terminated} = c} = g, n) do

@@ -48,6 +48,8 @@ defmodule ExSdr.FEC.Generic do
   @callback set_frame_size(t, non_neg_integer) :: {boolean, t}
   @doc "Items of delay (`:latency` of the block)."
   @callback latency(t) :: non_neg_integer
+  @doc "Input items after which the output no longer depends on the initial state (`:warmup`)."
+  @callback warmup(t) :: non_neg_integer | :unbounded
   @doc "GNU Radio's input conversion: \"none\", \"pack\", \"uchar\" or \"packed_bits\"."
   @callback input_conversion(t) :: String.t()
   @doc "GNU Radio's output conversion: \"none\" or \"packed_bits\"."
@@ -60,6 +62,7 @@ defmodule ExSdr.FEC.Generic do
                       hardware: 1,
                       set_frame_size: 2,
                       latency: 1,
+                      warmup: 1,
                       input_conversion: 1,
                       output_conversion: 1
 
@@ -86,6 +89,7 @@ defmodule ExSdr.FEC.Generic do
   def shift(%{impl: m} = g), do: optional(m, :shift, g, 0.0)
   def hardware(%{impl: m} = g), do: optional(m, :hardware, g, :transform)
   def latency(%{impl: m} = g), do: optional(m, :latency, g, 0)
+  def warmup(%{impl: m} = g), do: optional(m, :warmup, g, 0)
   def input_conversion(%{impl: m} = g), do: optional(m, :input_conversion, g, "none")
   def output_conversion(%{impl: m} = g), do: optional(m, :output_conversion, g, "none")
 
@@ -263,10 +267,11 @@ defmodule ExSdr.FEC.Generic do
   @doc """
   `fec.async_encoder`: a PDU `{meta, data}` in, `{meta, data}` out. With
   `packed: false` data is a binary of 0/1 bytes (several code blocks if it is
-  longer than the frame size), with `packed: true` packed bytes (MSB first
-  unless `rev_unpack` / `rev_pack`) that are unpacked, encoded as one frame
-  and packed again. Options as in GNU Radio: `:packed`, `:rev_unpack`,
-  `:rev_pack`, `:mtu`.
+  longer than the frame size), with `packed: true` packed bytes that are
+  unpacked, encoded as one frame and packed again. Options as in GNU Radio:
+  `:packed`, `:rev_unpack` and `:rev_pack` (both default true: least
+  significant bit first, as the tagged stream encoders; false: MSB first),
+  `:mtu` in bytes.
   """
   def async_encode(g, {meta, data}, state, opts \\ []) do
     packed = Keyword.get(opts, :packed, false)
@@ -274,12 +279,12 @@ defmodule ExSdr.FEC.Generic do
 
     if packed do
       if byte_size(data) > mtu, do: raise(ArgumentError, "message larger than the MTU")
-      bits = unpack(data, Keyword.get(opts, :rev_unpack, false))
+      bits = unpack(data, Keyword.get(opts, :rev_unpack, true))
       {_, gp} = set_frame_size(g, byte_size(bits))
       {out, state} = work(gp, to_tensor(bits, :u8), state)
       out_bits = to_binary(out)
       nbytes = div(output_size(gp), 8)
-      packed_out = pack(binary_part(out_bits, 0, nbytes * 8), Keyword.get(opts, :rev_pack, false))
+      packed_out = pack(binary_part(out_bits, 0, nbytes * 8), Keyword.get(opts, :rev_pack, true))
       {{meta, packed_out}, state}
     else
       nbits = byte_size(data)
@@ -343,7 +348,13 @@ defmodule ExSdr.FEC.Generic do
 
     {outs, state} = Enum.map_reduce(blocks, state, &work(gp, &1, &2))
     bits = outs |> Enum.map(&to_binary/1) |> IO.iodata_to_binary()
-    bits = if packed, do: pack(bits, Keyword.get(opts, :rev_pack, false)), else: bits
+
+    # the PDU has `round(n * rate) - diff` items whatever the decoder writes
+    # (a padded terminated cc_decoder writes fewer, GNU Radio leaves the rest
+    # as it was; here it is zero)
+    want = if variable, do: round(nbits_in * rate) - diff, else: byte_size(bits)
+    bits = if byte_size(bits) < want, do: bits <> :binary.copy(<<0>>, want - byte_size(bits)), else: bits
+    bits = if packed, do: pack(bits, Keyword.get(opts, :rev_pack, true)), else: bits
     {{meta, bits}, state}
   end
 
