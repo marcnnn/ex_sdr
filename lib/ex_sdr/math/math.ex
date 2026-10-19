@@ -136,7 +136,7 @@ defmodule ExSdr.Math do
       hardware: :feedback,
       # hysteresis: the output forgets its initial state only after the
       # input leaves the band, which need not happen (see docs/blocks/math.md)
-      warmup: nil
+      warmup: :unbounded
     }
   end
 

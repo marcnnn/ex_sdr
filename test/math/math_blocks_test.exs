@@ -142,7 +142,7 @@ defmodule ExSdr.MathBlocksTest do
     end
 
     test "threshold has no bounded warm-up (hysteresis)" do
-      assert Math.block(:threshold_ff, lo: -0.1, hi: 0.2).warmup == nil
+      assert Math.block(:threshold_ff, lo: -0.1, hi: 0.2).warmup == :unbounded
     end
 
     test "float-only blocks refuse a fixed-point format" do
