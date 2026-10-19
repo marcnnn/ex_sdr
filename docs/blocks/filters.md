@@ -22,8 +22,8 @@ in `ExSdr.Filters.Window` and `ExSdr.Filters.Firdes`.
 | `iir_filter_ffd` | `:iir_filter_ffd` | done, old and new style | feedback |
 | `pfb_interpolator_ccf` | `:pfb_interpolator_ccf` | done (the interpolating FIR) | feed_forward |
 | `pfb_decimator_ccf` | `:pfb_decimator_ccf` | done, serial input instead of one input per phase | feed_forward |
-| `pfb_arb_resampler_*` | - | skipped | - |
-| `mmse_resampler_cc/ff` | - | skipped | - |
+| `pfb_arb_resampler_*` | `ExSdr.Timing` | see docs/blocks/timing.md | - |
+| `mmse_resampler_cc/ff` | `ExSdr.Timing` | see docs/blocks/timing.md | - |
 
 Skipped blocks produce a data dependent number of outputs per input (the
 output position advances by a real-valued ratio). `NxFixed.Block` has

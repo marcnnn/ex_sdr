@@ -12,11 +12,10 @@ block and writes, under <output dir>:
   <case>/manifest.json        versions, SHA-256 of the case file and this
                               script, and the taps GNU Radio was given
 
-Usage, from the repository root (rootless podman, image of test/gnuradio/Containerfile):
+Usage: timing_golden.py <cases dir> <output dir>. Run through
+scripts/gnuradio_golden.sh for the timing family (golden.py HOOKS):
 
-    podman build -q -t exhdl-gnuradio test/gnuradio
-    podman run --rm -v "$PWD/test:/work/test:Z" -w /work exhdl-gnuradio \\
-        python3 test/gnuradio/timing_golden.py test/dsp_cases/timing/sync test/fixtures/gnuradio/timing/sync
+    scripts/gnuradio_golden.sh test/fixtures/gnuradio/timing test/dsp_cases/timing
 
 A case file has "signal" (a name below), "gnuradio" (a Python expression
 building the block; it sees gnuradio's digital and filter modules, numpy as

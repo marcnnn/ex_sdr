@@ -70,6 +70,8 @@ FULL_SCALE = 32768.0
 HOOKS = {
     "digital": [("digital_framing_golden.py", "framing.json")],
     "filters": [("filters_taps.py", "taps.json"), ("filters_pfb.py", "pfb.json")],
+    # Scripts with their own case directory get <cases>/<dir> <out>/<dir>.
+    "timing": [("timing_golden.py", "sync", "sync")],
 }
 
 SAFE_BUILTINS = {
@@ -298,8 +300,9 @@ def main(cases_dir, out_dir, family=""):
         write_case(case, raw, xs, refs, out_dir)
 
     here = os.path.dirname(os.path.abspath(__file__))
-    for script, target in HOOKS.get(family, []):
-        subprocess.run([sys.executable, os.path.join(here, script), os.path.join(out_dir, target)], check=True)
+    for script, target, *cases in HOOKS.get(family, []):
+        args = [os.path.join(cases_dir, c) for c in cases] + [os.path.join(out_dir, target)]
+        subprocess.run([sys.executable, os.path.join(here, script)] + args, check=True)
 
 
 if __name__ == "__main__":
