@@ -1,0 +1,6 @@
+{
+  "case": "pfb_arb_resampler_ccf_1p5059",
+  "case_sha256": "cf5ed712396deb939b785afea2c632f6e4d85b27b59485c46010300cb4d8dc47",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}
