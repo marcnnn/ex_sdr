@@ -31,31 +31,15 @@ defmodule ExSdr.Carrier.TestHelper do
     case = F.read_case(path)
     data = F.load(case, path, root())
     dir = Path.join(root(), case["name"])
-    ports = Enum.map(Enum.with_index(output_specs(case)), &port_data(&1, dir, data))
     tags_path = Path.join(dir, "tags.json")
     tags = if File.exists?(tags_path), do: tags_path |> File.read!() |> JSON.decode!(), else: %{}
-    {case, Map.merge(data, %{ports: ports, tags: tags})}
+    {case, Map.merge(data, %{ports: data.references, tags: tags})}
   end
 
   defp output_specs(case) do
     case["outputs"] ||
       [%{"type" => get_in(case, ["output", "type"]) || case["input"]["type"]}]
   end
-
-  defp port_data({_spec, 0}, _dir, data), do: data.reference
-
-  defp port_data({%{"type" => type}, k}, dir, _data) do
-    case type do
-      "bytes" ->
-        dir |> Path.join("out#{k}.u8") |> File.read!() |> :binary.bin_to_list()
-
-      t ->
-        values = for <<v::little-float-32 <- File.read!(Path.join(dir, "out#{k}.f32le"))>>, do: v
-        if t == "complex", do: pairs(values), else: values
-    end
-  end
-
-  defp pairs(list), do: list |> Enum.chunk_every(2) |> Enum.map(&List.to_tuple/1)
 
   def format(%{} = f), do: F.format(f)
   def format("float"), do: Num.float()

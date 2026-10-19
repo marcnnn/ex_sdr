@@ -54,7 +54,7 @@ defmodule ExSdr.Test.GnuRadioFixture do
       # one input: its items; several: one list of the inputs' items per sample
       input: if(length(inputs) == 1, do: hd(inputs), else: Enum.zip_with(inputs, & &1)),
       inputs: inputs,
-      reference: hd(references),
+      reference: List.first(references),
       references: references
     }
   end

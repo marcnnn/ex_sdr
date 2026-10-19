@@ -22,7 +22,7 @@ cannot express:
 * "outputs": [{"type": ..., "vlen": n}, ...]: the output ports of the last block
   (types complex, real, bytes, ushort; ushort is stored as float32). Port 0
   goes to gnuradio.f32le (or .u8 for bytes) like golden.py, port k to
-  out<k>.f32le / out<k>.u8. Without it the case's "output" type is port 0.
+  gnuradio<k>.f32le / gnuradio<k>.u8 (as golden.py). Without it the case's "output" type is port 0.
 * "tags": [key, ...]: the stream tags of output port 0 with those keys, in
   tags.json as [{"offset", "key", "value"}].
 * "probe": [method, ...]: methods called on the last block after the run
@@ -227,7 +227,7 @@ def write_case(case, raw, out_dir):
     else:
         x16.astype("<i2").tofile(os.path.join(case_dir, "input.s16le"))
     for k, ref in enumerate(outs):
-        stem = "gnuradio" if k == 0 else f"out{k}"
+        stem = "gnuradio" if k == 0 else f"gnuradio{k}"
         if ref.dtype == np.uint8:
             ref.tofile(os.path.join(case_dir, stem + ".u8"))
         else:
