@@ -1,0 +1,6 @@
+{
+  "case": "quantizer_6bit",
+  "case_sha256": "4a112f8137a71b628d68b859ec8343b748b58f6b74ecc18dac51023441d80783",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

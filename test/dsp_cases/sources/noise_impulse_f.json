@@ -1,0 +1,35 @@
+{
+  "name": "noise_impulse_f",
+  "description": "noise_source_f impulse, amplitude 0.05, statistics against GNU Radio",
+  "samples": 400000,
+  "seed": 1,
+  "input": {
+    "type": "none"
+  },
+  "output": {
+    "type": "real"
+  },
+  "params": {
+    "amp": 0.05,
+    "nseed": 42
+  },
+  "block": {
+    "name": "noise_source_f",
+    "opts": {
+      "type": "impulse",
+      "amplitude": 0.05,
+      "seed": 42
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.noise_source_f",
+      "args": [
+        "analog.GR_IMPULSE",
+        "amp",
+        "nseed"
+      ]
+    }
+  ],
+  "stats_only": true
+}

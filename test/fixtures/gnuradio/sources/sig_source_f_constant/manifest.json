@@ -1,0 +1,6 @@
+{
+  "case": "sig_source_f_constant",
+  "case_sha256": "59c1fb91cd1f9dd2fad8256c015da4cabded19d4389beb9c9d82b68c399c1885",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

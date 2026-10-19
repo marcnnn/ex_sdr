@@ -1,0 +1,6 @@
+{
+  "case": "fading_rician",
+  "case_sha256": "ead698a2fea750a9772a2e1b9b8f71a814c5e208571231faed6981e931f3c374",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

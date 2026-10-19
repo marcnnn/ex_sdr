@@ -1,0 +1,6 @@
+{
+  "case": "rotator_cc",
+  "case_sha256": "a6fc37b7f268c40cdfb514d4a846cf04b04012d1b3bbd401ab97d3750025f84d",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

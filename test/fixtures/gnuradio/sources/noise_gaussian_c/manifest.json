@@ -1,0 +1,6 @@
+{
+  "case": "noise_gaussian_c",
+  "case_sha256": "4e3109dbc2f51e0a1437a1d6b817d74860257596779b68eee3f78367511df885",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

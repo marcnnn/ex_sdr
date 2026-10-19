@@ -1,0 +1,6 @@
+{
+  "case": "glfsr_d31_default",
+  "case_sha256": "a4866371c7c7db0e56e50f04e1d6a1294a28450c1e18fb761d3586fd3ec089f1",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

@@ -1,0 +1,6 @@
+{
+  "case": "mmse_resampler_cc_fast",
+  "case_sha256": "7f009097f03a8054ef5685a568dc8d10833f17da34a1410563310c0c28672a10",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

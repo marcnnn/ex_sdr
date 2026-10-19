@@ -1,0 +1,6 @@
+{
+  "case": "iqbal_gen_rx",
+  "case_sha256": "d816f5aa3ddbd38e2b5b4fc41646a92df6ec5f9160653191470736617047e59a",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

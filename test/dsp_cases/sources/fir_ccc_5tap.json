@@ -1,0 +1,78 @@
+{
+  "name": "fir_ccc_5tap",
+  "description": "fir_ccc with 5 complex taps vs fir_filter_ccc",
+  "samples": 4096,
+  "seed": 3,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.05,
+        "amp": 0.45,
+        "phase": 0.0
+      },
+      {
+        "freq": -0.17,
+        "amp": 0.2,
+        "phase": 0.3
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {},
+  "block": {
+    "name": "fir_ccc",
+    "opts": {
+      "taps": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.3
+        ],
+        [
+          -0.2,
+          0.1
+        ],
+        [
+          0.05,
+          -0.05
+        ],
+        [
+          0.02,
+          0.0
+        ]
+      ]
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "filter.fir_filter_ccc",
+      "args": [
+        1,
+        "[1+0j, 0.3j, -0.2+0.1j, 0.05-0.05j, 0.02]"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.05,
+    "snr_db_min": 120.0,
+    "rationale": "Same arithmetic in f32 (a dot product of 5 taps); measured 0.0 LSB."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 2.2,
+      "snr_db_min": 80.0,
+      "rationale": "Each of the 5 taps is rounded to Q15 (at most 2^-16 each, sum of |x| * error <= 5 * 0.5 * 0.66 = 1.65 LSB) plus the output rounding (0.5 LSB). Measured 1.5 LSB."
+    }
+  ]
+}

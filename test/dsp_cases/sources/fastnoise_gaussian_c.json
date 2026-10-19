@@ -1,0 +1,38 @@
+{
+  "name": "fastnoise_gaussian_c",
+  "description": "fastnoise_source_c gaussian, amplitude 0.2, statistics against GNU Radio",
+  "samples": 100000,
+  "seed": 1,
+  "input": {
+    "type": "none"
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {
+    "amp": 0.2,
+    "nseed": 42,
+    "len": 65536
+  },
+  "block": {
+    "name": "fastnoise_source_c",
+    "opts": {
+      "type": "gaussian",
+      "amplitude": 0.2,
+      "seed": 42,
+      "samples": 16384
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.fastnoise_source_c",
+      "args": [
+        "analog.GR_GAUSSIAN",
+        "amp",
+        "nseed",
+        "len"
+      ]
+    }
+  ],
+  "stats_only": true
+}

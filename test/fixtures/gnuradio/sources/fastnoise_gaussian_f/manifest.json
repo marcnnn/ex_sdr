@@ -1,0 +1,6 @@
+{
+  "case": "fastnoise_gaussian_f",
+  "case_sha256": "bfbead194fc5fff7808ee0929cae1d5a9f865faad77081f73afe25ef9af8398c",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

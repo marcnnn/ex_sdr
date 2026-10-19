@@ -1,0 +1,86 @@
+{
+  "name": "sig_source_c_sawtooth",
+  "description": "sig_source_c sawtooth wave, amplitude 0.7, offset 0.1, phase 0.3",
+  "samples": 4096,
+  "seed": 1,
+  "input": {
+    "type": "none"
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {
+    "fs": 48000.0,
+    "freq": 590.4,
+    "amp": 0.7,
+    "offset": 0.1,
+    "phase": 0.3
+  },
+  "block": {
+    "name": "sig_source_c",
+    "opts": {
+      "waveform": "sawtooth",
+      "frequency": 590.4,
+      "sample_rate": 48000.0,
+      "amplitude": 0.7,
+      "offset": 0.1,
+      "phase": 0.3
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.sig_source_c",
+      "args": [
+        "fs",
+        "analog.GR_SAW_WAVE",
+        "freq",
+        "amp",
+        "offset",
+        "phase"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.25,
+    "snr_db_min": 100.0,
+    "rationale": "Piecewise linear in the phase word, exact in both implementations except GNU Radio's float32 arithmetic; measured 0.13 LSB and 109 dB."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 2.5,
+      "snr_db_min": 85.0,
+      "rationale": "Table free waveform: the error is the quantisation of the wave (0.5 LSB rounded, 1 LSB truncated), of the amplitude 0.7 and offset 0.1 constants (0.5 LSB each) and of the product (up to 1 LSB truncated); measured 2.0 LSB at worst."
+    },
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 2.5,
+      "snr_db_min": 85.0,
+      "rationale": "Table free waveform: the error is the quantisation of the wave (0.5 LSB rounded, 1 LSB truncated), of the amplitude 0.7 and offset 0.1 constants (0.5 LSB each) and of the product (up to 1 LSB truncated); measured 2.0 LSB at worst."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 2.5,
+      "snr_db_min": 85.0,
+      "rationale": "Table free waveform: the error is the quantisation of the wave (0.5 LSB rounded, 1 LSB truncated), of the amplitude 0.7 and offset 0.1 constants (0.5 LSB each) and of the product (up to 1 LSB truncated); measured 2.0 LSB at worst."
+    }
+  ]
+}

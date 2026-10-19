@@ -1,0 +1,6 @@
+{
+  "case": "vector_source_c",
+  "case_sha256": "7cdc1c1fea65b2aa19d199b0b617cceeaf3cd345d544582df2624dc6f9374ab1",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

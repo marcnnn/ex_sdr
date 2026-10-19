@@ -1,0 +1,36 @@
+{
+  "name": "glfsr_d31_default",
+  "description": "glfsr_source_b degree 31, mask 0x0, seed 0x3039",
+  "samples": 4096,
+  "seed": 1,
+  "input": {
+    "type": "none"
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {
+    "deg": 31,
+    "mask": 0,
+    "seed": 12345
+  },
+  "block": {
+    "name": "glfsr_source_b",
+    "opts": {
+      "degree": 31,
+      "mask": 0,
+      "seed": 12345
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.glfsr_source_b",
+      "args": [
+        "deg",
+        true,
+        "mask",
+        "seed"
+      ]
+    }
+  ]
+}

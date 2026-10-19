@@ -1,0 +1,58 @@
+{
+  "name": "quantizer_6bit",
+  "description": "quantizer to 6 bits on a real signal",
+  "samples": 4096,
+  "seed": 23,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.0123,
+        "amp": 0.7,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.0371,
+        "amp": 0.2,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.01
+  },
+  "params": {
+    "bits": 6
+  },
+  "block": {
+    "name": "quantizer",
+    "opts": {
+      "bits": 6
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "channels.quantizer",
+      "args": [
+        "bits"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.01,
+    "snr_db_min": 100.0,
+    "rationale": "Same rounding (to even at exact ties) and the same scaling by powers of two: identical."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 0.01,
+      "snr_db_min": 100.0,
+      "rationale": "Input and output are on the Q15 grid and the quantiser step is a multiple of it: the rounding is the same integer rounding, to even: identical."
+    }
+  ]
+}

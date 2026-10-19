@@ -1,0 +1,54 @@
+{
+  "name": "channel_model_default",
+  "description": "channel_model with default parameters: only the resampler's 3 sample lead and length remain",
+  "samples": 512,
+  "seed": 6,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.05,
+        "amp": 0.45,
+        "phase": 0.0
+      },
+      {
+        "freq": -0.17,
+        "amp": 0.2,
+        "phase": 0.3
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {},
+  "block": {
+    "name": "channel_model",
+    "opts": {}
+  },
+  "gnuradio": [
+    {
+      "block": "channels.channel_model",
+      "args": [
+        0.0
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.01,
+    "snr_db_min": 120.0,
+    "rationale": "Defaults: resampler at phase 0 (a 1 in tap 3) and nothing else; both outputs are the input advanced by 3 samples and 8 samples shorter. Exact."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 1.5,
+      "snr_db_min": 80.0,
+      "rationale": "The resampler's taps at phase 0 are a single 1 and zeros; the 1 saturates to 1 - 2^-15 in Q15 (|x| * 2^-15 <= 0.66 LSB) and the product is rounded (0.5 LSB). Measured 1.0 LSB."
+    }
+  ]
+}

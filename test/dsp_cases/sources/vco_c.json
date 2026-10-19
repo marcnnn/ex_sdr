@@ -1,0 +1,73 @@
+{
+  "name": "vco_c",
+  "description": "vco_c, sensitivity 2 pi * 0.1 per unit input at rate 1, amplitude 0.8, vs GNU Radio",
+  "samples": 4096,
+  "seed": 7,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.002,
+        "amp": 0.5,
+        "phase": 0.0
+      }
+    ],
+    "noise_rms": 0.0
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {
+    "sens": 0.6283185307179586,
+    "amp": 0.8
+  },
+  "block": {
+    "name": "vco_c",
+    "opts": {
+      "sensitivity": 0.6283185307179586,
+      "sample_rate": 1.0,
+      "amplitude": 0.8
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.vco_c",
+      "args": [
+        1.0,
+        "sens",
+        "amp"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 1.0,
+    "snr_db_min": 95.0,
+    "rationale": "Same NCO as sig_source_c: GNU Radio's table sine is accurate to 1.5e-5 of the amplitude (measured 0.13 LSB, 109 dB). The control input is a Q15 sample in both."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut10_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 165,
+      "snr_db_min": 48.5,
+      "rationale": "Phase truncated to 10 table bits: 49.0 dB, worst sample amp * 2 pi / 2^10 = 160.9 LSB (amp 0.8). The control is quantised to Q15 and the phase step rounded to 32 bits, which is negligible next to the table."
+    },
+    {
+      "variant": "q15_lut10_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 83,
+      "snr_db_min": 54.5,
+      "rationale": "Phase rounded to 10 table bits: 55.0 dB, worst sample amp * pi / 2^10 = 80.5 LSB."
+    }
+  ]
+}

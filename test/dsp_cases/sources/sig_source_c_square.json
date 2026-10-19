@@ -1,0 +1,74 @@
+{
+  "name": "sig_source_c_square",
+  "description": "sig_source_c square wave, amplitude 0.7, offset 0.1, phase 0.3",
+  "samples": 4096,
+  "seed": 1,
+  "input": {
+    "type": "none"
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {
+    "fs": 48000.0,
+    "freq": 590.4,
+    "amp": 0.7,
+    "offset": 0.1,
+    "phase": 0.3
+  },
+  "block": {
+    "name": "sig_source_c",
+    "opts": {
+      "waveform": "square",
+      "frequency": 590.4,
+      "sample_rate": 48000.0,
+      "amplitude": 0.7,
+      "offset": 0.1,
+      "phase": 0.3
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.sig_source_c",
+      "args": [
+        "fs",
+        "analog.GR_SQR_WAVE",
+        "freq",
+        "amp",
+        "offset",
+        "phase"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.01,
+    "snr_db_min": 100.0,
+    "rationale": "Levels only, no arithmetic on the phase except the sign bit: identical unless an edge falls on a different sample (it does not for this frequency)."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 1.0,
+      "snr_db_min": 90.0,
+      "rationale": "Two levels (amplitude + offset and offset), each rounded once: under 1 LSB in Q15."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 1.0,
+      "snr_db_min": 90.0,
+      "rationale": "Two levels (amplitude + offset and offset), each rounded once: under 1 LSB in Q15."
+    }
+  ]
+}

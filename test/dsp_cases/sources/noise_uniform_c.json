@@ -1,0 +1,35 @@
+{
+  "name": "noise_uniform_c",
+  "description": "noise_source_c uniform, amplitude 0.5, statistics against GNU Radio",
+  "samples": 100000,
+  "seed": 1,
+  "input": {
+    "type": "none"
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {
+    "amp": 0.5,
+    "nseed": 42
+  },
+  "block": {
+    "name": "noise_source_c",
+    "opts": {
+      "type": "uniform",
+      "amplitude": 0.5,
+      "seed": 42
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.noise_source_c",
+      "args": [
+        "analog.GR_UNIFORM",
+        "amp",
+        "nseed"
+      ]
+    }
+  ],
+  "stats_only": true
+}
