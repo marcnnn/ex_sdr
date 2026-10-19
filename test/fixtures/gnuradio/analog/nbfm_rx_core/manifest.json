@@ -1,0 +1,6 @@
+{
+  "case": "nbfm_rx_core",
+  "case_sha256": "06f4d1fb33d4dd1b476f85b55f323c2ef14b7d9c25e88f4c16af77f3838d3938",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

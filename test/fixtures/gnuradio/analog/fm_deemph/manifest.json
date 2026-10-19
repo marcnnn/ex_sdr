@@ -1,0 +1,6 @@
+{
+  "case": "fm_deemph",
+  "case_sha256": "aa580d5a18df04b3f79089d0837a51ae0720d8ef2d2e2f205b2306499b89995a",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

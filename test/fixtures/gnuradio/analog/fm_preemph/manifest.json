@@ -1,0 +1,6 @@
+{
+  "case": "fm_preemph",
+  "case_sha256": "a0cba1122333b421b51ead82877ceb6ff5a613c400025ef1d9ab75c208ce35be",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

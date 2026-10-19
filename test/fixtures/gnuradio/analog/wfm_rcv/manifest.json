@@ -1,0 +1,6 @@
+{
+  "case": "wfm_rcv",
+  "case_sha256": "5a782593cc7c585b51ca23fe22a72f15bda420e9de9b3c4236cea7d2ea8f1c7b",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

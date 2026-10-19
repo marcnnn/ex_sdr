@@ -1,0 +1,76 @@
+{
+  "name": "pwr_squelch_ff",
+  "description": "pwr_squelch_ff",
+  "samples": 3000,
+  "seed": 2014,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.03,
+        "amp": 0.07,
+        "phase": 0.0
+      }
+    ],
+    "steps": [
+      {
+        "amp": 0.3,
+        "at": 1500
+      }
+    ],
+    "noise_rms": 0.002
+  },
+  "params": {
+    "threshold_db": -20.0,
+    "alpha": 0.01
+  },
+  "block": {
+    "name": "pwr_squelch_ff",
+    "opts": {
+      "threshold_db": "threshold_db",
+      "alpha": "alpha"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.pwr_squelch_ff",
+      "args": [
+        "threshold_db",
+        "alpha",
+        0,
+        false
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.01,
+    "snr_db_min": 120,
+    "rationale": "Output is the input or zero; same crossing sample (measured: identical)"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 120,
+      "max_error_lsb": 0.01,
+      "rationale": "As simple_squelch_cc (measured: identical)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 120,
+      "max_error_lsb": 0.01,
+      "rationale": "As simple_squelch_cc (measured: identical)"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "name": "pm_mod",
+  "description": "phase_modulator_fc",
+  "samples": 4096,
+  "seed": 2002,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.011,
+        "amp": 0.7,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.0173,
+        "amp": 0.2,
+        "phase": 0.4
+      }
+    ]
+  },
+  "params": {
+    "sensitivity": 2.0
+  },
+  "block": {
+    "name": "phase_modulator_fc",
+    "opts": {
+      "sensitivity": "sensitivity"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.phase_modulator_fc",
+      "args": [
+        "sensitivity"
+      ]
+    }
+  ],
+  "output": {
+    "type": "complex"
+  },
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.1,
+    "snr_db_min": 130,
+    "rationale": "Both instances evaluate cos and sin in floating point; the difference is the f32 rounding of the angle (up to 1.8 rad, ulp 1.2e-7 rad = 0.004 LSB); measured 0.002 LSB"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 66,
+      "max_error_lsb": 27,
+      "rationale": "Phase rounded to 12 table bits: error at most pi/4096 rad = 25.1 LSB at amplitude 1, plus up to 1.5 LSB from table amplitude and quantisation; rms -> 67.1 dB (measured 25.6 LSB, 67.2 dB)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 78,
+      "max_error_lsb": 7,
+      "rationale": "Phase rounded to 14 table bits: error at most pi/16384 rad = 6.3 LSB at amplitude 1, plus up to 0.5 LSB; rms -> 79.1 dB (measured 6.4 LSB, 79.2 dB)"
+    }
+  ]
+}

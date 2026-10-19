@@ -1,0 +1,155 @@
+{
+  "name": "nbfm_tx_interp",
+  "description": "nbfm_tx with audio_rate 16 kHz: interpolating FIR (taps from optfir), pre-emphasis, FM modulator",
+  "samples": 1600,
+  "seed": 2030,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.45,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.027,
+        "amp": 0.2,
+        "phase": 0.3
+      }
+    ]
+  },
+  "params": {
+    "audio_rate": 16000,
+    "rate": 48000,
+    "tau": 7.5e-05,
+    "max_dev": 5000.0,
+    "fh": -1.0,
+    "taps": [
+      0.009515346512566398,
+      -0.006977933193606492,
+      -0.00971456375307838,
+      -0.009312522888402466,
+      -0.002592828992068179,
+      0.008913901783314582,
+      0.018705889418033625,
+      0.018765470063965572,
+      0.005193939238886135,
+      -0.017324056664840354,
+      -0.03596387380936704,
+      -0.036138438922215174,
+      -0.011227156915160283,
+      0.03025542222255996,
+      0.06554522732533856,
+      0.0683299313294934,
+      0.02495334532672168,
+      -0.052575178369966204,
+      -0.12559920901117233,
+      -0.1427973275358723,
+      -0.0646329594329402,
+      0.11351410601660746,
+      0.3522475885526281,
+      0.5792183494892731,
+      0.7173514242112548,
+      0.7173514242112548,
+      0.5792183494892731,
+      0.3522475885526281,
+      0.11351410601660746,
+      -0.0646329594329402,
+      -0.1427973275358723,
+      -0.12559920901117233,
+      -0.052575178369966204,
+      0.02495334532672168,
+      0.0683299313294934,
+      0.06554522732533856,
+      0.03025542222255996,
+      -0.011227156915160283,
+      -0.036138438922215174,
+      -0.03596387380936704,
+      -0.017324056664840354,
+      0.005193939238886135,
+      0.018765470063965572,
+      0.018705889418033625,
+      0.008913901783314582,
+      -0.002592828992068179,
+      -0.009312522888402466,
+      -0.00971456375307838,
+      -0.006977933193606492,
+      0.009515346512566398
+    ],
+    "interp": 3
+  },
+  "block": {
+    "name": "nbfm_tx",
+    "opts": {
+      "quad_rate": "rate",
+      "tau": "tau",
+      "max_dev": "max_dev",
+      "fh": "fh"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.nbfm_tx",
+      "args": [
+        "audio_rate",
+        "rate",
+        "tau",
+        "max_dev",
+        "fh"
+      ]
+    }
+  ],
+  "pipeline": [
+    {
+      "interp": 3
+    },
+    {
+      "fir": "taps"
+    },
+    {
+      "block": {
+        "name": "nbfm_tx",
+        "opts": {
+          "quad_rate": "rate",
+          "tau": "tau",
+          "max_dev": "max_dev",
+          "fh": "fh"
+        }
+      }
+    }
+  ],
+  "output": {
+    "type": "complex"
+  },
+  "float_vs_gnuradio": {
+    "max_error_lsb": 3.5,
+    "snr_db_min": 84,
+    "rationale": "The 50 tap interpolator (taps from optfir, gain 3) in f32 against GNU Radio's, then as nbfm_tx: the table of GNU Radio's fxpt sincos (measured 2.4 LSB, 88 dB)"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 65,
+      "max_error_lsb": 40,
+      "rationale": "The modulator integrates what the interpolator and pre-emphasis round: table 25.1 LSB plus the phase walk from taps rounded to Q15 (a gain error of the filter at the tones' frequencies, times 0.654 rad per unit, summed over the 4800 samples) (measured 36.8 LSB, 66.5 dB)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 70,
+      "max_error_lsb": 24,
+      "rationale": "Table 14 bits (6.3 LSB) plus the integrated tap and output rounding; the taps are 4 times finer but their rounding errors add coherently in the phase (measured 21.0 LSB, 71.6 dB)"
+    }
+  ]
+}

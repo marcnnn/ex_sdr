@@ -1,0 +1,73 @@
+{
+  "name": "pll_refout_cc",
+  "description": "pll_refout_cc",
+  "samples": 4000,
+  "seed": 2018,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.5,
+        "phase": 0.9
+      }
+    ],
+    "noise_rms": 0.002
+  },
+  "params": {
+    "loop_bw": 0.05,
+    "max_freq": 0.5,
+    "min_freq": -0.5
+  },
+  "block": {
+    "name": "pll_refout_cc",
+    "opts": {
+      "loop_bw": "loop_bw",
+      "max_freq": "max_freq",
+      "min_freq": "min_freq"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.pll_refout_cc",
+      "args": [
+        "loop_bw",
+        "max_freq",
+        "min_freq"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.5,
+    "snr_db_min": 95,
+    "rationale": "Same loop in f32 against GNU Radio (measured 0.058 LSB, 126 dB over all samples)"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 65.5,
+      "max_error_lsb": 40,
+      "rationale": "The reference has amplitude 1: table error 25.1 LSB plus the loop's phase deviation from the float loop (they track the same input; the table noise moves the fixed loop) (measured 37.8 LSB, 66.5 dB, from sample 200 on)",
+      "skip": 200
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 77.5,
+      "max_error_lsb": 11,
+      "rationale": "Table 14 bits: 6.3 LSB plus loop deviation (measured 9.6 LSB, 78.6 dB, from sample 200 on)",
+      "skip": 200
+    }
+  ]
+}

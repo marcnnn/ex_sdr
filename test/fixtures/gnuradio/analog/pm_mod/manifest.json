@@ -1,0 +1,6 @@
+{
+  "case": "pm_mod",
+  "case_sha256": "f76492d76eb56508481b0f532dc4647743f8f693f23e9bd3de1176edce73464c",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

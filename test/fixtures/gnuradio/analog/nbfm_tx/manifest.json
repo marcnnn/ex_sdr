@@ -1,0 +1,6 @@
+{
+  "case": "nbfm_tx",
+  "case_sha256": "019ccad6c30ab62d1bebf3bbda407d150b10e2ce776b164e16440a26630d283d",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}
