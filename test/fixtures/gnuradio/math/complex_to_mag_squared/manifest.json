@@ -1,0 +1,6 @@
+{
+  "case": "complex_to_mag_squared",
+  "case_sha256": "83d3eeaa69ecfa0203ba17a497980ae01f5983e2a39759fb531dce60db72c287",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

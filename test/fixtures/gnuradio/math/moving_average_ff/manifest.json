@@ -1,0 +1,6 @@
+{
+  "case": "moving_average_ff",
+  "case_sha256": "5c951c0a28e548679d0d7b16ed87cb858f1d53767281405fb4e2a554138166ce",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

@@ -1,0 +1,39 @@
+{
+  "name": "complex_to_arg",
+  "description": "complex_to_arg (float only)",
+  "samples": 4096,
+  "seed": 2010,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.03,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.3,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {},
+  "block": {
+    "name": "complex_to_arg"
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.complex_to_arg"
+    }
+  ],
+  "output": {
+    "type": "real"
+  },
+  "float_vs_gnuradio": {
+    "max_error": 1e-05,
+    "snr_db_min": 120.0,
+    "rationale": "atan2 in float32 against GNU Radio's float atan2 approximation; measured 1e-6, SNR 127.8 dB."
+  }
+}

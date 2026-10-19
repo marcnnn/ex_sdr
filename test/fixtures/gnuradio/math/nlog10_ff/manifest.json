@@ -1,0 +1,6 @@
+{
+  "case": "nlog10_ff",
+  "case_sha256": "18ad8ed33bc043d170e680549db4f64f958e4eeecc60ea062e38f2c471c1be66",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

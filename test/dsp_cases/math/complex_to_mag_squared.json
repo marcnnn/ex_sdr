@@ -1,0 +1,65 @@
+{
+  "name": "complex_to_mag_squared",
+  "description": "complex_to_mag_squared",
+  "samples": 4096,
+  "seed": 2006,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.03,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.3,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {},
+  "block": {
+    "name": "complex_to_mag_squared"
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.complex_to_mag_squared"
+    }
+  ],
+  "output": {
+    "type": "real"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 1.6e-05,
+      "snr_db_min": 89.5,
+      "rationale": "The square sum of Q15 samples is exact; the output is rounded once: <= 0.5 LSB = 1.53e-5. Measured 1.5e-5, SNR 90.8 dB."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 4e-06,
+      "snr_db_min": 101.0,
+      "rationale": "As q15_nearest with 0.5 Q17 LSB = 3.8e-6. Measured 4.0e-6 (rounded), SNR 102.7 dB."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 100.0,
+    "rationale": "GNU Radio and the float instance do the same float32 operations; measured 0."
+  }
+}

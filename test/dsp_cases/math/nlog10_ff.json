@@ -1,0 +1,53 @@
+{
+  "name": "nlog10_ff",
+  "description": "abs_ff then nlog10_ff(10, 1, 0), 10 log10 |x| (float only)",
+  "samples": 4096,
+  "seed": 2012,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.09,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {},
+  "block": [
+    {
+      "name": "abs_ff"
+    },
+    {
+      "name": "nlog10_ff",
+      "opts": {
+        "n": 10,
+        "k": 0
+      }
+    }
+  ],
+  "gnuradio": [
+    {
+      "block": "blocks.abs_ff"
+    },
+    {
+      "block": "blocks.nlog10_ff",
+      "args": [
+        10,
+        1,
+        0
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 0.0001,
+    "snr_db_min": 110.0,
+    "rationale": "GNU Radio's nlog10 is a fast log approximation in float32; measured 2.9e-5 dB, SNR 123.2 dB. Float only: no fixed-point log yet."
+  }
+}

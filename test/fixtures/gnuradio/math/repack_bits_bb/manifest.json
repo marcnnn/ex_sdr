@@ -1,0 +1,6 @@
+{
+  "case": "repack_bits_bb",
+  "case_sha256": "b98f582dcb144e2d4c418e60e9880c9831d095d9f792b754c9ec0fb556d4b021",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

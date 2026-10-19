@@ -1,0 +1,6 @@
+{
+  "case": "complex_to_imag",
+  "case_sha256": "dfecf86ce055d4c9c201c042395939b4321697db53ef11f483aeaabda4b3bdab",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

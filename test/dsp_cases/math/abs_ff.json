@@ -1,0 +1,62 @@
+{
+  "name": "abs_ff",
+  "description": "abs_ff",
+  "samples": 4096,
+  "seed": 2011,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.09,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {},
+  "block": {
+    "name": "abs_ff"
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.abs_ff"
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 0.0,
+      "snr_db_min": 100.0,
+      "rationale": "Sign change of a Q15 sample: no arithmetic on the values, so the fixed instance is exact (measured 0)."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 0.0,
+      "snr_db_min": 100.0,
+      "rationale": "Sign change of a Q17 sample: no arithmetic on the values, so the fixed instance is exact (measured 0)."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 100.0,
+    "rationale": "GNU Radio and the float instance do the same float32 operations; measured 0."
+  }
+}

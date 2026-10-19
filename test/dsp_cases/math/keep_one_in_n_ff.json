@@ -1,0 +1,69 @@
+{
+  "name": "keep_one_in_n_ff",
+  "description": "keep_one_in_n, n 4 (keeps item 3 of each group)",
+  "samples": 4096,
+  "seed": 2020,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.09,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {},
+  "block": {
+    "name": "keep_one_in_n",
+    "opts": {
+      "n": 4
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.keep_one_in_n",
+      "args": [
+        4,
+        4
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 0.0,
+      "snr_db_min": 100.0,
+      "rationale": "Selection only: no arithmetic on the values, so the fixed instance is exact (measured 0)."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 0.0,
+      "snr_db_min": 100.0,
+      "rationale": "Selection only: no arithmetic on the values, so the fixed instance is exact (measured 0)."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 100.0,
+    "rationale": "GNU Radio and the float instance do the same float32 operations; measured 0."
+  }
+}

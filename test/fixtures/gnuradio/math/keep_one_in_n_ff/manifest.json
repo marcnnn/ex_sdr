@@ -1,0 +1,6 @@
+{
+  "case": "keep_one_in_n_ff",
+  "case_sha256": "33ff93cb28fa8cfd63b6c53f761b9aa435964462a783282deae6f6f63530d5c6",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

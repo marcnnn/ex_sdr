@@ -1,0 +1,6 @@
+{
+  "case": "unpack_k_bits_bb",
+  "case_sha256": "7b60323da994636e4d653e11ceae4371f7a004178798115f9777f94dec0cadd8",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

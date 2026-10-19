@@ -1,0 +1,6 @@
+{
+  "case": "threshold_ff",
+  "case_sha256": "e7e9bb56a0522dec940f7db5c2bc610c3d1e982debc20f26f6b53966d815497e",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

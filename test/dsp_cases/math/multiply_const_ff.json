@@ -1,0 +1,82 @@
+{
+  "name": "multiply_const_ff",
+  "description": "multiply_const_ff by 0.7",
+  "samples": 4096,
+  "seed": 2001,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.09,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "k": 0.7
+  },
+  "block": {
+    "name": "multiply_const_ff",
+    "opts": {
+      "k": "k"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.multiply_const_ff",
+      "args": [
+        "k"
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 2.7e-05,
+      "snr_db_min": 87.0,
+      "rationale": "Output rounding <= 0.5 LSB (1.53e-05) plus |x| * |k - k_q| <= 0.7 * 2^-16 = 0.35 LSB (k = 0.7 in Q15): <= 0.85 LSB = 2.6e-5. Measured 2.1e-5, SNR 88.1 dB."
+    },
+    {
+      "variant": "q15_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 10
+      },
+      "max_error": 4.2e-05,
+      "snr_db_min": 81.5,
+      "rationale": "Truncation <= 1 LSB plus the constant error 0.35 LSB: <= 1.35 LSB = 4.1e-5. Measured 3.7e-5, SNR 82.7 dB."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 6.6e-06,
+      "snr_db_min": 98.0,
+      "rationale": "Output rounding <= 0.5 Q17 LSB (3.8e-6) plus 0.7 * 2^-18 (constant in Q17) = 2.7e-6: <= 6.5e-6. Measured 5.0e-6, SNR 100.1 dB."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 100.0,
+    "rationale": "GNU Radio and the float instance do the same float32 operations; measured 0."
+  }
+}

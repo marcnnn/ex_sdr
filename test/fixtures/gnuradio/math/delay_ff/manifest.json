@@ -1,0 +1,6 @@
+{
+  "case": "delay_ff",
+  "case_sha256": "1f96c6c1837d87f50db430ba20c0b43f2eb408568c12dfd8328f2b3cf6059373",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

@@ -1,0 +1,57 @@
+{
+  "name": "integrate_ff",
+  "description": "integrate_ff, decimation 8 (sum, no scale)",
+  "samples": 4096,
+  "seed": 2016,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.09,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {},
+  "block": {
+    "name": "integrate_ff",
+    "opts": {
+      "decim": 8
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.integrate_ff",
+      "args": [
+        8,
+        1
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q20_nearest",
+      "format": {
+        "bits": 20,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 0.0,
+      "snr_db_min": 100.0,
+      "rationale": "Sums of Q15 samples fit the 20-bit format, no rounding: no arithmetic on the values, so the fixed instance is exact (measured 0)."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 100.0,
+    "rationale": "float32 sums in a different order than GNU Radio; measured 0."
+  }
+}

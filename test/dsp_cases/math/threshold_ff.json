@@ -1,0 +1,77 @@
+{
+  "name": "threshold_ff",
+  "description": "threshold_ff with hysteresis lo -0.125, hi 0.25",
+  "samples": 4096,
+  "seed": 2013,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.09,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "lo": -0.125,
+    "hi": 0.25
+  },
+  "block": {
+    "name": "threshold_ff",
+    "opts": {
+      "lo": "lo",
+      "hi": "hi"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.threshold_ff",
+      "args": [
+        "lo",
+        "hi",
+        0
+      ]
+    }
+  ],
+  "output": {
+    "type": "real"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 0.0,
+      "snr_db_min": 100.0,
+      "rationale": "Comparisons with thresholds on the Q15 grid (lo = -0.125, hi = 0.25 are exact): no arithmetic on the values, so the fixed instance is exact (measured 0)."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 0.0,
+      "snr_db_min": 100.0,
+      "rationale": "Comparisons with thresholds on the Q17 grid: no arithmetic on the values, so the fixed instance is exact (measured 0)."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 0.0,
+    "snr_db_min": 100.0,
+    "rationale": "The output is a bit: exact equality. Measured 0."
+  }
+}
