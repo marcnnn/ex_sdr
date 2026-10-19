@@ -1,0 +1,32 @@
+{
+  "name": "punct_bb_delay3",
+  "description": "puncture_bb 6, 0b110101 delayed by 3",
+  "samples": 1800,
+  "seed": 2,
+  "input": {
+    "type": "bytes",
+    "modulus": 2
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {},
+  "block": {
+    "name": "puncture_bb",
+    "opts": {
+      "puncsize": 6,
+      "puncpat": 53,
+      "delay": 3
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "fec.puncture_bb",
+      "args": [
+        6,
+        53,
+        3
+      ]
+    }
+  ]
+}

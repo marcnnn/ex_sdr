@@ -1,0 +1,32 @@
+{
+  "name": "punct_bb_wide_pattern",
+  "description": "puncture_bb 4 with a pattern wider than the period, delay 1",
+  "samples": 2000,
+  "seed": 3,
+  "input": {
+    "type": "bytes",
+    "modulus": 2
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {},
+  "block": {
+    "name": "puncture_bb",
+    "opts": {
+      "puncsize": 4,
+      "puncpat": 31,
+      "delay": 1
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "fec.puncture_bb",
+      "args": [
+        4,
+        31,
+        1
+      ]
+    }
+  ]
+}

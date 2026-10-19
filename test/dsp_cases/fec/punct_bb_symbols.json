@@ -1,0 +1,32 @@
+{
+  "name": "punct_bb_symbols",
+  "description": "puncture_bb on byte symbols, 7 of 12",
+  "samples": 2400,
+  "seed": 5,
+  "input": {
+    "type": "bytes",
+    "modulus": 256
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {},
+  "block": {
+    "name": "puncture_bb",
+    "opts": {
+      "puncsize": 12,
+      "puncpat": 3030,
+      "delay": 5
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "fec.puncture_bb",
+      "args": [
+        12,
+        3030,
+        5
+      ]
+    }
+  ]
+}
