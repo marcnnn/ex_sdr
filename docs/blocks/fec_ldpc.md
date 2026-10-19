@@ -132,7 +132,7 @@ waterfall slope, and the 6-bit decoder to 0.1 dB of float min-sum.
   matrices; here the inverses are exact over GF(2). Back substitution in
   gr-fec assumes T is upper triangular with a unit diagonal without
   checking it: with gap 1 instead of 2 for `n_0100_k_0042_gap_02.alist`
-  gr-fec encodes words that violate 3 parity checks. Here that is
+  gr-fec encodes words that violate a parity check. Here that is
   checked and the gap rejected. A gap larger than needed is accepted by
   both and encodes the same.
 * `ldpc_decoder` (`awgn_bp`) checks only the first `rank(H)` rows for
