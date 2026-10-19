@@ -1,0 +1,8 @@
+{
+  "case": "ldpc_flip_h_n0300_k0152",
+  "case_sha256": "0f901d558296ac31a1267c54aa0d4a9519fe47cd69cef32b96bcc90f7ef3f1e2",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5",
+  "n": 300,
+  "k": 152
+}

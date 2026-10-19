@@ -1,0 +1,8 @@
+{
+  "case": "ldpc_par_n1800_k0902_gap28",
+  "case_sha256": "75365224a306ec9c50b38af6a603ec9d8666e9ca1d5e6cfbae095de7eb09bbcb",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5",
+  "n": 1800,
+  "k": 902
+}

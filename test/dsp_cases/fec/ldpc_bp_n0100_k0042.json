@@ -1,0 +1,14 @@
+{
+  "name": "ldpc_bp_n0100_k0042",
+  "block": "ldpc_decoder",
+  "alist": "n_0100_k_0042_gap_02.alist",
+  "max_iter": 50,
+  "ebn0_db": [
+    1.0,
+    2.0,
+    3.0
+  ],
+  "frames": 100,
+  "seed": 13,
+  "rationale": "Float sum-product (tanh rule, f64). Same operation order; tanh/atanh may differ by an ulp between libm and XLA, so a decision can only differ where a posterior LLR is within rounding of 0. Input as for the bit flip cases."
+}

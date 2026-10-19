@@ -1,0 +1,8 @@
+{
+  "case": "ldpc_gen_n0100_k0058",
+  "case_sha256": "f51041f49bed0a7defb12627073816ed466419c0a2b590bd3b2e224b8b08dcfe",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5",
+  "n": 100,
+  "k": 58
+}

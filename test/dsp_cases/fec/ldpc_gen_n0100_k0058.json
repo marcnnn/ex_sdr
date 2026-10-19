@@ -1,0 +1,8 @@
+{
+  "name": "ldpc_gen_n0100_k0058",
+  "block": "ldpc_gen_mtrx_encoder",
+  "alist": "n_0100_k_0058_gen_matrix.alist",
+  "frames": 24,
+  "seed": 5,
+  "rationale": "G^T s over GF(2): codewords must be equal bit for bit."
+}

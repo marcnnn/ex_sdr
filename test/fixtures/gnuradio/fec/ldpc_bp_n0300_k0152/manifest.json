@@ -1,0 +1,8 @@
+{
+  "case": "ldpc_bp_n0300_k0152",
+  "case_sha256": "c286a858a525cc9e800775b8010298ec47dfefa41ecc569de82ddf7204d82be3",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5",
+  "n": 300,
+  "k": 152
+}
