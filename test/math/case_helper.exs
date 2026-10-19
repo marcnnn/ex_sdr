@@ -34,23 +34,38 @@ defmodule ExSdr.MathTest.Case do
     end
   end
 
+  defp resolve("msb", _params), do: :msb
+  defp resolve("lsb", _params), do: :lsb
   defp resolve(name, params) when is_binary(name), do: Map.fetch!(params, name)
   defp resolve(v, _params), do: v
 
-  @doc "Input items of the case in `format` (as containers)."
+  @doc """
+  Input items of the case in `format` (as containers). Cases with two inputs
+  have items `[a, b]`; the container is the pair of the two inputs' containers.
+  """
   def container(items, case, format) do
-    case case["input"]["type"] do
-      "bytes" ->
-        Nx.tensor(items, type: :u8)
+    types = for spec <- case["inputs"] || [case["input"]], do: spec["type"]
 
-      "complex" ->
-        {re, im} = Enum.unzip(items)
-        {samples(re, format), samples(im, format)}
+    case types do
+      [type] ->
+        items_container(items, type, format)
 
-      "real" ->
-        samples(items, format)
+      types ->
+        for {type, i} <- Enum.with_index(types) do
+          items_container(Enum.map(items, &Enum.at(&1, i)), type, format)
+        end
+        |> List.to_tuple()
     end
   end
+
+  defp items_container(items, "bytes", _format), do: Nx.tensor(items, type: :u8)
+
+  defp items_container(items, "complex", format) do
+    {re, im} = Enum.unzip(items)
+    {samples(re, format), samples(im, format)}
+  end
+
+  defp items_container(items, "real", format), do: samples(items, format)
 
   defp samples(ints, format), do: Num.from_int(Nx.tensor(ints, type: :s16), 15, format)
 

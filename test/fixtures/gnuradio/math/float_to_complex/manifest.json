@@ -1,0 +1,6 @@
+{
+  "case": "float_to_complex",
+  "case_sha256": "c487afdc54c156e61b4a82b1e320d370f0632e7a2d8286e13156881850f401cf",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

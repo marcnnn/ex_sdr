@@ -1,0 +1,6 @@
+{
+  "case": "unpacked_to_packed_bb_lsb",
+  "case_sha256": "9ccb7c3e4e28a7766ae30df4bc7c3029df44c0f2f2314d9764ae2f77d26723fa",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

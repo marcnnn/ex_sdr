@@ -181,14 +181,10 @@ order is not known to us; step statistics and clipping are tested.
 
 ## Regenerating the GNU Radio output
 
-`scripts/gnuradio_golden.sh` runs `golden.py`, which always starts a chain with an input signal
-and so cannot run a source. Sources use `test/gnuradio/sources_golden.py` (same case format, one more
-input type `"none"`):
+    scripts/gnuradio_golden.sh test/fixtures/gnuradio/sources test/dsp_cases/sources
 
-    test/gnuradio/sources_golden.sh
-
-(rootless podman image `exhdl-gnuradio`, no sudo). Cases with an input signal go through
-`golden.run_case` unchanged. Cases of random blocks (`"stats_only": true`: noise, fastnoise, fading)
+(rootless podman image `exhdl-gnuradio`, no sudo). Chains that start with a source use input type
+`"none"`. Cases of random blocks (`"stats_only": true`: noise, fastnoise, fading)
 keep no samples: the script writes `stats.json` (per component n, mean, variance, kurtosis,
 spectral flatness, count and moments of nonzero values; for complex output the power mean and
 variance), and the tests compare our statistics with those. This keeps the fixtures under 1 MB.

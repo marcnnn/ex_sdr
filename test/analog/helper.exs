@@ -113,6 +113,11 @@ defmodule ExSdr.Analog.TestHelper do
   @doc "Q15 integer input of a case as the block's input container in `format`."
   def to_input(input, format) when is_list(input) do
     case input do
+      # two real inputs: items [data, control]
+      [[_, _] | _] ->
+        {a, b} = input |> Enum.map(&List.to_tuple/1) |> Enum.unzip()
+        {samples(a, format), samples(b, format)}
+
       [{_, _} | _] ->
         {re, im} = Enum.unzip(input)
         {samples(re, format), samples(im, format)}

@@ -1,0 +1,6 @@
+{
+  "case": "sample_and_hold_ff",
+  "case_sha256": "410a6f71dafe767fa8e5014eb2039da71b1e14b2ed4e3f627bc5209efeec81ad",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

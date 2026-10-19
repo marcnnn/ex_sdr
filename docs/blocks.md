@@ -45,12 +45,46 @@ no local GNU Radio needed) and writes the fixture:
 
     scripts/gnuradio_golden.sh test/fixtures/gnuradio/<family> test/dsp_cases/<family>
 
-Input types: `"complex"` and `"real"` (tones, steps, noise; Q15) or
-`"bytes"` (random, `"modulus"` 2 for bits). `"output": {"type": ...}` when
-the chain changes the item type. `ExSdr.Test.GnuRadioFixture.family/1`
-loads all cases of a family: `[{case, %{input:, reference:}}]`.
+`scripts/gnuradio_golden.sh` is the only entry point. The runner is
+`test/gnuradio/golden.py`; its header has the full case format. In short:
+
+* **Inputs.** `"input"` (one) or `"inputs": [...]` (connected to ports 0..n-1
+  of the first block). Types: `"complex"` and `"real"` (tones, steps, noise;
+  Q15), `"bytes"` (random, `"modulus"` 2 for bits), `"none"` for chains that
+  start with a source (`"samples"` items are taken). Several inputs are drawn in
+  order from the case's seed.
+* **Outputs.** `"output": {"type": ...}` or `"outputs": [...]` (ports 0..m-1 of the
+  last block): `"complex"`, `"real"`, `"bytes"`, `"short"` (int16 sink,
+  `gnuradio.s16le`), `"int"` (`gnuradio.s32le`). The default is the first
+  input's type. Files after the first are `input1.*`, `gnuradio1.*`.
+* **Statistics.** `"stats_only": true` stores `stats.json` instead of samples,
+  for random blocks.
+* **Arguments.** Strings in a block's `"args"` are Python expressions with `pi`,
+  `math`, `np`, the modules `gr`, `blocks`, `filter`, `analog`, `digital`, `fec`,
+  `channels`, and the case's `params` as bare names (when they are valid
+  identifiers) or as the dict `p` (`p["pass"]`; an argument that is just a param
+  name always gives that param). They can build objects
+  (`digital.constellation_qpsk().base()`) and name enums (`gr.GR_MSB_FIRST`).
+* **Other fixtures.** Taps, tagged streams and PDUs do not fit the case format.
+  Scripts listed in `HOOKS` in `golden.py` write them when the family's cases
+  are run: `digital/framing.json`, `filters/taps.json`, `filters/pfb.json`.
+  A new family adds its script there.
+* Some GNU Radio blocks are float-only on one port or take bytes on a control
+  port (`sample_and_hold_ff`); a case then lists the input types the block has.
+
+`ExSdr.Test.GnuRadioFixture.family/1` loads all cases of a family:
+`[{case, %{input:, reference:}}]`; with several inputs `input` holds one
+`[a, b]` per sample, `inputs` the lists, and `references` all outputs.
 Look at `test/dsp_cases/fir_ccf_31tap.json` and
-`test/gnuradio_reference_test.exs` for the existing pattern.
+`test/gnuradio_reference_test.exs` for the existing pattern, and at the math
+cases `add_ff`, `float_to_short` and `packed_to_unpacked_bb_msb` for two inputs,
+an int16 output and an enum.
+
+GNU Radio is not always repeatable on the byte: `filters/fft_filter_ccf_decim2`
+changes in float rounding (up to 1e-7) and `filters/rational_resampler_ccf_5_3`
+sometimes ends one item later, from run to run, with the old runner as well.
+Regenerating the filters family can therefore show a diff there; keep the
+committed files unless the case changed.
 
 Per block, as far as it applies:
 

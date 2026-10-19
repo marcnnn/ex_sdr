@@ -28,7 +28,7 @@ constants). Cases in `test/dsp_cases/analog/`, GNU Radio output in
 | `pll_freqdet_cf` | `:pll_freqdet_cf` | done | feedback |
 | `pll_refout_cc` | `:pll_refout_cc` | done | feedback |
 | `rail_ff` | `:rail_ff` | done | stateless |
-| `blocks.sample_and_hold_ff` | `:sample_and_hold_ff` | done, checked against hand computed values only (the GNU Radio harness has one source) | feedback (one register) |
+| `blocks.sample_and_hold_ff` | `:sample_and_hold_ff` | done, GNU Radio case with a float input and a random 0/1 byte control (GNU Radio's control port is a byte stream) | feedback (one register) |
 | `nbfm_tx` | `:nbfm_tx` | partial: `audio_rate == quad_rate`; with the interpolating filter tested as a composition (taps supplied by the test) | feedback |
 | `nbfm_rx` | `:nbfm_rx_core` plus a decimating FIR | partial, as `nbfm_tx`: demodulator and de-emphasis are the block, the audio filter is a composition | feedback |
 | `wfm_rcv` | `:quadrature_demod_cf`, FIR, `:fm_deemph` | composition, tested; no fused block | |
@@ -65,7 +65,7 @@ thresholds) are options, so they are compile time constants, like FIR taps.
 | `simple_squelch_cc` | `threshold_db`, `alpha` (0.001) |
 | `pwr_squelch_cc`, `pwr_squelch_ff` | `threshold_db`, `alpha` (0.0001) |
 | `rail_ff` | `lo`, `hi` (representable in the format) |
-| `sample_and_hold_ff` | none; the sample is `{data, control}` |
+| `sample_and_hold_ff` | none; the sample is `{data, control}`, control nonzero latches |
 | `pll_*` | `loop_bw`, `max_freq` (pi), `min_freq` (-pi), `iterations`, `guard`; `pll_freqdet_cf` also `out_gain` (1.0) |
 | `nbfm_tx` | `quad_rate`, `tau`, `max_dev` (5e3), `fh` (-1.0) |
 | `nbfm_rx_core` | `quad_rate`, `tau`, `max_dev` |

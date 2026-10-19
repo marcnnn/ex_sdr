@@ -2,7 +2,7 @@ defmodule ExSdr.SourcesCase do
   @moduledoc false
   # Helpers for the sources family: cases in test/dsp_cases/sources, GNU Radio
   # output in test/fixtures/gnuradio/sources (made by
-  # test/gnuradio/sources_golden.sh).
+  # scripts/gnuradio_golden.sh).
 
   alias ExSdr.Test.GnuRadioFixture, as: F
   alias NxFixed.Block
@@ -26,7 +26,7 @@ defmodule ExSdr.SourcesCase do
 
   @doc """
   Cases of random blocks, for which only the statistics of GNU Radio's output are
-  kept (`stats.json`, made by test/gnuradio/sources_golden.py): `[{case, stats}]`.
+  kept (`stats.json`, made by test/gnuradio/golden.py): `[{case, stats}]`.
   """
   def stats_cases do
     for {path, case} <- all_cases(), case["stats_only"] do

@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""Reference for gr-filter blocks that the single chain runner (golden.py) cannot
+"""Reference for gr-filter blocks that the case format of golden.py cannot
 build: pfb_decimator_ccf has one input per decimation phase, fed here by
 stream_to_streams from one serial stream.
 
-Usage (from the repository root):
-
-    podman run --rm -v "$PWD/test:/work/test:ro,Z" -v "$PWD/test/fixtures/gnuradio/filters:/out:Z" \
-        -w /work exhdl-gnuradio python3 test/gnuradio/filters_pfb.py /out/pfb.json
+Usage: filters_pfb.py <output file>. Called by scripts/gnuradio_golden.sh for the
+filters family (golden.py HOOKS), which writes test/fixtures/gnuradio/filters/pfb.json.
 
 Writes {"gnuradio": version, "cases": [{name, decim, channel, taps, input, output}]};
 input and output are lists of [re, im] with input values on the Q15 grid.

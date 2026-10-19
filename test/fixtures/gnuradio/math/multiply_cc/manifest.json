@@ -1,0 +1,6 @@
+{
+  "case": "multiply_cc",
+  "case_sha256": "a3afd62f69a35d6d2acc096a258cb5cebb15f5b6f89082df16b108cf68c0899d",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

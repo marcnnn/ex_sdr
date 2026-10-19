@@ -28,12 +28,12 @@ check is listed under notes. **skipped** = not implemented, reason given.
 | `complex_to_real` | `:complex_to_real` | done | stateless | |
 | `complex_to_imag` | `:complex_to_imag` | done | stateless | |
 | `complex_to_float` | - | skipped | - | two outputs; `NxFixed.Block` has one output |
-| `float_to_complex` | `:float_to_complex` | partial | stateless | pair input `{re, im}`; no GNU Radio case (two sources) |
-| `magphase_to_complex` | `:magphase_to_complex` | partial | stateless | pair input, float only; no GNU Radio case |
+| `float_to_complex` | `:float_to_complex` | done | stateless | pair input `{re, im}`; two-input GNU Radio case |
+| `magphase_to_complex` | `:magphase_to_complex` | partial | stateless | pair input, float only; two-input GNU Radio case |
 | `abs_ff` | `:abs_ff` | done | stateless | most negative value saturates |
 | `nlog10_ff` | `:nlog10_ff` | partial | stateless | float only (log10); chained after `abs_ff` in the case |
-| `add_ff`, `sub_ff`, `mul_ff`, `div_ff` | same | partial | stateless | pair input; unit tests, no GNU Radio case |
-| `add_cc`, `sub_cc`, `mul_cc`, `div_cc` | same | partial | stateless | pair input; unit tests, no GNU Radio case |
+| `add_ff`, `sub_ff`, `multiply_ff`, `divide_ff` | `:add_ff`, `:sub_ff`, `:mul_ff`, `:div_ff` | done | stateless | pair input; two-input GNU Radio cases |
+| `add_cc`, `sub_cc`, `multiply_cc`, `divide_cc` | `:add_cc`, `:sub_cc`, `:mul_cc`, `:div_cc` | done | stateless | pair input; two-input GNU Radio cases |
 | `threshold_ff` | `:threshold_ff` | done | feedback | hysteresis; output is a bit (u8) |
 | `moving_average_ff` | `:moving_average_ff` | done | feed-forward | `length`, `scale`; window = taps |
 | `moving_average_cc` | `:moving_average_cc` | done | feed-forward | |
@@ -51,12 +51,12 @@ check is listed under notes. **skipped** = not implemented, reason given.
 | `deinterleave` | - | skipped | - | N outputs; needs a port model in `NxFixed.Block` |
 | `unpack_k_bits_bb` | `:unpack_k_bits_bb` | done | stateless | frame, rate `{1, k}`; MSB first |
 | `pack_k_bits_bb` | `:pack_k_bits_bb` | done | stateless | frame, rate `{k, 1}`; MSB first |
-| `packed_to_unpacked_bb` | `:packed_to_unpacked_bb` | partial | stateless | unpack with MSB order; GNU Radio needs an endianness enum that `golden.py` cannot pass |
-| `unpacked_to_packed_bb` | `:unpacked_to_packed_bb` | partial | stateless | pack with MSB order; as above |
+| `packed_to_unpacked_bb` | `:packed_to_unpacked_bb` | done | control | host; `k` bits per chunk, `endianness`; bits that do not fill a chunk wait in the state |
+| `unpacked_to_packed_bb` | `:unpacked_to_packed_bb` | done | control | host; as above |
 | `repack_bits_bb` | `:repack_bits_bb` | done | control | host; LSB first; bit state carried |
 | `char_to_float` | `:char_to_float` | done | stateless | `scale` divides, as in GNU Radio |
 | `float_to_char` | `:float_to_char` | done | stateless | rounds to nearest, saturates to s8 |
-| `float_to_short` | - | skipped | - | `golden.py` has no int16 sink; would be `float_to_char` at 16 bits |
+| `float_to_short` | `:float_to_short` | done | stateless | rounds to nearest, saturates to s16; GNU Radio case with an int16 sink |
 
 Hardware classes follow `NxFixed.Block`. Feed-forward blocks keep a delay
 line only; feedback blocks depend on their own state (accumulator,
@@ -74,10 +74,17 @@ hysteresis); control blocks count positions or hold a bit buffer.
 * **Pairs.** Two-input blocks take the sample `{a, b}` (complex: `{{ar, ai},
   {br, bi}}`). A two-input block is one `NxFixed.Block` with an item that is a
   pair.
+* **Two inputs.** The GNU Radio cases give `"inputs": [a, b]`; the case items
+  are `[a, b]` per sample and the block input is the pair of containers.
 * **Division.** Fixed point is an exact integer quotient of the aligned raw
   values, rounded once; division by zero saturates by the sign of the
   numerator (GNU Radio gives inf). Complex division is `a * conj(b) / |b|^2`
   with one rounding per component.
+* **Packing aliases.** `packed_to_unpacked_bb` and `unpacked_to_packed_bb` are
+  GNU Radio's chunk packers, not `unpack_k_bits_bb` under another name: the
+  endianness orders the bits of the 8-bit side only, the first bit of a chunk is
+  always its top bit (checked against GNU Radio for both orders). A trailing
+  partial chunk is dropped, as GNU Radio does at the end of a stream.
 * **Bit blocks.** Host and frame kernels on `u8` tensors; `repack_bits_bb`
   takes a tensor and returns a binary, since Nx cannot hold empty tensors
   and a chunk may produce no byte.
@@ -108,12 +115,8 @@ hysteresis); control blocks count positions or hold a bit buffer.
 
 ## Not yet checked against GNU Radio
 
-The two-input blocks (`add_*`, `sub_*`, `mul_*`, `div_*`, `float_to_complex`,
-`magphase_to_complex`), the packing aliases, and `stream_to_vector` as a
-chain: the unit tests compare with float arithmetic and with the fixed-point
-rounding bounds. They need a second input source in
-`test/gnuradio/golden.py` (or an endianness enum) to be checked against GNU
-Radio.
+`stream_to_vector` and `vector_to_stream` as a chain (identity on the flat
+stream).
 
 ## Requests outside this branch
 
@@ -121,8 +124,5 @@ Radio.
   forgets its start only after the input leaves the band). The block sets
   `warmup: nil`; the type says `non_neg_integer`. Either allow `nil` (not
   bounded) or a separate field.
-* `test/gnuradio/golden.py`: a second source for two-input blocks, and enum
-  arguments (`endianness`), so the pair blocks and packing aliases get GNU
-  Radio cases.
 * `NxFixed.Dataflow` does not support `Nx.sign/1`; the divider uses
   comparisons instead.
