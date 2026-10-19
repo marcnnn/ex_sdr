@@ -121,7 +121,7 @@ defmodule ExSdr.FEC.ConvViterbi do
       half: half,
       kinds: kinds,
       refs: List.to_tuple(refs),
-      max: n * 127 >>> 2
+      max: (n * 127) >>> 2
     }
   end
 
@@ -131,7 +131,7 @@ defmodule ExSdr.FEC.ConvViterbi do
 
   @doc "Distance metric of expected 0/255 bits against symbols (GNU Radio's branch metric)."
   def distance(expected, syms) do
-    sum = 1 + (Enum.zip_reduce(expected, syms, 0, fn e, s, acc -> acc + bxor(e, s) end))
+    sum = 1 + Enum.zip_reduce(expected, syms, 0, fn e, s, acc -> acc + bxor(e, s) end)
     sum >>> 3
   end
 
@@ -208,7 +208,7 @@ defmodule ExSdr.FEC.ConvViterbi do
 
     Enum.reduce(last..first//-1, {[], state}, fn step, {bits, s} ->
       d = elem(decisions, step) >>> s &&& 1
-      {[d | bits], (s >>> 1) ||| d <<< top}
+      {[d | bits], s >>> 1 ||| d <<< top}
     end)
   end
 end

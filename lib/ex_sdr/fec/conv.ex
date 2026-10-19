@@ -94,7 +94,10 @@ defmodule ExSdr.FEC.Conv do
         :ok
     end
 
-    padding = if padded and mode == :terminated, do: div(rate * (k - 1) + 7, 8) * 8 - rate * (k - 1), else: 0
+    padding =
+      if padded and mode == :terminated,
+        do: div(rate * (k - 1) + 7, 8) * 8 - rate * (k - 1),
+        else: 0
 
     conf = %{
       k: k,

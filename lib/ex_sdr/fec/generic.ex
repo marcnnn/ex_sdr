@@ -222,7 +222,10 @@ defmodule ExSdr.FEC.Generic do
     Enum.map_reduce(packets, state, fn p, st ->
       bits = to_tensor(p, :u8)
       n = Nx.axis_size(bits, 0)
-      if n > mtu * 8, do: raise(ArgumentError, "tagged_encoder: received frame is larger than MTU")
+
+      if n > mtu * 8,
+        do: raise(ArgumentError, "tagged_encoder: received frame is larger than MTU")
+
       {_, gp} = set_frame_size(g, n)
       {out, st} = work(gp, bits, st)
       {to_binary(out), st}
@@ -288,7 +291,9 @@ defmodule ExSdr.FEC.Generic do
         if variable do
           [to_tensor(data, :u8)]
         else
-          if rem(nbits, size) != 0, do: raise(ArgumentError, "input does not divide into code block size")
+          if rem(nbits, size) != 0,
+            do: raise(ArgumentError, "input does not divide into code block size")
+
           for <<b::binary-size(size) <- data>>, do: to_tensor(b, :u8)
         end
 
@@ -346,7 +351,11 @@ defmodule ExSdr.FEC.Generic do
   defp unpack(bytes, false), do: ExSdr.Comm.Bits.unpack(bytes)
 
   defp unpack(bytes, true),
-    do: for(<<b <- bytes>>, into: <<>>, do: for(<<x::1 <- <<b>> >>, into: <<>>, do: <<x>>) |> reverse_bin())
+    do:
+      for(<<b <- bytes>>,
+        into: <<>>,
+        do: for(<<(x::1 <- <<b>>)>>, into: <<>>, do: <<x>>) |> reverse_bin()
+      )
 
   defp pack(bits, false), do: ExSdr.Comm.Bits.pack(bits)
 
