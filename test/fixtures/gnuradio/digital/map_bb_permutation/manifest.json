@@ -1,0 +1,6 @@
+{
+  "case": "map_bb_permutation",
+  "case_sha256": "9d497fa0af546b67a514db8439e19af8fff190da0179d213c2286fa100191f17",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

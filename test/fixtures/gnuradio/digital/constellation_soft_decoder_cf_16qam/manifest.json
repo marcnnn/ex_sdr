@@ -1,0 +1,6 @@
+{
+  "case": "constellation_soft_decoder_cf_16qam",
+  "case_sha256": "8be9d992a9b3605b6bb04b85425026b26b05a3084d74612581ffb3f098a8f785",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

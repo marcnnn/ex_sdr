@@ -1,0 +1,6 @@
+{
+  "case": "descrambler_bb_1021",
+  "case_sha256": "9e60a931893f4e4d713d466744e057562389c1e297486b3b4ee0783751d4397c",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

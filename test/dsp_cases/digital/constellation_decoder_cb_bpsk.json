@@ -1,0 +1,53 @@
+{
+  "name": "constellation_decoder_cb_bpsk",
+  "description": "constellation_decoder_cb for constellation_bpsk",
+  "samples": 4096,
+  "seed": 12,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.013,
+        "amp": 0.45,
+        "phase": 0.3
+      },
+      {
+        "freq": -0.071,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.25
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {},
+  "block": {
+    "name": "constellation_decoder_cb",
+    "opts": {
+      "constellation": "bpsk"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.constellation_decoder_cb",
+      "args": [
+        "digital.constellation_bpsk().base()"
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_mismatches": 8,
+      "rationale": "Points rounded to Q15 move the decision boundaries by under one LSB; only samples within that distance of a boundary can decide differently."
+    }
+  ]
+}

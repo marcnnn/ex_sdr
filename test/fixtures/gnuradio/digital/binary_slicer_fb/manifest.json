@@ -1,0 +1,6 @@
+{
+  "case": "binary_slicer_fb",
+  "case_sha256": "9220cab6ae00074e5312db109cd87128572db1691d6046aaad572087bac14148",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

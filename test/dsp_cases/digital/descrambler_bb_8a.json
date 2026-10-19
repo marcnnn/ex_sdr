@@ -1,0 +1,36 @@
+{
+  "name": "descrambler_bb_8a",
+  "description": "descrambler_bb mask 0x8a seed 0x7f length 7",
+  "samples": 2048,
+  "seed": 67,
+  "input": {
+    "type": "bytes",
+    "modulus": 2
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {
+    "mask": 138,
+    "seed": 127,
+    "len": 7
+  },
+  "block": {
+    "name": "descrambler_bb",
+    "opts": {
+      "mask": "$mask",
+      "seed": "$seed",
+      "len": "$len"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.descrambler_bb",
+      "args": [
+        "mask",
+        "seed",
+        "len"
+      ]
+    }
+  ]
+}

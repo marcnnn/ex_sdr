@@ -1,0 +1,44 @@
+{
+  "name": "binary_slicer_fb",
+  "description": "binary_slicer_fb on a noisy sine",
+  "samples": 4096,
+  "seed": 41,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.011,
+        "amp": 0.6,
+        "phase": 0.2
+      }
+    ],
+    "noise_rms": 0.2
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {},
+  "block": {
+    "name": "binary_slicer_fb",
+    "opts": {}
+  },
+  "gnuradio": [
+    {
+      "block": "digital.binary_slicer_fb",
+      "args": []
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_mismatches": 0,
+      "rationale": "The decision is the sign of a Q15 input, identical in every format."
+    }
+  ]
+}

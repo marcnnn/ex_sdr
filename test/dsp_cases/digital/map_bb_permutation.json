@@ -1,0 +1,39 @@
+{
+  "name": "map_bb_permutation",
+  "description": "map_bb with a permutation of 0..7",
+  "samples": 2048,
+  "seed": 16,
+  "input": {
+    "type": "bytes",
+    "modulus": 8
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {
+    "map": [
+      2,
+      0,
+      3,
+      1,
+      7,
+      5,
+      6,
+      4
+    ]
+  },
+  "block": {
+    "name": "map_bb",
+    "opts": {
+      "map": "$map"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.map_bb",
+      "args": [
+        "map"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "case": "constellation_soft_decoder_cf_8psk",
+  "case_sha256": "ab6785a361d221593e5012e77cb1457db965fb726c64c73a4a554a136328b983",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

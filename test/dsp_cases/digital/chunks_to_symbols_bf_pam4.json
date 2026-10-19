@@ -1,0 +1,52 @@
+{
+  "name": "chunks_to_symbols_bf_pam4",
+  "description": "chunks_to_symbols_bf with a 4-PAM table",
+  "samples": 2048,
+  "seed": 14,
+  "input": {
+    "type": "bytes",
+    "modulus": 4
+  },
+  "output": {
+    "type": "real"
+  },
+  "params": {
+    "table": [
+      -3.0,
+      -1.0,
+      1.0,
+      3.0
+    ]
+  },
+  "block": {
+    "name": "chunks_to_symbols_bf",
+    "opts": {
+      "table": "$table"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.chunks_to_symbols_bf",
+      "args": [
+        "table"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_abs": 0.0,
+    "rationale": "Exact: integer valued table."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q16_13",
+      "format": {
+        "bits": 16,
+        "frac": 13,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_abs": 0.0,
+      "rationale": "Integer valued table is exact in Q3.13."
+    }
+  ]
+}

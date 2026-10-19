@@ -1,0 +1,36 @@
+{
+  "name": "scrambler_bb_8a",
+  "description": "scrambler_bb mask 0x8a seed 0x7f length 7",
+  "samples": 2048,
+  "seed": 57,
+  "input": {
+    "type": "bytes",
+    "modulus": 2
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {
+    "mask": 138,
+    "seed": 127,
+    "len": 7
+  },
+  "block": {
+    "name": "scrambler_bb",
+    "opts": {
+      "mask": "$mask",
+      "seed": "$seed",
+      "len": "$len"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.scrambler_bb",
+      "args": [
+        "mask",
+        "seed",
+        "len"
+      ]
+    }
+  ]
+}

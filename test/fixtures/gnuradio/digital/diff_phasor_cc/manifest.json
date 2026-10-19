@@ -1,0 +1,6 @@
+{
+  "case": "diff_phasor_cc",
+  "case_sha256": "42465d3835e7372be0d3bfa6f2d262e79061a1b64fc2997785a80a77c92a2f03",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

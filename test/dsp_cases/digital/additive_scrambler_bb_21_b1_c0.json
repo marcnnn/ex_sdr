@@ -1,0 +1,42 @@
+{
+  "name": "additive_scrambler_bb_21_b1_c0",
+  "description": "additive_scrambler_bb mask 0x21, 1 bits per byte, reset every 0 bytes",
+  "samples": 1000,
+  "seed": 75,
+  "input": {
+    "type": "bytes",
+    "modulus": 256
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {
+    "mask": 33,
+    "seed": 1,
+    "len": 5,
+    "count": 0,
+    "bpb": 1
+  },
+  "block": {
+    "name": "additive_scrambler_bb",
+    "opts": {
+      "mask": "$mask",
+      "seed": "$seed",
+      "len": "$len",
+      "count": "$count",
+      "bits_per_byte": "$bpb"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.additive_scrambler_bb",
+      "args": [
+        "mask",
+        "seed",
+        "len",
+        "count",
+        "bpb"
+      ]
+    }
+  ]
+}

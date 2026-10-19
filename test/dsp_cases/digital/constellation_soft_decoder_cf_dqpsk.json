@@ -1,0 +1,44 @@
+{
+  "name": "constellation_soft_decoder_cf_dqpsk",
+  "description": "constellation_soft_decoder_cf for constellation_dqpsk (default noise power)",
+  "samples": 2048,
+  "seed": 13,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.013,
+        "amp": 0.45,
+        "phase": 0.3
+      },
+      {
+        "freq": -0.071,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.25
+  },
+  "output": {
+    "type": "real"
+  },
+  "params": {},
+  "block": {
+    "name": "constellation_soft_decoder_cf",
+    "opts": {
+      "constellation": "dqpsk"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.constellation_soft_decoder_cf",
+      "args": [
+        "digital.constellation_dqpsk().base()"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_abs": 2e-05,
+    "rationale": "Log-sum-exp of squared distances: float32 in both, evaluated in different orders. Values stay below 12 in magnitude (float32 ulp 1e-6 there), measured worst 1e-6; 2e-5 allows for a few ulps more."
+  }
+}

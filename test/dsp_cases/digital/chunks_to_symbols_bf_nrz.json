@@ -1,0 +1,50 @@
+{
+  "name": "chunks_to_symbols_bf_nrz",
+  "description": "NRZ mapping of bits as gfsk_mod does it",
+  "samples": 2048,
+  "seed": 15,
+  "input": {
+    "type": "bytes",
+    "modulus": 2
+  },
+  "output": {
+    "type": "real"
+  },
+  "params": {
+    "table": [
+      -1.0,
+      1.0
+    ]
+  },
+  "block": {
+    "name": "chunks_to_symbols_bf",
+    "opts": {
+      "table": "$table"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.chunks_to_symbols_bf",
+      "args": [
+        "table"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_abs": 0.0,
+    "rationale": "Exact."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q16_14",
+      "format": {
+        "bits": 16,
+        "frac": 14,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_abs": 0.0,
+      "rationale": "+-1 is exact in Q2.14."
+    }
+  ]
+}
