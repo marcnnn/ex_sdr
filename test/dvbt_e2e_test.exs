@@ -168,6 +168,61 @@ defmodule ExSdr.DVBT.EndToEndTest do
     assert out.rs_failed == 0
   end
 
+  @tag :dvbt
+  test "streaming receiver: the batch receiver's TS, whatever the piece sizes", %{
+    ts: ts,
+    impaired: x
+  } do
+    batch = Receiver.receive_sync(x, @opts)
+
+    outs =
+      for sizes <- [[2112 * 8], [1, 7777, 300_001, 45_000, 2111]] do
+        out = stream(x, sizes)
+        assert out.sync.start == batch.sync.start
+        assert out.rs_failed == 0
+        assert binary_part(out.ts, 0, byte_size(batch.ts)) == batch.ts
+        # the stream also outputs the packets after the last whole group of 8
+        assert byte_size(out.ts) - byte_size(batch.ts) < 8 * 188
+        assert_source(ts, out.ts)
+        out
+      end
+
+    assert Enum.uniq(outs) |> length() == 1
+  end
+
+  # pushes x in pieces of the given sizes (cycled), then flushes
+  defp stream(x, sizes) do
+    total = Nx.size(x)
+
+    {pieces, _} =
+      sizes
+      |> Stream.cycle()
+      |> Enum.reduce_while({[], 0}, fn n, {acc, pos} ->
+        if pos >= total,
+          do: {:halt, {acc, pos}},
+          else: {:cont, {[Nx.slice(x, [pos], [min(n, total - pos)]) | acc], pos + n}}
+      end)
+
+    st = Receiver.Stream.new(@opts)
+
+    {out, st} =
+      pieces
+      |> Enum.reverse()
+      |> Enum.reduce({[], st}, fn piece, {out, st} ->
+        {ts, st} = Receiver.Stream.push(st, piece)
+        {[out, ts], st}
+      end)
+
+    {tail, st} = Receiver.Stream.flush(st)
+
+    %{
+      ts: IO.iodata_to_binary([out, tail]),
+      sync: st.sync,
+      rs_corrected: st.rs_corrected,
+      rs_failed: st.rs_failed
+    }
+  end
+
   @tag :dvbt_live
   test "gr-dtv decodes the identical impaired signal to the same source TS", %{
     ts: ts,

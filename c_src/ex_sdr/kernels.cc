@@ -9,6 +9,7 @@
 #include "hwy/highway.h"
 #include "kernels.h"
 
+#include <algorithm>
 #include <cstring>
 #include <vector>
 
@@ -115,9 +116,13 @@ void FirQ15Impl(const int16_t* HWY_RESTRICT ext, size_t n, const int32_t* HWY_RE
 // interleaved load gives both. Metrics are uint16, renormalised every 256
 // steps (spread stays below 1000 + 256 * n).
 // kS: the state count fixed at compile time (0: S at run time).
+// `metric_io` holds the S metrics before the first step and receives them
+// after the last; `step0` is the number of steps before this call, so a
+// run split into several calls renormalises at the same steps as one call.
 template <unsigned n_out, unsigned kS>
-void ViterbiAcs(const uint8_t* HWY_RESTRICT rx, size_t n_steps, unsigned S_rt, bool start_unknown,
-                uint64_t* HWY_RESTRICT decisions, const uint16_t* HWY_RESTRICT expected, unsigned* final_state) {
+void ViterbiAcs(const uint8_t* HWY_RESTRICT rx, size_t n_steps, unsigned S_rt, uint64_t step0,
+                uint16_t* HWY_RESTRICT metric_io, uint64_t* HWY_RESTRICT decisions,
+                const uint16_t* HWY_RESTRICT expected) {
   const unsigned S = kS ? kS : S_rt;
   const hn::ScalableTag<uint16_t> d;
   const size_t lanes = hn::Lanes(d);
@@ -126,10 +131,9 @@ void ViterbiAcs(const uint8_t* HWY_RESTRICT rx, size_t n_steps, unsigned S_rt, b
   const uint16_t* e0 = expected;
   const uint16_t* e1 = expected + n_out * S;
 
-  std::vector<uint16_t> metric_v(S), next_v(S);
+  std::vector<uint16_t> metric_v(metric_io, metric_io + S), next_v(S);
   uint16_t* metric = metric_v.data();
   uint16_t* next = next_v.data();
-  for (unsigned s = 0; s < S; ++s) metric[s] = start_unknown || s == 0 ? 0 : 1000;
 
   for (size_t i = 0; i < n_steps; ++i) {
     const uint8_t* r = rx + n_out * i;
@@ -179,28 +183,25 @@ void ViterbiAcs(const uint8_t* HWY_RESTRICT rx, size_t n_steps, unsigned S_rt, b
 
     std::swap(metric, next);
 
-    if ((i & 255) == 255) {
+    if (((step0 + i) & 255) == 255) {
       uint16_t lo = metric[0];
       for (unsigned s = 1; s < S; ++s) lo = metric[s] < lo ? metric[s] : lo;
       for (unsigned s = 0; s < S; ++s) metric[s] = static_cast<uint16_t>(metric[s] - lo);
     }
   }
-
-  unsigned best = 0;
-  for (unsigned s = 1; s < S; ++s)
-    if (metric[s] < metric[best]) best = s;
-  *final_state = best;
+  std::memcpy(metric_io, metric, S * sizeof(uint16_t));
 }
 
-void ViterbiSimdImpl(const uint8_t* HWY_RESTRICT rx, size_t n_steps, unsigned n_out, unsigned S, bool start_unknown,
-                     uint64_t* HWY_RESTRICT decisions, const uint16_t* HWY_RESTRICT expected, unsigned* final_state) {
+void ViterbiSimdImpl(const uint8_t* HWY_RESTRICT rx, size_t n_steps, unsigned n_out, unsigned S, uint64_t step0,
+                     uint16_t* HWY_RESTRICT metric, uint64_t* HWY_RESTRICT decisions,
+                     const uint16_t* HWY_RESTRICT expected) {
   // K = 7 (64 states) is the common case: DVB, 802.11, CCSDS, ...
-  if (S == 64 && n_out == 2) return ViterbiAcs<2, 64>(rx, n_steps, S, start_unknown, decisions, expected, final_state);
-  if (S == 64 && n_out == 3) return ViterbiAcs<3, 64>(rx, n_steps, S, start_unknown, decisions, expected, final_state);
+  if (S == 64 && n_out == 2) return ViterbiAcs<2, 64>(rx, n_steps, S, step0, metric, decisions, expected);
+  if (S == 64 && n_out == 3) return ViterbiAcs<3, 64>(rx, n_steps, S, step0, metric, decisions, expected);
   switch (n_out) {
-    case 2: return ViterbiAcs<2, 0>(rx, n_steps, S, start_unknown, decisions, expected, final_state);
-    case 3: return ViterbiAcs<3, 0>(rx, n_steps, S, start_unknown, decisions, expected, final_state);
-    default: return ViterbiAcs<4, 0>(rx, n_steps, S, start_unknown, decisions, expected, final_state);
+    case 2: return ViterbiAcs<2, 0>(rx, n_steps, S, step0, metric, decisions, expected);
+    case 3: return ViterbiAcs<3, 0>(rx, n_steps, S, step0, metric, decisions, expected);
+    default: return ViterbiAcs<4, 0>(rx, n_steps, S, step0, metric, decisions, expected);
   }
 }
 
@@ -310,22 +311,38 @@ void traceback(const ConvCode& code, const uint64_t* decisions, size_t n, unsign
 }
 }  // namespace
 
-void Viterbi(const ConvCode& code, const uint8_t* rx, size_t n, bool start_unknown, uint8_t* bits) {
-  const unsigned S = 1u << (code.k - 1), n_out = code.n;
-  const size_t words = (S + 63) / 64;
-  // expected output pattern (bit j = output j) per state and choice
+namespace {
+// Expected output pattern (bit j = output j) per state and choice.
+std::vector<uint8_t> Patterns(const ConvCode& code) {
+  const unsigned S = 1u << (code.k - 1);
   std::vector<uint8_t> pattern(2 * S);
   for (unsigned s = 0; s < S; ++s)
     for (unsigned c = 0; c < 2; ++c) {
       unsigned p = 0;
-      for (unsigned j = 0; j < n_out; ++j) p |= parity(branch_reg(code, s, c, S) & code.polys[j]) << j;
+      for (unsigned j = 0; j < code.n; ++j) p |= parity(branch_reg(code, s, c, S) & code.polys[j]) << j;
       pattern[2 * s + c] = static_cast<uint8_t>(p);
     }
+  return pattern;
+}
 
-  std::vector<uint32_t> metric(S), next(S), bm(1u << n_out);
-  for (unsigned s = 0; s < S; ++s) metric[s] = start_unknown || s == 0 ? 0 : 1000000;
-  std::vector<uint64_t> decisions(n * words, 0);
+// The same per output, as the SIMD kernel takes it.
+std::vector<uint16_t> Expected(const ConvCode& code) {
+  const unsigned S = 1u << (code.k - 1), n_out = code.n;
+  std::vector<uint16_t> expected(2 * n_out * S);
+  for (unsigned s = 0; s < S; ++s)
+    for (unsigned c = 0; c < 2; ++c)
+      for (unsigned j = 0; j < n_out; ++j)
+        expected[(c * n_out + j) * S + s] = static_cast<uint16_t>(parity(branch_reg(code, s, c, S) & code.polys[j]));
+  return expected;
+}
 
+// Scalar add-compare-select over n steps; `metric` (S entries) is updated
+// in place, decisions (zeroed by the caller) are set per step.
+void AcsScalar(const ConvCode& code, const uint8_t* pattern, const uint8_t* rx, size_t n, uint32_t* metric,
+               uint64_t* decisions) {
+  const unsigned S = 1u << (code.k - 1), n_out = code.n;
+  const size_t words = (S + 63) / 64;
+  std::vector<uint32_t> next(S), bm(1u << n_out);
   for (size_t i = 0; i < n; ++i) {
     const uint8_t* r = rx + n_out * i;
     for (unsigned p = 0; p < (1u << n_out); ++p) {
@@ -333,7 +350,7 @@ void Viterbi(const ConvCode& code, const uint8_t* rx, size_t n, bool start_unkno
       for (unsigned j = 0; j < n_out; ++j) m += r[j] != 2 && r[j] != ((p >> j) & 1);
       bm[p] = m;
     }
-    uint64_t* dec = decisions.data() + words * i;
+    uint64_t* dec = decisions + words * i;
     for (unsigned s = 0; s < S; ++s) {
       const uint32_t c0 = metric[predecessor(s, 0, S)] + bm[pattern[2 * s]];
       const uint32_t c1 = metric[predecessor(s, 1, S)] + bm[pattern[2 * s + 1]];
@@ -347,11 +364,26 @@ void Viterbi(const ConvCode& code, const uint8_t* rx, size_t n, bool start_unkno
     for (unsigned s = 1; s < S; ++s) lo = next[s] < lo ? next[s] : lo;
     for (unsigned s = 0; s < S; ++s) metric[s] = next[s] - lo;
   }
+}
 
+template <typename T>
+unsigned BestState(const T* metric, unsigned S) {
   unsigned best = 0;
   for (unsigned s = 1; s < S; ++s)
     if (metric[s] < metric[best]) best = s;
-  traceback(code, decisions.data(), n, best, bits);
+  return best;
+}
+}  // namespace
+
+void Viterbi(const ConvCode& code, const uint8_t* rx, size_t n, bool start_unknown, uint8_t* bits) {
+  const unsigned S = 1u << (code.k - 1);
+  const size_t words = (S + 63) / 64;
+  const auto pattern = Patterns(code);
+  std::vector<uint32_t> metric(S);
+  for (unsigned s = 0; s < S; ++s) metric[s] = start_unknown || s == 0 ? 0 : 1000000;
+  std::vector<uint64_t> decisions(n * words, 0);
+  AcsScalar(code, pattern.data(), rx, n, metric.data(), decisions.data());
+  traceback(code, decisions.data(), n, BestState(metric.data(), S), bits);
 }
 
 bool ViterbiSimdSupported(const ConvCode& code) {
@@ -363,20 +395,84 @@ bool ViterbiSimdSupported(const ConvCode& code) {
 void ViterbiSimd(const ConvCode& code, const uint8_t* rx, size_t n, bool start_unknown, uint8_t* bits) {
   if (n == 0) return;
   if (!ViterbiSimdSupported(code)) return Viterbi(code, rx, n, start_unknown, bits);
-  const unsigned S = 1u << (code.k - 1), n_out = code.n;
-  std::vector<uint16_t> expected(2 * n_out * S);
-  for (unsigned s = 0; s < S; ++s)
-    for (unsigned c = 0; c < 2; ++c)
-      for (unsigned j = 0; j < n_out; ++j)
-        expected[(c * n_out + j) * S + s] = static_cast<uint16_t>(parity(branch_reg(code, s, c, S) & code.polys[j]));
-
+  const unsigned S = 1u << (code.k - 1);
+  const auto expected = Expected(code);
+  // The initial metric of unreachable states only needs to exceed every
+  // real path metric of the first K - 1 steps; 1000 gives the same
+  // decisions as the scalar decoder's 1000000.
+  std::vector<uint16_t> metric(S);
+  for (unsigned s = 0; s < S; ++s) metric[s] = start_unknown || s == 0 ? 0 : 1000;
   std::vector<uint64_t> decisions(n * ((S + 63) / 64));
-  unsigned best = 0;
-  HWY_DYNAMIC_DISPATCH(ViterbiSimdImpl)(rx, n, n_out, S, start_unknown, decisions.data(), expected.data(), &best);
-  traceback(code, decisions.data(), n, best, bits);
+  HWY_DYNAMIC_DISPATCH(ViterbiSimdImpl)(rx, n, code.n, S, 0, metric.data(), decisions.data(), expected.data());
+  traceback(code, decisions.data(), n, BestState(metric.data(), S), bits);
+}
+
+ViterbiStreamState ViterbiStreamNew(const ConvCode& code, bool start_unknown, bool simd, uint32_t depth) {
+  const unsigned S = 1u << (code.k - 1);
+  ViterbiStreamState st;
+  st.simd = simd && ViterbiSimdSupported(code);
+  st.depth = depth;
+  st.metric.resize(S);
+  const uint32_t unreachable = st.simd ? 1000 : 1000000;
+  for (unsigned s = 0; s < S; ++s) st.metric[s] = start_unknown || s == 0 ? 0 : unreachable;
+  return st;
+}
+
+void ViterbiStream(const ConvCode& code, ViterbiStreamState& st, const uint8_t* rx, size_t n, bool flush,
+                   std::vector<uint8_t>& bits) {
+  const unsigned S = 1u << (code.k - 1);
+  const size_t words = (S + 63) / 64;
+  const uint64_t D = st.depth;
+  const auto pattern = Patterns(code);
+  const auto expected = Expected(code);
+  std::vector<uint16_t> m16(S);
+  std::vector<uint8_t> tb;
+
+  // Traceback from the best state after the last step over the retained
+  // steps [emitted, steps); outputs the bits of steps [emitted, upto).
+  auto emit = [&](uint64_t upto) {
+    const size_t len = st.steps - st.emitted;
+    tb.resize(len);
+    traceback(code, st.decisions.data(), len, BestState(st.metric.data(), S), tb.data());
+    const size_t out = upto - st.emitted;
+    bits.insert(bits.end(), tb.begin(), tb.begin() + out);
+    st.decisions.erase(st.decisions.begin(), st.decisions.begin() + out * words);
+    st.emitted = upto;
+  };
+
+  size_t i = 0;
+  while (i < n) {
+    // up to the next multiple of the depth
+    const size_t seg = std::min<uint64_t>(n - i, D - st.steps % D);
+    const size_t base = st.decisions.size();
+    st.decisions.resize(base + seg * words, 0);
+    if (st.simd) {
+      for (unsigned s = 0; s < S; ++s) m16[s] = static_cast<uint16_t>(st.metric[s]);
+      HWY_DYNAMIC_DISPATCH(ViterbiSimdImpl)(rx + code.n * i, seg, code.n, S, st.steps, m16.data(),
+                                            st.decisions.data() + base, expected.data());
+      for (unsigned s = 0; s < S; ++s) st.metric[s] = m16[s];
+    } else {
+      AcsScalar(code, pattern.data(), rx + code.n * i, seg, st.metric.data(), st.decisions.data() + base);
+    }
+    st.steps += seg;
+    i += seg;
+    // every D steps: the bits at least D steps back are final
+    if (st.steps % D == 0 && st.steps >= 2 * D) emit(st.steps - D);
+  }
+  if (flush && st.steps > st.emitted) emit(st.steps);
 }
 
 // -- byte-level channel coding (ExSdr.Comm) ---------------------------------
+
+void ConvInterleaveStream(const uint8_t* ext, size_t n, int branches, int depth, bool inverse, uint64_t phase,
+                          uint8_t* out) {
+  const size_t I = branches, hist = I * (I - 1) * depth;
+  for (size_t k = 0; k < n; ++k) {
+    const size_t j = (phase + k) % I;
+    const size_t delay = (inverse ? I - 1 - j : j) * depth;
+    out[k] = ext[hist + k - I * delay];
+  }
+}
 
 void ConvInterleave(const uint8_t* in, size_t n, int branches, int depth, bool inverse, uint8_t* out) {
   // branch j: FIFO of j * M (or (I - 1 - j) * M) bytes, as a ring buffer
@@ -505,9 +601,14 @@ void RsDecode(const RsParams& c, const uint8_t* in, size_t count, uint8_t* out, 
   }
 }
 
-void ByteAffine(const uint8_t* in, size_t n, const uint8_t* keep, const uint8_t* mask, size_t period, uint8_t* out) {
-  for (size_t g = 0; g + period <= n; g += period)
-    for (size_t k = 0; k < period; ++k) out[g + k] = (in[g + k] & keep[k]) ^ mask[k];
+void ByteAffine(const uint8_t* in, size_t n, const uint8_t* keep, const uint8_t* mask, size_t period, size_t phase,
+                uint8_t* out) {
+  // first up to the period boundary, then whole periods, then the rest
+  size_t k = 0, p = phase % period;
+  for (; k < n && p != 0; ++k, p = (p + 1) % period) out[k] = (in[k] & keep[p]) ^ mask[p];
+  for (; k + period <= n; k += period)
+    for (size_t q = 0; q < period; ++q) out[k + q] = (in[k + q] & keep[q]) ^ mask[q];
+  for (size_t q = 0; k < n; ++k, ++q) out[k] = (in[k] & keep[q]) ^ mask[q];
 }
 
 }  // namespace exhdl

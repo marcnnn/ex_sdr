@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 namespace exhdl {
 
@@ -64,11 +65,38 @@ void Viterbi(const ConvCode& code, const uint8_t* rx, size_t n_steps, bool start
 // the vector length.
 void ViterbiSimd(const ConvCode& code, const uint8_t* rx, size_t n_steps, bool start_unknown, uint8_t* bits);
 
+// Streaming Viterbi decoder with a sliding-window traceback of `depth`
+// steps: the add-compare-select steps are those of one long run of the
+// block decoders above (same metrics, same decisions); every `depth` steps
+// (counted from the start of the stream) a traceback from the best state
+// fixes the bits that lie at least `depth` steps back. The output therefore
+// does not depend on how the input is split into calls. `flush` traces back
+// from the best state after the last step and outputs the rest.
+struct ViterbiStreamState {
+  bool simd = false;   // SIMD kernel (uint16 metrics) or scalar (uint32)
+  uint32_t depth = 0;
+  uint64_t steps = 0;    // steps decoded
+  uint64_t emitted = 0;  // bits output
+  std::vector<uint32_t> metric;     // 2^(k-1) path metrics
+  std::vector<uint64_t> decisions;  // per step [emitted, steps): words of decision bits
+};
+ViterbiStreamState ViterbiStreamNew(const ConvCode& code, bool start_unknown, bool simd, uint32_t depth);
+// Decodes n more steps (rx as for Viterbi), appending the finished bits.
+void ViterbiStream(const ConvCode& code, ViterbiStreamState& st, const uint8_t* rx, size_t n, bool flush,
+                   std::vector<uint8_t>& bits);
+
 // Byte-level channel coding blocks of ExSdr.Comm, bit-identical to the
 // Elixir references:
 // Forney interleaver (inverse = deinterleaver) with I branches and unit
 // delay M, delay lines starting at zero.
 void ConvInterleave(const uint8_t* in, size_t n, int branches, int depth, bool inverse, uint8_t* out);
+// Streaming form: every output byte is the input byte I * d earlier on its
+// branch (d = branch delay), so a block needs only the I * (I - 1) * M bytes
+// before it. `ext` = those bytes (oldest first, zeros at the stream start)
+// followed by the n new ones; `phase` = bytes before this block (mod I
+// gives the branch of the first new byte).
+void ConvInterleaveStream(const uint8_t* ext, size_t n, int branches, int depth, bool inverse, uint64_t phase,
+                          uint8_t* out);
 // Reed-Solomon code over GF(256), see ExSdr.Comm.ReedSolomon: roots
 // beta^(fcr + i) with beta = alpha^prim, shortened by `shortening`.
 struct RsParams {
@@ -80,8 +108,10 @@ struct RsParams {
 // Elixir reference.
 void RsDecode(const RsParams& code, const uint8_t* in, size_t count, uint8_t* out, size_t* corrected, size_t* failed);
 // out = (in & keep) ^ mask with keep/mask repeating every `period` bytes
-// (periodic additive scramblers, ExSdr.Comm.Scrambler).
-void ByteAffine(const uint8_t* in, size_t n, const uint8_t* keep, const uint8_t* mask, size_t period, uint8_t* out);
+// (periodic additive scramblers, ExSdr.Comm.Scrambler); in[0] is at
+// position `phase` of the period.
+void ByteAffine(const uint8_t* in, size_t n, const uint8_t* keep, const uint8_t* mask, size_t period, size_t phase,
+                uint8_t* out);
 
 // Name of the SIMD target chosen at runtime (e.g. "NEON", "SVE2", "AVX2").
 const char* SimdTarget();

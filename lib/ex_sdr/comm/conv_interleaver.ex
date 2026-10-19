@@ -21,6 +21,37 @@ defmodule ExSdr.Comm.ConvInterleaver do
   def interleave(c, bytes, opts \\ []), do: run(c, bytes, false, opts)
   def deinterleave(c, bytes, opts \\ []), do: run(c, bytes, true, opts)
 
+  @doc """
+  Streaming state: `{history, position}`. Every output byte is the input
+  byte I * d earlier (d: delay of its branch), so the state is the last
+  I * (I - 1) * M input bytes (zeros at the start, like the delay lines)
+  and the number of bytes so far. `stream/4` gives the same output for any
+  split of the input as one call of `interleave/3` or `deinterleave/3`.
+  """
+  def stream_state(%__MODULE__{} = c), do: {:binary.copy(<<0>>, delay(c)), 0}
+
+  @doc "`{out, state}`; `direction` is `:interleave` or `:deinterleave`. Option `:native`."
+  def stream(%__MODULE__{branches: i, depth: m} = c, direction, bytes, {history, pos}, opts \\ []) do
+    inverse? = direction == :deinterleave
+
+    if Keyword.get_lazy(opts, :native, &ExSdr.SIMD.available?/0) do
+      {out, history} = ExSdr.NIF.conv_interleave_stream(history, bytes, i, m, inverse?, pos)
+      {out, {history, pos + byte_size(bytes)}}
+    else
+      hist = delay(c)
+      ext = history <> bytes
+
+      out =
+        for k <- 0..(byte_size(bytes) - 1)//1, into: <<>> do
+          j = rem(pos + k, i)
+          d = if inverse?, do: (i - 1 - j) * m, else: j * m
+          <<:binary.at(ext, hist + k - i * d)>>
+        end
+
+      {out, {binary_part(ext, byte_size(bytes), hist), pos + byte_size(bytes)}}
+    end
+  end
+
   defp run(%__MODULE__{branches: i, depth: m}, bytes, inverse?, opts) do
     if Keyword.get_lazy(opts, :native, &ExSdr.SIMD.available?/0) do
       ExSdr.NIF.conv_interleave(bytes, i, m, inverse?)

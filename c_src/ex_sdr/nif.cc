@@ -113,9 +113,8 @@ std::tuple<fine::Term, fine::Term, int64_t> ddc_q15_scalar(ErlNifEnv* env, ErlNi
 }
 FINE_NIF(ddc_q15_scalar, ERL_NIF_DIRTY_JOB_CPU_BOUND);
 
-// rx: n bytes per step of the mother code (one per generator), values 0/1
-// or 2 for an erasure. Returns one byte (0/1) per step.
-fine::Term viterbi(ErlNifEnv* env, ErlNifBinary rx, int64_t k, std::vector<int64_t> polys, bool start_unknown, bool simd) {
+namespace {
+exhdl::ConvCode conv_code(int64_t k, const std::vector<int64_t>& polys) {
   if (k < 2 || k > 9 || polys.size() < 2 || polys.size() > 4)
     throw std::invalid_argument("viterbi: needs constraint length 2..9 and 2..4 polynomials");
   exhdl::ConvCode code{static_cast<unsigned>(k), static_cast<unsigned>(polys.size()), {0, 0, 0, 0}};
@@ -123,9 +122,59 @@ fine::Term viterbi(ErlNifEnv* env, ErlNifBinary rx, int64_t k, std::vector<int64
     if (polys[j] <= 0 || polys[j] >= (int64_t{1} << k)) throw std::invalid_argument("viterbi: polynomial out of range");
     code.polys[j] = static_cast<unsigned>(polys[j]);
   }
+  return code;
+}
+
+void check_rx(const exhdl::ConvCode& code, const ErlNifBinary& rx) {
   if (rx.size % code.n != 0) throw std::invalid_argument("viterbi: rx must hold whole steps");
   for (size_t i = 0; i < rx.size; ++i)
     if (rx.data[i] > 2) throw std::invalid_argument("viterbi: values must be 0, 1 or 2");
+}
+
+// Streaming Viterbi state as a binary: header, metrics, decision words.
+struct StreamHeader {
+  uint32_t k, simd, depth, metrics;
+  uint64_t steps, emitted, words;
+};
+
+fine::Term encode_state(ErlNifEnv* env, const exhdl::ConvCode& code, const exhdl::ViterbiStreamState& st) {
+  const StreamHeader h{code.k, st.simd, st.depth, static_cast<uint32_t>(st.metric.size()), st.steps, st.emitted,
+                       st.decisions.size()};
+  const size_t size = sizeof h + st.metric.size() * sizeof(uint32_t) + st.decisions.size() * sizeof(uint64_t);
+  auto [term, out] = new_binary<uint8_t>(env, size);
+  std::memcpy(out, &h, sizeof h);
+  std::memcpy(out + sizeof h, st.metric.data(), st.metric.size() * sizeof(uint32_t));
+  std::memcpy(out + sizeof h + st.metric.size() * sizeof(uint32_t), st.decisions.data(),
+              st.decisions.size() * sizeof(uint64_t));
+  return term;
+}
+
+exhdl::ViterbiStreamState decode_state(const exhdl::ConvCode& code, const ErlNifBinary& bin) {
+  StreamHeader h;
+  if (bin.size < sizeof h) throw std::invalid_argument("viterbi_stream: bad state");
+  std::memcpy(&h, bin.data, sizeof h);
+  const size_t S = size_t{1} << (code.k - 1), words = (S + 63) / 64;
+  if (h.k != code.k || h.metrics != S || h.depth == 0 || h.words != (h.steps - h.emitted) * words ||
+      bin.size != sizeof h + S * sizeof(uint32_t) + h.words * sizeof(uint64_t))
+    throw std::invalid_argument("viterbi_stream: state does not match the code");
+  exhdl::ViterbiStreamState st;
+  st.simd = h.simd != 0;
+  st.depth = h.depth;
+  st.steps = h.steps;
+  st.emitted = h.emitted;
+  st.metric.resize(S);
+  std::memcpy(st.metric.data(), bin.data + sizeof h, S * sizeof(uint32_t));
+  st.decisions.resize(h.words);
+  std::memcpy(st.decisions.data(), bin.data + sizeof h + S * sizeof(uint32_t), h.words * sizeof(uint64_t));
+  return st;
+}
+}  // namespace
+
+// rx: n bytes per step of the mother code (one per generator), values 0/1
+// or 2 for an erasure. Returns one byte (0/1) per step.
+fine::Term viterbi(ErlNifEnv* env, ErlNifBinary rx, int64_t k, std::vector<int64_t> polys, bool start_unknown, bool simd) {
+  const auto code = conv_code(k, polys);
+  check_rx(code, rx);
   const size_t n = rx.size / code.n;
   auto [out_term, out] = new_binary<uint8_t>(env, n);
   if (simd)
@@ -136,6 +185,28 @@ fine::Term viterbi(ErlNifEnv* env, ErlNifBinary rx, int64_t k, std::vector<int64
 }
 FINE_NIF(viterbi, ERL_NIF_DIRTY_JOB_CPU_BOUND);
 
+fine::Term viterbi_stream_new(ErlNifEnv* env, int64_t k, std::vector<int64_t> polys, bool start_unknown, bool simd,
+                              int64_t depth) {
+  const auto code = conv_code(k, polys);
+  if (depth < 1 || depth > (int64_t{1} << 20)) throw std::invalid_argument("viterbi_stream_new: depth must be 1..2^20");
+  return encode_state(env, code, exhdl::ViterbiStreamNew(code, start_unknown, simd, static_cast<uint32_t>(depth)));
+}
+FINE_NIF(viterbi_stream_new, 0);
+
+// Returns {bits, new_state}; see exhdl::ViterbiStream.
+std::tuple<fine::Term, fine::Term> viterbi_stream(ErlNifEnv* env, ErlNifBinary state, ErlNifBinary rx, int64_t k,
+                                                  std::vector<int64_t> polys, bool flush) {
+  const auto code = conv_code(k, polys);
+  check_rx(code, rx);
+  auto st = decode_state(code, state);
+  std::vector<uint8_t> bits;
+  exhdl::ViterbiStream(code, st, rx.data, rx.size / code.n, flush, bits);
+  auto [bits_term, out] = new_binary<uint8_t>(env, bits.size());
+  if (!bits.empty()) std::memcpy(out, bits.data(), bits.size());
+  return {bits_term, encode_state(env, code, st)};
+}
+FINE_NIF(viterbi_stream, ERL_NIF_DIRTY_JOB_CPU_BOUND);
+
 fine::Term conv_interleave(ErlNifEnv* env, ErlNifBinary in, int64_t branches, int64_t depth, bool inverse) {
   if (branches < 1 || depth < 0) throw std::invalid_argument("conv_interleave: needs branches >= 1, depth >= 0");
   auto [out_term, out] = new_binary<uint8_t>(env, in.size);
@@ -143,6 +214,26 @@ fine::Term conv_interleave(ErlNifEnv* env, ErlNifBinary in, int64_t branches, in
   return out_term;
 }
 FINE_NIF(conv_interleave, ERL_NIF_DIRTY_JOB_CPU_BOUND);
+
+// history: the I * (I - 1) * M bytes before `in`; phase: bytes before `in`.
+// Returns {out, new_history}.
+std::tuple<fine::Term, fine::Term> conv_interleave_stream(ErlNifEnv* env, ErlNifBinary history, ErlNifBinary in,
+                                                          int64_t branches, int64_t depth, bool inverse, int64_t phase) {
+  if (branches < 1 || depth < 0 || phase < 0)
+    throw std::invalid_argument("conv_interleave_stream: needs branches >= 1, depth >= 0, phase >= 0");
+  const size_t hist = static_cast<size_t>(branches) * (branches - 1) * depth;
+  if (history.size != hist) throw std::invalid_argument("conv_interleave_stream: history must hold I * (I - 1) * M bytes");
+  std::vector<uint8_t> ext(hist + in.size);
+  if (hist) std::memcpy(ext.data(), history.data, hist);
+  if (in.size) std::memcpy(ext.data() + hist, in.data, in.size);
+  auto [out_term, out] = new_binary<uint8_t>(env, in.size);
+  exhdl::ConvInterleaveStream(ext.data(), in.size, static_cast<int>(branches), static_cast<int>(depth), inverse,
+                              static_cast<uint64_t>(phase), out);
+  auto [hist_term, new_hist] = new_binary<uint8_t>(env, hist);
+  if (hist) std::memcpy(new_hist, ext.data() + in.size, hist);
+  return {out_term, hist_term};
+}
+FINE_NIF(conv_interleave_stream, ERL_NIF_DIRTY_JOB_CPU_BOUND);
 
 std::tuple<fine::Term, int64_t, int64_t> rs_decode(ErlNifEnv* env, ErlNifBinary in, int64_t field_poly, int64_t n, int64_t k,
                                                      int64_t fcr, int64_t prim, int64_t shortening) {
@@ -160,11 +251,11 @@ std::tuple<fine::Term, int64_t, int64_t> rs_decode(ErlNifEnv* env, ErlNifBinary 
 }
 FINE_NIF(rs_decode, ERL_NIF_DIRTY_JOB_CPU_BOUND);
 
-fine::Term byte_affine(ErlNifEnv* env, ErlNifBinary in, ErlNifBinary keep, ErlNifBinary mask) {
-  if (keep.size != mask.size || mask.size == 0 || in.size % mask.size != 0)
-    throw std::invalid_argument("byte_affine: masks of equal size, input whole periods");
+fine::Term byte_affine(ErlNifEnv* env, ErlNifBinary in, ErlNifBinary keep, ErlNifBinary mask, int64_t phase) {
+  if (keep.size != mask.size || mask.size == 0 || phase < 0)
+    throw std::invalid_argument("byte_affine: masks of equal size, phase >= 0");
   auto [out_term, out] = new_binary<uint8_t>(env, in.size);
-  exhdl::ByteAffine(in.data, in.size, keep.data, mask.data, mask.size, out);
+  exhdl::ByteAffine(in.data, in.size, keep.data, mask.data, mask.size, static_cast<size_t>(phase), out);
   return out_term;
 }
 FINE_NIF(byte_affine, ERL_NIF_DIRTY_JOB_CPU_BOUND);

@@ -17,6 +17,9 @@ defmodule ExSdr.DVBT.EnergyDispersal do
   @doc "Descrambles groups of 8 packets and restores the 0x47 sync bytes."
   def descramble(ts), do: Scrambler.apply(scrambler(0x47), ts)
 
+  @doc "Streaming form of `descramble/1`: `ts` starts `phase` bytes after a group start."
+  def descramble_at(ts, phase), do: Scrambler.apply_at(scrambler(0x47), ts, phase)
+
   defp scrambler(first_sync) do
     key = {__MODULE__, first_sync}
 

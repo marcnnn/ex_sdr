@@ -184,6 +184,57 @@ defmodule ExSdr.Comm.Convolutional do
     run_native(code, depunctured_binary(code, bits), opts, Keyword.get(opts, :simd, true))
   end
 
+  @doc """
+  Streaming decoder (native): the add-compare-select steps of one long
+  `decode_binary/3` run, with a sliding-window traceback instead of one at
+  the end of the block. Every `depth` steps (counted from the stream start)
+  a traceback from the best state fixes the bits at least `depth` steps
+  back, so output lags the input by `depth` to `2 * depth` steps and does
+  not depend on how the input is split. Same output as
+  `decode_reference/3` with the same `:depth` over the whole input.
+
+  Options: `start:` as in `decode/3`, `depth:` (default 128), `simd:`
+  (default true).
+  """
+  def decoder(code, opts \\ []) do
+    state =
+      ExSdr.NIF.viterbi_stream_new(
+        code.k,
+        code.polynomials,
+        Keyword.get(opts, :start, :zero) == :unknown,
+        Keyword.get(opts, :simd, true),
+        Keyword.get(opts, :depth, 128)
+      )
+
+    %{code: code, state: state, pending: <<>>}
+  end
+
+  @doc """
+  Feeds received code bits (0/1 bytes, punctured) to a `decoder/2`;
+  returns `{decoded bits as 0/1 bytes, decoder}`.
+  """
+  def decode_stream(%{code: code, pending: pending} = dec, bits) do
+    per_period = code.puncture |> List.flatten() |> Enum.sum()
+    bits = pending <> bits
+    whole = div(byte_size(bits), per_period) * per_period
+    <<body::binary-size(whole), rest::binary>> = bits
+    {out, state} = step(dec, depunctured_binary(code, body), false)
+    {out, %{dec | state: state, pending: rest}}
+  end
+
+  @doc """
+  Ends the stream: an incomplete puncturing period is completed with
+  erasures (as in `decode/3`) and the remaining bits are traced back from
+  the best final state. Returns `{bits, decoder}`.
+  """
+  def flush(%{code: code, pending: pending} = dec) do
+    {out, state} = step(dec, depunctured_binary(code, pending), true)
+    {out, %{dec | state: state, pending: <<>>}}
+  end
+
+  defp step(%{code: code, state: state}, rx, flush),
+    do: ExSdr.NIF.viterbi_stream(state, rx, code.k, code.polynomials, flush)
+
   @doc "Native decoding of a depunctured binary (see `depunctured_binary/2`)."
   def run_native(code, rx, opts, simd) do
     ExSdr.NIF.viterbi(
@@ -200,7 +251,11 @@ defmodule ExSdr.Comm.Convolutional do
       length(code.polynomials) <= 4
   end
 
-  @doc "The Elixir reference decoder."
+  @doc """
+  The Elixir reference decoder. With `depth:` it decodes like the
+  streaming decoder (`decoder/2`) fed the whole input and flushed;
+  without, one traceback over the whole block.
+  """
   def decode_reference(code, bits, opts \\ []) do
     steps = depuncture(code, bits)
     states = states(code)
@@ -214,8 +269,11 @@ defmodule ExSdr.Comm.Convolutional do
         :unknown -> List.to_tuple(List.duplicate(0, states))
       end
 
-    {metrics, decisions} =
-      Enum.reduce(steps, {start, []}, fn rx, {metrics, decisions} ->
+    depth = Keyword.get(opts, :depth)
+
+    # decisions newest first; best state after every multiple of `depth` steps
+    {metrics, decisions, bests, _} =
+      Enum.reduce(steps, {start, [], %{}, 0}, fn rx, {metrics, decisions, bests, i} ->
         {new, mask} =
           Enum.reduce(s_mask..0//-1, {[], 0}, fn s, {acc, mask} ->
             {{p0, o0}, {p1, o1}} = elem(code.trellis, s)
@@ -225,14 +283,49 @@ defmodule ExSdr.Comm.Convolutional do
             if c1 < c0, do: {[c1 | acc], mask ||| 1 <<< s}, else: {[c0 | acc], mask}
           end)
 
-        {List.to_tuple(new), [mask | decisions]}
+        new = List.to_tuple(new)
+
+        bests =
+          if depth && rem(i + 1, depth) == 0, do: Map.put(bests, i + 1, best(new)), else: bests
+
+        {new, [mask | decisions], bests, i + 1}
       end)
 
-    {_, final} = metrics |> Tuple.to_list() |> Enum.with_index() |> Enum.min()
+    n = length(decisions)
+    final = best(metrics)
 
+    if depth do
+      decisions = decisions |> Enum.reverse() |> List.to_tuple()
+
+      # after step t (a multiple of depth, t >= 2 depth): bits [t - 2d, t - d)
+      windows =
+        for t <- (2 * depth)..n//depth do
+          traceback(decisions, bests[t], t - 2 * depth, t, top, s_mask) |> Enum.take(depth)
+        end
+
+      done = if n >= 2 * depth, do: div(n, depth) * depth - depth, else: 0
+      List.flatten([windows | traceback(decisions, final, done, n, top, s_mask)])
+    else
+      {bits, _} =
+        Enum.reduce(decisions, {[], final}, fn mask, {acc, s} ->
+          lsb = mask >>> s &&& 1
+          {[s >>> top | acc], (s <<< 1 &&& s_mask) ||| lsb}
+        end)
+
+      bits
+    end
+  end
+
+  defp best(metrics) do
+    {_, s} = metrics |> Tuple.to_list() |> Enum.with_index() |> Enum.min()
+    s
+  end
+
+  # bits of steps [from, to) traced back from state s after step `to`
+  defp traceback(decisions, s, from, to, top, s_mask) do
     {bits, _} =
-      Enum.reduce(decisions, {[], final}, fn mask, {acc, s} ->
-        lsb = mask >>> s &&& 1
+      Enum.reduce((to - 1)..from//-1, {[], s}, fn i, {acc, s} ->
+        lsb = elem(decisions, i) >>> s &&& 1
         {[s >>> top | acc], (s <<< 1 &&& s_mask) ||| lsb}
       end)
 

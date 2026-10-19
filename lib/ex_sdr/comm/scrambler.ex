@@ -21,13 +21,27 @@ defmodule ExSdr.Comm.Scrambler do
   Applies the map to whole periods. Option `:native` (default: when the
   NIF is loaded) selects the native kernel or the Elixir reference.
   """
-  def apply(%__MODULE__{keep: keep, mask: mask}, data, opts \\ [])
-      when rem(byte_size(data), byte_size(mask)) == 0 do
+  def apply(%__MODULE__{mask: mask} = s, data, opts \\ [])
+      when rem(byte_size(data), byte_size(mask)) == 0,
+      do: apply_at(s, data, 0, opts)
+
+  @doc """
+  Streaming form: `data` of any length whose first byte sits at position
+  `phase` of the period (e.g. the number of bytes before it). Same options.
+  """
+  def apply_at(%__MODULE__{keep: keep, mask: mask}, data, phase, opts \\ []) do
+    p = byte_size(mask)
+    phase = rem(phase, p)
+
     if Keyword.get_lazy(opts, :native, &ExSdr.SIMD.available?/0) do
-      ExSdr.NIF.byte_affine(data, keep, mask)
+      ExSdr.NIF.byte_affine(data, keep, mask, phase)
     else
-      p = byte_size(mask)
-      for <<chunk::binary-size(p) <- data>>, into: <<>>, do: affine(chunk, keep, mask)
+      # rotate the masks to the phase and repeat them over the data
+      n = byte_size(data)
+      reps = div(phase + n, p) + 1
+      keep = binary_part(:binary.copy(keep, reps), phase, n)
+      mask = binary_part(:binary.copy(mask, reps), phase, n)
+      affine(data, keep, mask)
     end
   end
 

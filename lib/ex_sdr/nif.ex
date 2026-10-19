@@ -25,10 +25,18 @@ defmodule ExSdr.NIF do
   def one_pole_q15(_x, _y0, _alpha, _round), do: :erlang.nif_error(:not_loaded)
   def simd_target, do: :erlang.nif_error(:not_loaded)
   def viterbi(_rx, _k, _polys, _start_unknown, _simd), do: :erlang.nif_error(:not_loaded)
+
+  def viterbi_stream_new(_k, _polys, _start_unknown, _simd, _depth),
+    do: :erlang.nif_error(:not_loaded)
+
+  def viterbi_stream(_state, _rx, _k, _polys, _flush), do: :erlang.nif_error(:not_loaded)
   def conv_interleave(_bytes, _branches, _depth, _inverse), do: :erlang.nif_error(:not_loaded)
+
+  def conv_interleave_stream(_history, _bytes, _branches, _depth, _inverse, _phase),
+    do: :erlang.nif_error(:not_loaded)
 
   def rs_decode(_bytes, _field_poly, _n, _k, _fcr, _prim, _shortening),
     do: :erlang.nif_error(:not_loaded)
 
-  def byte_affine(_bytes, _keep, _mask), do: :erlang.nif_error(:not_loaded)
+  def byte_affine(_bytes, _keep, _mask, _phase), do: :erlang.nif_error(:not_loaded)
 end

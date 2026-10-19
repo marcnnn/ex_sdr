@@ -23,14 +23,50 @@ defmodule ExSdr.Comm.OFDM.FrontEnd do
 
   @pi :math.pi()
 
-  @doc "Runs the front end; returns the code bits as a binary of 0/1 bytes."
-  def run(samples, freq_offset, spec) do
-    o = spec.ofdm
-    group = lcm(OFDM.period(o), cell_tables(spec))
-    n = div(div(Nx.size(samples), OFDM.symbol_length(o)), group) * group
-    x = Nx.slice(samples, [0], [n * OFDM.symbol_length(o)])
+  @doc """
+  Runs the front end; returns the code bits as a binary of 0/1 bytes.
+  `phase` is the phase (radians) of the frequency correction at the first
+  sample: a stream processed in chunks passes
+  `start_phase(spec, freq_offset, samples before the chunk)` to continue it.
+  """
+  def run(samples, freq_offset, spec, phase \\ 0.0) do
+    n = div(div(Nx.size(samples), OFDM.symbol_length(spec.ofdm)), group(spec)) * group(spec)
+    x = Nx.slice(samples, [0], [n * OFDM.symbol_length(spec.ofdm)])
+    spec |> prepare(n) |> run_prepared(x, freq_offset, phase)
+  end
+
+  @doc """
+  The compiled front end for exactly `symbols` symbols, with its tables on
+  the device: for a stream of equal chunks (`run_prepared/4`), so the
+  per-call cost is only the computation.
+  """
+  def prepare(spec, symbols) do
     t = tables(spec)
-    compiled(n, spec, t).(x, Nx.tensor(freq_offset, type: :f32), t) |> Nx.to_binary()
+
+    %{
+      fun: compiled(symbols, spec, t),
+      tables: t,
+      samples: symbols * OFDM.symbol_length(spec.ofdm)
+    }
+  end
+
+  @doc "Runs a `prepare/2`d front end on exactly its number of samples."
+  def run_prepared(%{fun: f, tables: t, samples: n}, samples, freq_offset, phase \\ 0.0) do
+    ^n = Nx.size(samples)
+
+    f.(samples, Nx.tensor(freq_offset, type: :f32), Nx.tensor(phase, type: :f32), t)
+    |> Nx.to_binary()
+  end
+
+  @doc "Symbols per call must be a multiple of this (pilot classes and cell tables)."
+  def group(spec), do: lcm(OFDM.period(spec.ofdm), cell_tables(spec))
+
+  @doc "Phase of the frequency correction after `samples` samples, reduced mod 2 pi."
+  def start_phase(spec, freq_offset, samples) do
+    fft = spec.ofdm.fft
+    # exact integer part first: samples * offset / fft turns, in float64
+    turns = freq_offset * rem(samples, fft) / fft + freq_offset * div(samples, fft)
+    -2 * @pi * (turns - Float.floor(turns))
   end
 
   defp cell_tables(%{cells: nil}), do: 1
@@ -54,9 +90,15 @@ defmodule ExSdr.Comm.OFDM.FrontEnd do
           bits?: spec.bits != nil
         ]
 
-        templates = [Nx.template({n * OFDM.symbol_length(o)}, :c64), Nx.template({}, :f32), t]
+        templates = [
+          Nx.template({n * OFDM.symbol_length(o)}, :c64),
+          Nx.template({}, :f32),
+          Nx.template({}, :f32),
+          t
+        ]
+
         compiler = if Code.ensure_loaded?(EXLA), do: EXLA, else: Nx.Defn.Evaluator
-        f = Nx.Defn.compile(&front_end/4, templates ++ [static], compiler: compiler)
+        f = Nx.Defn.compile(&front_end/5, templates ++ [static], compiler: compiler)
         :persistent_term.put(key, f)
         f
 
@@ -79,6 +121,10 @@ defmodule ExSdr.Comm.OFDM.FrontEnd do
           bits: if(spec.bits, do: Permutation.tensor(spec.bits), else: Nx.tensor(0))
         }
 
+        # on the device once, not copied on every call
+        t =
+          if Code.ensure_loaded?(EXLA.Backend), do: Nx.backend_transfer(t, EXLA.Backend), else: t
+
         :persistent_term.put(key, t)
         t
 
@@ -87,7 +133,7 @@ defmodule ExSdr.Comm.OFDM.FrontEnd do
     end
   end
 
-  defn front_end(x, freq_offset, t, opts \\ []) do
+  defn front_end(x, freq_offset, phase0, t, opts \\ []) do
     opts = keyword!(opts, [:fft, :cp, :period, :constellation, :cells?, :bits?])
     fft = opts[:fft]
     cp = opts[:cp]
@@ -95,7 +141,9 @@ defmodule ExSdr.Comm.OFDM.FrontEnd do
     sym = fft + cp
     n = div(Nx.size(x), sym)
 
-    phase = Nx.complex(0.0, -2 * @pi / fft) * freq_offset * Nx.iota({n * sym}, type: :f32)
+    phase =
+      Nx.complex(0.0, -2 * @pi / fft) * freq_offset * Nx.iota({n * sym}, type: :f32) +
+        Nx.complex(0.0, phase0)
 
     carriers =
       (x * Nx.exp(phase))
