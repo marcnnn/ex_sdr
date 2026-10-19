@@ -1,0 +1,39 @@
+{
+  "name": "complex_to_mag",
+  "description": "complex_to_mag (float only)",
+  "samples": 4096,
+  "seed": 2009,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.03,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.3,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {},
+  "block": {
+    "name": "complex_to_mag"
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.complex_to_mag"
+    }
+  ],
+  "output": {
+    "type": "real"
+  },
+  "float_vs_gnuradio": {
+    "max_error": 0.005,
+    "snr_db_min": 50.0,
+    "rationale": "GNU Radio computes the magnitude with VOLK's approximate square root; the float instance is an exact sqrt. Measured 0.0028 (index 884, reference 0.609375 vs exact 0.6122), SNR 55.7 dB."
+  }
+}

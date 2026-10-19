@@ -1,0 +1,75 @@
+{
+  "name": "float_to_char",
+  "description": "float_to_char, scale 127 (signed bytes out, rounded)",
+  "samples": 4096,
+  "seed": 2025,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.09,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "scale": 127.0
+  },
+  "block": {
+    "name": "float_to_char",
+    "opts": {
+      "scale": "scale"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.float_to_char",
+      "args": [
+        1,
+        "scale"
+      ]
+    }
+  ],
+  "output": {
+    "type": "bytes",
+    "signed": true
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 1.0,
+      "snr_db_min": 60.0,
+      "rationale": "As the float instance: exact product, rounded once; differs by 1 only at ties. Measured 0."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 1.0,
+      "snr_db_min": 60.0,
+      "rationale": "As q15_nearest. Measured 0."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1.0,
+    "snr_db_min": 60.0,
+    "rationale": "Output is an integer; the fixed instance rounds the exact product, the float instance a float32 product. They differ by 1 only at exact ties. Measured 0."
+  }
+}

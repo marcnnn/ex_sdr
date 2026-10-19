@@ -1,0 +1,6 @@
+{
+  "case": "complex_to_mag",
+  "case_sha256": "093af01b918d8c99b1f6d49aae56c4ebdcd6db0e6d73147d93f0e7802c05e023",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

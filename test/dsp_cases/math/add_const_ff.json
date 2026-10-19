@@ -1,0 +1,82 @@
+{
+  "name": "add_const_ff",
+  "description": "add_const_ff by 0.1",
+  "samples": 4096,
+  "seed": 2003,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.09,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "c": 0.1
+  },
+  "block": {
+    "name": "add_const_ff",
+    "opts": {
+      "c": "c"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.add_const_ff",
+      "args": [
+        "c"
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 2.2e-05,
+      "snr_db_min": 94.0,
+      "rationale": "Samples are Q15 integers and the sum stays on the Q15 grid, so the only error is c quantized to Q15 (0.2 LSB); bound 0.7 LSB = 2.2e-5 for margin. Measured 6e-6, SNR 95.6 dB."
+    },
+    {
+      "variant": "q15_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 10
+      },
+      "max_error": 2.2e-05,
+      "snr_db_min": 94.0,
+      "rationale": "The sum is already on the Q15 grid, so truncation does not act; only the constant error (0.2 LSB) remains. Measured 6e-6, SNR 95.6 dB."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 4e-06,
+      "snr_db_min": 106.0,
+      "rationale": "Samples are exact in Q17; the only error is c quantized to Q17: <= 0.5 Q17 LSB = 3.8e-6. Measured 2e-6, SNR 107.6 dB."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 100.0,
+    "rationale": "GNU Radio and the float instance do the same float32 operations; measured 0."
+  }
+}

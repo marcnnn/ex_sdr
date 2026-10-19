@@ -1,0 +1,6 @@
+{
+  "case": "conjugate_cc",
+  "case_sha256": "869105743823426bc5255b15b4b7d01fe4bfd08ce7f865d5f48a1f729cb158d2",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

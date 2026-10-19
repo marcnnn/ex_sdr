@@ -1,0 +1,85 @@
+{
+  "name": "moving_average_ff",
+  "description": "moving_average_ff, length 16, scale 1/16",
+  "samples": 4096,
+  "seed": 2014,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.09,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "scale": 0.0625
+  },
+  "block": {
+    "name": "moving_average_ff",
+    "opts": {
+      "length": 16,
+      "scale": "scale"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.moving_average_ff",
+      "args": [
+        16,
+        "scale",
+        4096
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 1.6e-05,
+      "snr_db_min": 88.0,
+      "rationale": "scale = 1/16 is exact in Q15, so the sum is exact and only the output rounding (<= 0.5 LSB = 1.53e-5) counts. Measured 1.5e-5, SNR 89.8 dB."
+    },
+    {
+      "variant": "q15_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 10
+      },
+      "max_error": 3.1e-05,
+      "snr_db_min": 83.0,
+      "rationale": "Truncation <= 1 LSB = 3.05e-5. Measured 2.9e-5, SNR 84.4 dB."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 4e-06,
+      "snr_db_min": 100.0,
+      "rationale": "Output rounding <= 0.5 Q17 LSB = 3.8e-6. Measured 4.0e-6 (rounded), SNR 101.4 dB."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 100.0,
+    "rationale": "float32 sums in a different order than GNU Radio's FIR; measured 0."
+  }
+}

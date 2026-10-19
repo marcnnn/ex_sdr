@@ -1,0 +1,85 @@
+{
+  "name": "add_const_cc",
+  "description": "add_const_cc by -0.05 + 0.02j",
+  "samples": 4096,
+  "seed": 2004,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.03,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.3,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "c": [
+      -0.05,
+      0.02
+    ]
+  },
+  "block": {
+    "name": "add_const_cc",
+    "opts": {
+      "c": "c"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.add_const_cc",
+      "args": [
+        "c[0] + 1j * c[1]"
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 1.8e-05,
+      "snr_db_min": 88.0,
+      "rationale": "The sum stays on the Q15 grid; the constants (-0.05, 0.02) quantize with errors 0.4 and 0.36 LSB, complex <= 0.54 LSB; bound 0.6 LSB. Measured 1.6e-5, SNR 89.7 dB."
+    },
+    {
+      "variant": "q15_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 10
+      },
+      "max_error": 1.8e-05,
+      "snr_db_min": 88.0,
+      "rationale": "As q15_nearest (no rounding of the sum happens in either mode). Measured 1.6e-5, SNR 89.7 dB."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 8.5e-06,
+      "snr_db_min": 99.0,
+      "rationale": "Constants quantize to Q17 (0.5 LSB per component, complex <= 0.71 Q17 LSB = 5.4e-6). Bound 8.5e-6 for margin. Measured 5e-6, SNR 100.9 dB."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 100.0,
+    "rationale": "GNU Radio and the float instance do the same float32 operations; measured 0."
+  }
+}
