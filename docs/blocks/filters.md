@@ -87,5 +87,5 @@ and, for IIRs, the input count after which the impulse response stays below
 * `test/filters/gnuradio_test.exs`: per case float vs GNU Radio, three fixed formats vs float,
   and the width check. Cases are written by `test/filters/gen_cases.exs`
   (bounds derived from tap rounding, see the file header for the two-step run).
-* `test/filters/pfb_test.exs`: polyphase blocks against `test/gnuradio/filters_pfb.py` output.
+* `test/filters/pfb_test.exs`: polyphase blocks against `test/gnuradio/filters_pfb.py` output (run by `scripts/gnuradio_golden.sh` for this family).
 * `test/filters/blocks_test.exs`: split invariance, declarations, behaviours.

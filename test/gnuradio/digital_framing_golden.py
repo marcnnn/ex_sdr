@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """GNU Radio reference data for the digital family's objects and blocks that
-golden.py's plain stream chain cannot drive: tagged-stream blocks
+the case format of golden.py cannot express: tagged-stream blocks
 (crc32_bb, protocol_formatter_bb), PDU blocks (crc_append, crc_check,
 hdlc_framer_pb, hdlc_deframer_bp), the access code correlators, the
 constellation objects and the firdes tap generators.
@@ -8,12 +8,8 @@ constellation objects and the firdes tap generators.
 Usage: digital_framing_golden.py <output file>
 
 Writes one JSON file with the inputs (hex strings for bytes, 0/1 strings
-for bits) and what GNU Radio produced. Run it in the podman image like
-golden.py:
-
-  podman run --rm -v "$PWD/test:/work/test:ro,Z" \
-    -v "$PWD/test/fixtures/gnuradio/digital:/out:Z" -w /work exhdl-gnuradio \
-    python3 test/gnuradio/digital_framing_golden.py /out/framing.json
+for bits) and what GNU Radio produced. Called by scripts/gnuradio_golden.sh for the
+digital family (golden.py HOOKS), which writes test/fixtures/gnuradio/digital/framing.json.
 """
 import json
 import sys

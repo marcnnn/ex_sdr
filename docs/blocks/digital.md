@@ -63,21 +63,14 @@ samples), partial, skipped. Hardware class as in `NxFixed.Block`.
 
 ## Checks against GNU Radio
 
-Stream blocks are run by `test/dsp_cases/digital/*.json` through
-`test/gnuradio/digital_golden.py` (which drives `golden.py` but evaluates
-GNU Radio object arguments such as `digital.constellation_qpsk().base()`).
-The rest (tagged streams, PDUs, constellation objects, taps) is produced by
-`test/gnuradio/digital_framing_golden.py` into
-`test/fixtures/gnuradio/digital/framing.json`. Regenerating, in the podman
-image (no sudo):
+Stream blocks are run by `test/dsp_cases/digital/*.json` through the shared runner
+(`test/gnuradio/golden.py`; arguments may build GNU Radio objects such as
+`digital.constellation_qpsk().base()`). The rest (tagged streams, PDUs,
+constellation objects, taps) is produced by `test/gnuradio/digital_framing_golden.py`
+into `test/fixtures/gnuradio/digital/framing.json`; the runner calls it for this
+family. Regenerating both, in the podman image (no sudo):
 
-    podman run --rm -v "$PWD/test:/work/test:ro,Z" \
-      -v "$PWD/test/dsp_cases/digital:/cases:ro,Z" \
-      -v "$PWD/test/fixtures/gnuradio/digital:/out:Z" -w /work exhdl-gnuradio \
-      python3 test/gnuradio/digital_golden.py /cases /out
-    podman run --rm -v "$PWD/test:/work/test:ro,Z" \
-      -v "$PWD/test/fixtures/gnuradio/digital:/out:Z" -w /work exhdl-gnuradio \
-      python3 test/gnuradio/digital_framing_golden.py /out/framing.json
+    scripts/gnuradio_golden.sh test/fixtures/gnuradio/digital test/dsp_cases/digital
 
 Bit and byte results are equal to GNU Radio's, including the scramblers with
 reset, HDLC on noisy streams and all packet formats. Sample results have the

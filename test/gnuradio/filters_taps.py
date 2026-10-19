@@ -2,10 +2,8 @@
 """Filter design reference: GNU Radio's windows and firdes taps for a fixed
 list of parameter sets, written as JSON for test/filters/design_test.exs.
 
-Usage (podman, no local GNU Radio needed), from the repository root:
-
-    podman run --rm -v "$PWD/test:/work/test:ro,Z" -v "$PWD/test/fixtures/gnuradio/filters:/out:Z" \
-        -w /work exhdl-gnuradio python3 test/gnuradio/filters_taps.py /out/taps.json
+Usage: filters_taps.py <output file>. Called by scripts/gnuradio_golden.sh for the
+filters family (golden.py HOOKS), which writes test/fixtures/gnuradio/filters/taps.json.
 
 Each entry is {"fun": name, "args": [...], "taps": [...]}; complex taps are
 [re, im] pairs. Window types are given by name ("hamming", ...).
