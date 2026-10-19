@@ -1,0 +1,34 @@
+defmodule ExSdr.NIF do
+  @moduledoc false
+  # Raw bindings to c_src/ex_sdr (see ExSdr.SIMD for the public API).
+  @on_load :load
+
+  def load do
+    path = :filename.join(:code.priv_dir(:ex_sdr), ~c"native/libex_sdr")
+
+    # Keep the module loadable without the NIF; ExSdr.SIMD.available?/0 tells.
+    case :erlang.load_nif(path, 0) do
+      :ok -> :persistent_term.put({__MODULE__, :loaded}, true)
+      {:error, reason} -> :persistent_term.put({__MODULE__, :loaded}, {:error, reason})
+    end
+
+    :ok
+  end
+
+  def ddc_q15(_i, _q, _phase, _inc, _gain, _lut_bits, _round, _table),
+    do: :erlang.nif_error(:not_loaded)
+
+  def ddc_q15_scalar(_i, _q, _phase, _inc, _gain, _lut_bits, _round, _table),
+    do: :erlang.nif_error(:not_loaded)
+
+  def fir_q15(_history, _x, _taps, _round), do: :erlang.nif_error(:not_loaded)
+  def one_pole_q15(_x, _y0, _alpha, _round), do: :erlang.nif_error(:not_loaded)
+  def simd_target, do: :erlang.nif_error(:not_loaded)
+  def viterbi(_rx, _k, _polys, _start_unknown, _simd), do: :erlang.nif_error(:not_loaded)
+  def conv_interleave(_bytes, _branches, _depth, _inverse), do: :erlang.nif_error(:not_loaded)
+
+  def rs_decode(_bytes, _field_poly, _n, _k, _fcr, _prim, _shortening),
+    do: :erlang.nif_error(:not_loaded)
+
+  def byte_affine(_bytes, _keep, _mask), do: :erlang.nif_error(:not_loaded)
+end

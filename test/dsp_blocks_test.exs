@@ -1,14 +1,15 @@
-defmodule ExHdl.DSPBlocksTest do
+defmodule ExSdr.DSPBlocksTest do
   @moduledoc """
-  The format-generic blocks (ExHdl.DSP.Blocks) instantiated as Q15 must be
+  The format-generic blocks (ExSdr.DSP.Blocks) instantiated as Q15 must be
   bit-identical to the hand-written Q15 kernels, and the analyses must work
   on them unchanged.
   """
   use ExUnit.Case, async: true
 
-  alias ExHdl.{DSP, Num}
-  alias ExHdl.DSP.Blocks
-  alias ExHdl.Test.DSP, as: K
+  alias NxFixed, as: DSP
+  alias NxFixed.Num
+  alias ExSdr.DSP.Blocks
+  alias ExSdr.Test.DSP, as: K
 
   @n 1024
   @taps_q15 [0, 39, 91, 139, 129, 0, -271, -609, -832, -696, 0, 1297, 3011, 4755, 6059, 6542] ++
@@ -41,7 +42,7 @@ defmodule ExHdl.DSPBlocksTest do
   end
 
   defp raw(outputs), do: Enum.map(outputs, fn {a, b} -> {value(a), value(b)} end)
-  defp value(%Num.Fixed{t: t}), do: Nx.to_number(t)
+  defp value(%NxFixed.Fixed{t: t}), do: Nx.to_number(t)
   defp value(t), do: Nx.to_number(t)
 
   defp q15_pairs(i, q), do: Enum.zip_with(i, q, &{Nx.s16(&1), Nx.s16(&2)})
@@ -124,13 +125,6 @@ defmodule ExHdl.DSPBlocksTest do
 
       assert Enum.map(new, &value/1) == Enum.map(old, &Nx.to_number/1)
     end
-  end
-
-  test "the analyses work on generic blocks: ddc as Q15 runs at one sample per cycle" do
-    f = Num.q(16, 15)
-    s = %Num.Fixed{t: Nx.template({}, :s16), frac: 15}
-    args = [{s, s}, Nx.template({}, :u16), Nx.template({}, :u16), s, [format: f]]
-    assert {:ok, %{loop_latency: 1, ii: 1}} = DSP.analyze_scan(&Blocks.ddc/5, args, state: 1)
   end
 
   test "the float instance runs the same algorithm" do

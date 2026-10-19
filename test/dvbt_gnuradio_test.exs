@@ -1,6 +1,6 @@
-defmodule ExHdl.DVBT.GnuRadioTest do
+defmodule ExSdr.DVBT.GnuRadioTest do
   @moduledoc """
-  ExHdl's DVB-T implementation against GNU Radio's gr-dtv (reference data
+  ExSdr's DVB-T implementation against GNU Radio's gr-dtv (reference data
   from scripts/dvbt_golden.sh; 2k, QPSK, rate 1/2, GI 1/32, 6 superframes).
 
     * transmitter stages: bit-exact (SHA-256 over every stage's stream)
@@ -14,7 +14,7 @@ defmodule ExHdl.DVBT.GnuRadioTest do
   """
   use ExUnit.Case, async: true
 
-  alias ExHdl.DVBT.{
+  alias ExSdr.DVBT.{
     Convolutional,
     EnergyDispersal,
     Inner,
@@ -40,7 +40,7 @@ defmodule ExHdl.DVBT.GnuRadioTest do
     size = s["items"] * if(s["dtype"] == "complex64", do: 8, else: 1)
 
     assert byte_size(data) >= size,
-           "#{name}: ExHdl produced #{byte_size(data)} bytes, gr-dtv #{size}"
+           "#{name}: ExSdr produced #{byte_size(data)} bytes, gr-dtv #{size}"
 
     part = binary_part(data, 0, size)
     head = File.read!(Path.join(@dir, "#{name}.head"))

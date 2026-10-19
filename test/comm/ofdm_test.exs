@@ -1,4 +1,4 @@
-defmodule ExHdl.Comm.OFDMTest do
+defmodule ExSdr.Comm.OFDMTest do
   @moduledoc """
   The generic mapping, permutation and OFDM blocks with a configuration
   other than DVB-T: an IEEE 802.11a-style symbol (64-point FFT, carriers
@@ -8,8 +8,8 @@ defmodule ExHdl.Comm.OFDMTest do
   use ExUnit.Case, async: true
   use ExUnitProperties
 
-  alias ExHdl.Comm.{Constellation, OFDM, Permutation}
-  alias ExHdl.Comm.OFDM.FrontEnd
+  alias ExSdr.Comm.{Constellation, OFDM, Permutation}
+  alias ExSdr.Comm.OFDM.FrontEnd
 
   defp wifi_ofdm do
     # logical carrier k = frequency index k - 26
@@ -60,7 +60,7 @@ defmodule ExHdl.Comm.OFDMTest do
     constellations = [
       qam16(),
       Constellation.square(Constellation.reflected_gray_axis(3), :split),
-      ExHdl.DVBT.Inner.constellation(:qam64),
+      ExSdr.DVBT.Inner.constellation(:qam64),
       # 8-PSK: generic point table, nearest point
       Constellation.new(
         for(w <- 0..7, do: {:math.cos(w * :math.pi() / 4), :math.sin(w * :math.pi() / 4)})
@@ -176,7 +176,7 @@ defmodule ExHdl.Comm.OFDMTest do
 
     y = Nx.concatenate([lead, x]) |> Nx.multiply(rot)
 
-    {theta, frac} = ExHdl.Comm.OFDM.Sync.timing(o, y, 40)
+    {theta, frac} = ExSdr.Comm.OFDM.Sync.timing(o, y, 40)
     assert rem(theta, 80) == 37
     assert_in_delta frac, 0.3, 0.02
 
@@ -184,6 +184,6 @@ defmodule ExHdl.Comm.OFDMTest do
     # into the guard carriers when the shift is wrong)
     class = hd(o.classes)
     used = Enum.map(class.pilots, &elem(&1, 0)) ++ class.data
-    assert ExHdl.Comm.OFDM.Sync.integer_offset(o, y, theta, frac, 8, used) == 3
+    assert ExSdr.Comm.OFDM.Sync.integer_offset(o, y, theta, frac, 8, used) == 3
   end
 end

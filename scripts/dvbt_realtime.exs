@@ -2,8 +2,8 @@
 #   MIX_ENV=test mix run scripts/dvbt_realtime.exs
 # Uses the signal written by scripts/dvbt_compare.exs if present, otherwise
 # generates one (4 superframes, unknown start, frequency offset, C/N 8.8 dB).
-alias ExHdl.DVBT.{Channel, Convolutional, Receiver, Sync, TestSignal, Transmitter}
-alias ExHdl.SIMD.NIF
+alias ExSdr.DVBT.{Channel, Convolutional, Receiver, Sync, TestSignal, Transmitter}
+alias ExSdr.NIF
 Nx.default_backend(EXLA.Backend)
 
 file = Path.join(System.get_env("DVBT_WORK", "/tmp/dvbt_run"), "samples.c64")
@@ -27,14 +27,14 @@ end
 IO.puts("signal: #{Float.round(signal_ms)} ms (#{Nx.size(x)} samples), medians of 5 runs")
 {:ok, s} = time.("acquisition (once per stream)", fn -> Sync.acquire(x) end)
 y = Nx.slice(x, [s.start], [Nx.size(x) - s.start])
-bits = time.("front end (compiled defn)", fn -> ExHdl.Comm.OFDM.FrontEnd.run(y, s.freq_offset, Receiver.front_end_spec(:qpsk)) end)
+bits = time.("front end (compiled defn)", fn -> ExSdr.Comm.OFDM.FrontEnd.run(y, s.freq_offset, Receiver.front_end_spec(:qpsk)) end)
 rx = Convolutional.depunctured_binary(bits, {1, 2})
 time.("Viterbi, scalar kernel", fn -> NIF.viterbi(rx, 7, [0o171, 0o133], true, false) end)
 dec = time.("Viterbi, SIMD kernel", fn -> NIF.viterbi(rx, 7, [0o171, 0o133], true, true) end)
-bytes = ExHdl.Comm.Bits.pack(dec)
-de = time.("Forney deinterleaver", fn -> ExHdl.DVBT.OuterInterleaver.deinterleave(bytes) end)
+bytes = ExSdr.Comm.Bits.pack(dec)
+de = time.("Forney deinterleaver", fn -> ExSdr.DVBT.OuterInterleaver.deinterleave(bytes) end)
 payload = binary_part(de, 2244, div(byte_size(de) - 2244, 204) * 204)
-time.("Reed-Solomon", fn -> ExHdl.DVBT.ReedSolomon.decode_all(payload) end)
+time.("Reed-Solomon", fn -> ExSdr.DVBT.ReedSolomon.decode_all(payload) end)
 
 opts = [constellation: :qpsk, code_rate: {1, 2}, start: s.start, freq_offset: s.freq_offset]
 Receiver.receive_fast(x, opts)

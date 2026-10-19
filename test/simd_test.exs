@@ -1,6 +1,6 @@
-defmodule ExHdl.SIMDTest do
+defmodule ExSdr.SIMDTest do
   @moduledoc """
-  The Highway SIMD kernels (ExHdl.SIMD via ExHdl.CPU.run_block/5) against the
+  The Highway SIMD kernels (ExSdr.SIMD via ExSdr.CPU.run_block/5) against the
   compiled Nx reference of the same block and format: bit-identical for
   random inputs, parameters, table widths, rounding modes and lengths
   (including lengths that are not a multiple of the vector width).
@@ -8,9 +8,11 @@ defmodule ExHdl.SIMDTest do
   use ExUnit.Case, async: true
   use ExUnitProperties
 
-  alias ExHdl.{CPU, DSP, Num}
-  alias ExHdl.DSP.Blocks
-  alias ExHdl.Num.Fixed
+  alias ExSdr.CPU
+  alias NxFixed, as: DSP
+  alias NxFixed.Num
+  alias ExSdr.DSP.Blocks
+  alias NxFixed.Fixed
 
   @moduletag :simd
 
@@ -67,10 +69,10 @@ defmodule ExHdl.SIMDTest do
   end
 
   test "the NIF is loaded and uses a real SIMD target" do
-    assert ExHdl.SIMD.available?()
+    assert ExSdr.SIMD.available?()
     # SCALAR/EMU128 means Highway fell back to emulation, e.g. an ARMv7 build
     # without the NEON override in the Makefile.
-    refute ExHdl.SIMD.target() in ["SCALAR", "EMU128"]
+    refute ExSdr.SIMD.target() in ["SCALAR", "EMU128"]
   end
 
   property "ddc is bit-identical to the Nx reference" do

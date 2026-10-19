@@ -1,4 +1,4 @@
-# Builds the SIMD NIF (c_src/simd) for ExHdl.SIMD. Driven by elixir_make,
+# Builds the SIMD NIF (c_src/ex_sdr) for ExSdr.SIMD. Driven by elixir_make,
 # which sets MIX_APP_PATH, ERTS_INCLUDE_DIR and (via mix.exs) FINE_INCLUDE_DIR.
 #
 # Google Highway is fetched once (pinned version and SHA-256) and the few
@@ -9,12 +9,12 @@ HWY_VERSION := 1.4.0
 HWY_SHA256  := e72241ac9524bb653ae52ced768b508045d4438726a303f10181a38f764a453c
 HWY_URL     := https://github.com/google/highway/archive/refs/tags/$(HWY_VERSION).tar.gz
 
-MIX_APP_PATH ?= _build/dev/lib/ex_hdl
-BUILD_DIR    := $(abspath $(MIX_APP_PATH)/../..)/ex_hdl_native
+MIX_APP_PATH ?= _build/dev/lib/ex_sdr
+BUILD_DIR    := $(abspath $(MIX_APP_PATH)/../..)/ex_sdr_native
 HWY_DIR      := $(BUILD_DIR)/highway-$(HWY_VERSION)
 OBJ_DIR      := $(BUILD_DIR)/obj
 PRIV_DIR     := $(MIX_APP_PATH)/priv/native
-NIF          := $(PRIV_DIR)/libexhdl_simd.so
+NIF          := $(PRIV_DIR)/libex_sdr.so
 
 HWY_SRCS := abort aligned_allocator per_target print targets timer
 HWY_OBJS := $(addprefix $(OBJ_DIR)/hwy_,$(addsuffix .o,$(HWY_SRCS)))
@@ -33,8 +33,8 @@ ifeq ($(filter aarch64%,$(shell $(CXX) -dumpmachine)),)
 CXXFLAGS += -march=armv7-a -mfpu=neon -mfloat-abi=hard -DHWY_BROKEN_ARM7_WITHOUT_VFP4=0 -Wno-psabi
 endif
 endif
-CPPFLAGS += -I$(HWY_DIR) -I$(ERTS_INCLUDE_DIR) -I$(FINE_INCLUDE_DIR) -Ic_src/simd
-LDFLAGS  += -shared -ldl
+CPPFLAGS += -I$(HWY_DIR) -I$(ERTS_INCLUDE_DIR) -I$(FINE_INCLUDE_DIR) -Ic_src/ex_sdr
+LDFLAGS  += -shared 
 
 all: $(NIF)
 
@@ -42,11 +42,11 @@ $(NIF): $(OBJS)
 	@mkdir -p $(PRIV_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
-$(OBJ_DIR)/kernels.o: c_src/simd/kernels.cc c_src/simd/kernels.h $(HWY_DIR)/.ok
+$(OBJ_DIR)/kernels.o: c_src/ex_sdr/kernels.cc c_src/ex_sdr/kernels.h $(HWY_DIR)/.ok
 	@mkdir -p $(OBJ_DIR)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
-$(OBJ_DIR)/nif.o: c_src/simd/nif.cc c_src/simd/kernels.h $(HWY_DIR)/.ok
+$(OBJ_DIR)/nif.o: c_src/ex_sdr/nif.cc c_src/ex_sdr/kernels.h $(HWY_DIR)/.ok
 	@mkdir -p $(OBJ_DIR)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 

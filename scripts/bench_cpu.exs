@@ -1,9 +1,11 @@
 # CPU throughput of the Q15 blocks per implementation.
 #   MIX_ENV=test mix run scripts/bench_cpu.exs [block_size]
 # Data is already in tensors/binaries (no per-sample Elixir data).
-alias ExHdl.{CPU, DSP, Num}
-alias ExHdl.DSP.Blocks
-alias ExHdl.Num.Fixed
+alias ExSdr.CPU
+alias NxFixed, as: DSP
+alias NxFixed.Num
+alias ExSdr.DSP.Blocks
+alias NxFixed.Fixed
 
 n = String.to_integer(List.first(System.argv()) || "65536")
 reps = max(div(2_000_000, n), 3)
@@ -25,7 +27,7 @@ blocks = [
   {"one_pole", &Blocks.one_pole/4, i, Num.zeros({}, f), [Num.constant(0.01, f)], [format: f]}
 ]
 
-IO.puts("block size #{n}, SIMD target #{ExHdl.SIMD.target()}, Msamples/s")
+IO.puts("block size #{n}, SIMD target #{ExSdr.SIMD.target()}, Msamples/s")
 IO.puts(String.pad_trailing("block", 24) <> String.pad_leading("SIMD NIF", 10) <> String.pad_leading("Nx/EXLA", 10))
 
 for {name, fun, samples, state, params, kopts} <- blocks do
@@ -35,8 +37,8 @@ for {name, fun, samples, state, params, kopts} <- blocks do
 end
 
 # Kernel alone: scalar reference vs SIMD (no Nx conversions).
-table = for v <- ExHdl.DSP.Primitives.sine_values(1024, 32767), into: <<>>, do: <<v::signed-native-32>>
+table = for v <- NxFixed.Primitives.sine_values(1024, 32767), into: <<>>, do: <<v::signed-native-32>>
 ib = Nx.to_binary(i.t); qb = Nx.to_binary(q.t)
-simd = measure.(fn -> ExHdl.SIMD.NIF.ddc_q15(ib, qb, 0, 3001, 26214, 10, true, table) end)
-scalar = measure.(fn -> ExHdl.SIMD.NIF.ddc_q15_scalar(ib, qb, 0, 3001, 26214, 10, true, table) end)
+simd = measure.(fn -> ExSdr.NIF.ddc_q15(ib, qb, 0, 3001, 26214, 10, true, table) end)
+scalar = measure.(fn -> ExSdr.NIF.ddc_q15_scalar(ib, qb, 0, 3001, 26214, 10, true, table) end)
 IO.puts("ddc kernel only: SIMD #{Float.round(simd, 1)}, scalar #{Float.round(scalar, 1)}")

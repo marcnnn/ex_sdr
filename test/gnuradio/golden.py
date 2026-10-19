@@ -4,14 +4,14 @@
 Usage: golden.py <cases dir> <output dir>   (normally via scripts/gnuradio_golden.sh)
 
 For every case it generates the input signal (seeded numpy), quantises it to
-Q15 exactly as ExHdl sees it, runs the case's GNU Radio block chain and
+Q15 exactly as ExSdr sees it, runs the case's GNU Radio block chain and
 writes <output dir>/<case>/:
 
   input.s16le     little-endian int16 (interleaved I/Q for complex input)
   gnuradio.f32le  little-endian float32, 1.0 = 32768 (interleaved I/Q for complex)
   manifest.json   versions and the SHA-256 of the case file it was made from
 
-GNU Radio computes in float; the ExHdl runner (test/gnuradio_reference_test.exs)
+GNU Radio computes in float; the ExSdr runner (test/gnuradio_reference_test.exs)
 compares its Q15 results against this per sample and by SNR.
 """
 import glob

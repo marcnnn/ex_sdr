@@ -1,8 +1,8 @@
-defmodule ExHdl.Comm.ConvolutionalTest do
+defmodule ExSdr.Comm.ConvolutionalTest do
   use ExUnit.Case, async: true
   use ExUnitProperties
 
-  alias ExHdl.Comm.Convolutional, as: CC
+  alias ExSdr.Comm.Convolutional, as: CC
 
   # Codes of several standards: K, generators, puncturing
   @codes [
@@ -58,7 +58,7 @@ defmodule ExHdl.Comm.ConvolutionalTest do
         {period, _} = CC.rate(code)
         assert length(ref) == div(length(msg) + period - 1, period) * period
 
-        if ExHdl.SIMD.available?() do
+        if ExSdr.SIMD.available?() do
           bin = :binary.list_to_bin(noisy)
 
           assert CC.decode_binary(code, bin, start: start, simd: false) ==

@@ -1,8 +1,8 @@
-defmodule ExHdl.Comm.ReedSolomonTest do
+defmodule ExSdr.Comm.ReedSolomonTest do
   use ExUnit.Case, async: true
   use ExUnitProperties
 
-  alias ExHdl.Comm.{GF, ReedSolomon}
+  alias ExSdr.Comm.{GF, ReedSolomon}
 
   # Codes of several standards and fields.
   @codes [
@@ -78,7 +78,7 @@ defmodule ExHdl.Comm.ReedSolomonTest do
       {_, corrected, failed} = ref
       assert corrected > 0 and failed > 0
 
-      if ExHdl.SIMD.available?() do
+      if ExSdr.SIMD.available?() do
         assert ReedSolomon.decode_all_bytes(code, IO.iodata_to_binary(codewords), native: true) ==
                  ref
       end

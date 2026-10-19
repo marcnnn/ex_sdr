@@ -1,4 +1,4 @@
-defmodule ExHdl.DVBT.FECTest do
+defmodule ExSdr.DVBT.FECTest do
   @moduledoc """
   Self-consistency of the DVB-T outer/inner coding reference implementations
   (EN 300 744 4.3). Comparison against GNU Radio's gr-dtv is in
@@ -7,7 +7,7 @@ defmodule ExHdl.DVBT.FECTest do
   use ExUnit.Case, async: true
   use ExUnitProperties
 
-  alias ExHdl.DVBT.{Convolutional, EnergyDispersal, OuterInterleaver, ReedSolomon}
+  alias ExSdr.DVBT.{Convolutional, EnergyDispersal, OuterInterleaver, ReedSolomon}
 
   @moduletag timeout: 300_000
 

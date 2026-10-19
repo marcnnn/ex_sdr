@@ -1,9 +1,9 @@
-defmodule ExHdl.Comm.ByteBlocksTest do
+defmodule ExSdr.Comm.ByteBlocksTest do
   use ExUnit.Case, async: true
   use ExUnitProperties
   import Bitwise
 
-  alias ExHdl.Comm.{ConvInterleaver, LFSR, Scrambler}
+  alias ExSdr.Comm.{ConvInterleaver, LFSR, Scrambler}
 
   test "LFSR: maximal length sequences have period 2^n - 1" do
     for {n, taps} <- [{7, [4, 7]}, {11, [9, 11]}, {15, [14, 15]}] do
@@ -26,7 +26,7 @@ defmodule ExHdl.Comm.ByteBlocksTest do
               data <- binary(length: period * periods) do
       s = Scrambler.new(keep, mask)
       ref = Scrambler.apply(s, data, native: false)
-      if ExHdl.SIMD.available?(), do: assert(Scrambler.apply(s, data, native: true) == ref)
+      if ExSdr.SIMD.available?(), do: assert(Scrambler.apply(s, data, native: true) == ref)
 
       # keep = 0xFF everywhere: applying twice restores the input
       s = Scrambler.new(:binary.copy(<<0xFF>>, period), mask)
@@ -42,7 +42,7 @@ defmodule ExHdl.Comm.ByteBlocksTest do
       d = ConvInterleaver.delay(c)
       padded = data <> :binary.copy(<<0>>, d)
 
-      for native <- if(ExHdl.SIMD.available?(), do: [false, true], else: [false]) do
+      for native <- if(ExSdr.SIMD.available?(), do: [false, true], else: [false]) do
         out =
           c
           |> ConvInterleaver.interleave(padded, native: native)

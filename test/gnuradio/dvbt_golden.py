@@ -6,7 +6,7 @@ Usage: dvbt_golden.py <output dir>   (via scripts/dvbt_golden.sh, Debian image)
 Runs the gr-dtv transmitter on a deterministic transport stream, then the
 gr-dtv receiver on the (noise-free) transmitter output, and records every
 stage. Bit-level streams are stored as SHA-256 + length + the first bytes
-(they are regenerated exactly by ExHdl's implementation); for the float
+(they are regenerated exactly by ExSdr's implementation); for the float
 front end a window of time-domain samples and the receiver's equalised
 carriers are stored.
 
@@ -30,7 +30,7 @@ WINDOW = 8                          # OFDM symbols stored for front-end tests
 
 
 def ts_packets(n):
-    """Deterministic transport stream, reproduced by ExHdl.DVBT.TestSignal."""
+    """Deterministic transport stream, reproduced by ExSdr.DVBT.TestSignal."""
     out = bytearray()
     for i in range(n):
         pid = 0x100 + i % 3

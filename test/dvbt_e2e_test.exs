@@ -1,7 +1,7 @@
-defmodule ExHdl.DVBT.EndToEndTest do
+defmodule ExSdr.DVBT.EndToEndTest do
   @moduledoc """
-  DVB-T end to end (2k, QPSK, 1/2, GI 1/32): ExHdl's transmitter, a channel
-  with unknown start, carrier frequency offset and AWGN, and ExHdl's
+  DVB-T end to end (2k, QPSK, 1/2, GI 1/32): ExSdr's transmitter, a channel
+  with unknown start, carrier frequency offset and AWGN, and ExSdr's
   receiver with its own acquisition. The live test runs gr-dtv's receiver
   on the identical samples (podman image exhdl-gnuradio-dtv).
 
@@ -10,7 +10,7 @@ defmodule ExHdl.DVBT.EndToEndTest do
   use ExUnit.Case, async: false
   use ExUnitProperties
 
-  alias ExHdl.DVBT.{Channel, Convolutional, Inner, OFDM, Receiver, TestSignal, Transmitter}
+  alias ExSdr.DVBT.{Channel, Convolutional, Inner, OFDM, Receiver, TestSignal, Transmitter}
 
   @moduletag timeout: 900_000
 
@@ -38,7 +38,7 @@ defmodule ExHdl.DVBT.EndToEndTest do
 
   @tag :dvbt
   test "fast path makes the same hard decisions as the reference front end", %{impaired: x} do
-    {:ok, sync} = ExHdl.DVBT.Sync.acquire(x)
+    {:ok, sync} = ExSdr.DVBT.Sync.acquire(x)
     symbols = Nx.slice(x, [sync.start], [68 * 2112])
     shifted = Channel.frequency_offset(symbols, -sync.freq_offset)
 
@@ -52,13 +52,13 @@ defmodule ExHdl.DVBT.EndToEndTest do
 
     fast =
       generic
-      |> ExHdl.Comm.OFDM.carriers(symbols, 68, sync.freq_offset)
-      |> then(&ExHdl.Comm.OFDM.equalise(generic, &1, 0))
+      |> ExSdr.Comm.OFDM.carriers(symbols, 68, sync.freq_offset)
+      |> then(&ExSdr.Comm.OFDM.equalise(generic, &1, 0))
       |> then(
-        &ExHdl.Comm.Constellation.demap_tensor(
+        &ExSdr.Comm.Constellation.demap_tensor(
           constellation,
           &1,
-          ExHdl.Comm.Constellation.tensor_tables(constellation)
+          ExSdr.Comm.Constellation.tensor_tables(constellation)
         )
       )
       |> Nx.to_flat_list()
@@ -106,8 +106,8 @@ defmodule ExHdl.DVBT.EndToEndTest do
       rx = noisy |> :binary.list_to_bin() |> Convolutional.depunctured_binary(rate)
       unknown = start == :unknown
 
-      simd = ExHdl.SIMD.NIF.viterbi(rx, 7, [0o171, 0o133], unknown, true)
-      assert simd == ExHdl.SIMD.NIF.viterbi(rx, 7, [0o171, 0o133], unknown, false)
+      simd = ExSdr.NIF.viterbi(rx, 7, [0o171, 0o133], unknown, true)
+      assert simd == ExSdr.NIF.viterbi(rx, 7, [0o171, 0o133], unknown, false)
 
       assert :binary.bin_to_list(simd) ==
                Convolutional.decode_reference(noisy, rate, start: start)
@@ -116,7 +116,7 @@ defmodule ExHdl.DVBT.EndToEndTest do
 
   @tag :dvbt
   test "native RS decoder equals the Elixir reference on DVB codewords" do
-    alias ExHdl.DVBT.ReedSolomon
+    alias ExSdr.DVBT.ReedSolomon
     :rand.seed(:exsss, {5, 6, 7})
 
     # 0..12 byte errors per codeword: corrected, and failed ones
@@ -204,7 +204,7 @@ defmodule ExHdl.DVBT.EndToEndTest do
     ours = Receiver.receive_sync(x, @opts)
     gr_start = assert_source(ts, gr)
     our_start = assert_source(ts, ours.ts)
-    # ExHdl starts at the first complete superframe; gr-dtv locks during it
+    # ExSdr starts at the first complete superframe; gr-dtv locks during it
     assert our_start <= gr_start
   end
 end

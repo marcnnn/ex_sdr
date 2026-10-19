@@ -1,0 +1,5 @@
+# :gnuradio_live - runs GNU Radio during the test (native or podman)
+#                  (run with `mix test --only gnuradio_live`)
+# :dvbt - DVB-T comparison against gr-dtv reference data (tens of seconds)
+# :dvbt_live - DVB-T end to end against gr-dtv's receiver (podman)
+ExUnit.start(exclude: [gnuradio_live: true, dvbt: true, dvbt_live: true])

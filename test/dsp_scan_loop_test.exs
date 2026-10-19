@@ -1,13 +1,14 @@
-defmodule ExHdl.DSPScanLoopTest do
+defmodule ExSdr.DSPScanLoopTest do
   @moduledoc """
-  The compiled block loop (ExHdl.DSP.run_scan_stacked/5, EXLA) against the
+  The compiled block loop (NxFixed.run_scan_stacked/5, EXLA) against the
   per-sample reference: bit-identical in fixed point, within float32
   rounding for the float instance (XLA computes cos/sin differently).
   """
   use ExUnit.Case, async: true
 
-  alias ExHdl.{DSP, Num}
-  alias ExHdl.DSP.Blocks
+  alias NxFixed, as: DSP
+  alias NxFixed.Num
+  alias ExSdr.DSP.Blocks
 
   @n 1024
   @taps [

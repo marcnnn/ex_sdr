@@ -1,29 +1,29 @@
 # DVB-T: full chain against GNU Radio (gr-dtv)
 
-ExHdl contains a complete DVB-T transmitter and receiver (ETSI EN 300 744,
+ExSdr contains a complete DVB-T transmitter and receiver (ETSI EN 300 744,
 2k mode, non-hierarchical) as exact reference implementations in Elixir
-(`ExHdl.DVBT.*`), compared stage by stage and end to end with GNU Radio
+(`ExSdr.DVBT.*`), compared stage by stage and end to end with GNU Radio
 3.10.12's gr-dtv. Fedora's GNU Radio lacks gr-dtv; the reference runs in a
 Debian image (`test/gnuradio/debian/Containerfile`).
 
 Configuration: 2k, QPSK, code rate 1/2, guard interval 1/32, cell id 0.
 
-DVB-T is a configuration of the generic blocks in `ExHdl.Comm`
-(`docs/comm.md`); the `ExHdl.DVBT` modules hold the standard's parameters
+DVB-T is a configuration of the generic blocks in `ExSdr.Comm`
+(`docs/comm.md`); the `ExSdr.DVBT` modules hold the standard's parameters
 and tables and only the parts that exist in DVB-T alone (TPS, superframe
 sync).
 
 | Module | Stage | Generic block |
 |---|---|---|
-| `ExHdl.DVBT.EnergyDispersal` | PRBS randomisation (scramble/descramble) | `LFSR`, `Scrambler` |
-| `ExHdl.DVBT.ReedSolomon` | RS(204, 188, t = 8) | `ReedSolomon` |
-| `ExHdl.DVBT.OuterInterleaver` | Forney interleaver I = 12, M = 17 | `ConvInterleaver` |
-| `ExHdl.DVBT.Convolutional` | K = 7 code, all puncturing rates, hard-decision Viterbi | `Convolutional` |
-| `ExHdl.DVBT.Inner` | bit/symbol interleaving, Gray mapping, hard demapping | `Permutation`, `Constellation` |
-| `ExHdl.DVBT.TPS` | TPS bits incl. BCH(67, 53) parity | DVB-T only |
-| `ExHdl.DVBT.OFDM` | pilot classes, TPS DBPSK | `OFDM`, `OFDM.FrontEnd` |
-| `ExHdl.DVBT.Sync` | timing, frequency offset, superframe start from TPS | `OFDM.Sync` + DVB-T TPS sync |
-| `ExHdl.DVBT.Transmitter`, `ExHdl.DVBT.Receiver` | complete chains | |
+| `ExSdr.DVBT.EnergyDispersal` | PRBS randomisation (scramble/descramble) | `LFSR`, `Scrambler` |
+| `ExSdr.DVBT.ReedSolomon` | RS(204, 188, t = 8) | `ReedSolomon` |
+| `ExSdr.DVBT.OuterInterleaver` | Forney interleaver I = 12, M = 17 | `ConvInterleaver` |
+| `ExSdr.DVBT.Convolutional` | K = 7 code, all puncturing rates, hard-decision Viterbi | `Convolutional` |
+| `ExSdr.DVBT.Inner` | bit/symbol interleaving, Gray mapping, hard demapping | `Permutation`, `Constellation` |
+| `ExSdr.DVBT.TPS` | TPS bits incl. BCH(67, 53) parity | DVB-T only |
+| `ExSdr.DVBT.OFDM` | pilot classes, TPS DBPSK | `OFDM`, `OFDM.FrontEnd` |
+| `ExSdr.DVBT.Sync` | timing, frequency offset, superframe start from TPS | `OFDM.Sync` + DVB-T TPS sync |
+| `ExSdr.DVBT.Transmitter`, `ExSdr.DVBT.Receiver` | complete chains | |
 
 ## Stage by stage
 
@@ -42,12 +42,12 @@ frequency/sampling corrections), while hard decisions stay correct.
 
 ## End to end: fair comparison
 
-ExHdl's transmitter (4 superframes, 1008 packets), then an unknown start
+ExSdr's transmitter (4 superframes, 1008 packets), then an unknown start
 (3333 samples of noise in front), a carrier frequency offset of 1.37
 subcarriers (6.1 kHz) and AWGN. Both receivers synchronise themselves and
 decode the identical samples (`MIX_ENV=test mix run scripts/dvbt_compare.exs 4.0 4.5 5.0`):
 
-| SNR per sample (C/N in band) | ExHdl correct packets | gr-dtv correct packets |
+| SNR per sample (C/N in band) | ExSdr correct packets | gr-dtv correct packets |
 |---|---|---|
 | noise-free | 992 / 992 | 640 / 640 |
 | 3.5 dB (4.3 dB) | 0.2 % | 0 % |
@@ -55,16 +55,16 @@ decode the identical samples (`MIX_ENV=test mix run scripts/dvbt_compare.exs 4.0
 | 4.5 dB (5.3 dB) | 99.3 % | 91.9 % |
 | 5.0 / 6.0 / 8.0 dB | 100 % | 100 % |
 
-ExHdl's acquisition (`ExHdl.DVBT.Sync`): cyclic prefix correlation for
+ExSdr's acquisition (`ExSdr.DVBT.Sync`): cyclic prefix correlation for
 timing and fractional frequency offset, continual pilot energy for the
 integer offset, TPS sync word and frame number for the superframe start;
 it finds the start to the sample and the offset to within 0.003
-subcarriers. ExHdl outputs from the first complete superframe, gr-dtv one
+subcarriers. ExSdr outputs from the first complete superframe, gr-dtv one
 superframe later (it locks during the first).
 
 Both use hard-decision Viterbi decoding; with soft decisions the standard
 expects quasi-error-free reception around C/N 3.1 dB. The remaining 0.3-0.5
-dB advantage near the threshold is plausibly ExHdl's full-block Viterbi
+dB advantage near the threshold is plausibly ExSdr's full-block Viterbi
 traceback (gr-dtv: about 40 bits at rate 1/2) and its equaliser (see the
 observation above); not separated yet.
 
@@ -76,16 +76,16 @@ Neoverse-N1, one core for the decoding stages (`MIX_ENV=test mix run scripts/dvb
 | Receiver | Time for 252 ms of signal |
 |---|---|
 | gr-dtv (C++, VOLK) | 16.4 s |
-| ExHdl list reference (`Receiver.receive/2`) | 81 s |
-| ExHdl fast path, first version (eager EXLA + scalar Viterbi + Elixir outer stages) | 1.4-1.7 s |
-| **ExHdl fast path (`Receiver.receive_sync/2`)** | **about 220-250 ms: real time** |
+| ExSdr list reference (`Receiver.receive/2`) | 81 s |
+| ExSdr fast path, first version (eager EXLA + scalar Viterbi + Elixir outer stages) | 1.4-1.7 s |
+| **ExSdr fast path (`Receiver.receive_sync/2`)** | **about 200-250 ms: real time (front end on several cores, see below)** |
 
 Per stage in the fast path (medians, the host is shared, +-20 %):
 
 | Stage | Time | How |
 |---|---|---|
 | Acquisition | ~100 ms | once per stream (timing, frequency offset, superframe start) |
-| Front end | ~90-100 ms | `ExHdl.Comm.OFDM.FrontEnd`: one `defn` compiled by EXLA; symbols grouped by pilot class with a reshape |
+| Front end | ~90-100 ms | `ExSdr.Comm.OFDM.FrontEnd`: one `defn` compiled by EXLA; symbols grouped by pilot class with a reshape |
 | Viterbi | ~65-80 ms | Highway SIMD add-compare-select (scalar kernel: 344 ms) |
 | Reed-Solomon | ~12-17 ms | native; syndromes first, full decoding only for packets with errors |
 | Forney deinterleaver, descrambler, packing | ~10 ms | native / binaries |
@@ -95,7 +95,10 @@ Every kernel is bit-identical to its Elixir reference (property tests in
 one only in a few float rounding cases at decision boundaries, with the
 same decoded output.
 
-Real time is reached on one core with little margin. A streaming receiver
+XLA's CPU backend runs parts of the compiled front end (mainly the FFT) on
+its own thread pool. Pinned to one core (`taskset -c 3`), the front end
+takes about 160 ms and the whole receiver 269 ms for 252 ms of signal
+(0.93x real time); the decoding stages are single-threaded either way. A streaming receiver
 could overlap the front end (EXLA) and the decoding stages on two cores;
 that needs Viterbi and deinterleaver state carried across blocks, which is
 not implemented (blocks are decoded independently here).
@@ -103,7 +106,7 @@ not implemented (blocks are decoded independently here).
 The DVB-T stick chips (e.g. RTL2832U) do all of this in a small dedicated
 demodulator circuit; their SDR mode streams at most about 3 Msamples/s,
 too little for an 8 MHz DVB-T channel, so software DVB-T is not possible
-with them. ExHdl's FPGA path is the analogous hardware route.
+with them. ex_hdl's FPGA path is the analogous hardware route.
 
 ## Not done yet
 

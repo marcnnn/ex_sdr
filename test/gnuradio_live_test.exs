@@ -1,4 +1,4 @@
-defmodule ExHdl.GnuRadioLiveTest do
+defmodule ExSdr.GnuRadioLiveTest do
   @moduledoc """
   Runs GNU Radio during the test (native, or rootless podman) instead of
   using the committed data:
@@ -10,8 +10,8 @@ defmodule ExHdl.GnuRadioLiveTest do
   """
   use ExUnit.Case, async: false
 
-  alias ExHdl.GnuRadioReferenceTest
-  alias ExHdl.Test.GnuRadioFixture, as: F
+  alias ExSdr.GnuRadioReferenceTest
+  alias ExSdr.Test.GnuRadioFixture, as: F
 
   @moduletag :gnuradio_live
   @moduletag timeout: 900_000
@@ -32,7 +32,7 @@ defmodule ExHdl.GnuRadioLiveTest do
 
     test "#{case_data["name"]}: float instance against live GNU Radio", %{live: live} do
       data = F.load(@case_data, @case_path, live)
-      float = F.run_block(@case_data, data.input, ExHdl.Num.float())
+      float = F.run_block(@case_data, data.input, NxFixed.Num.float())
 
       GnuRadioReferenceTest.assert_close(
         data.reference,

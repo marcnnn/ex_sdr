@@ -1,9 +1,9 @@
-# DVB-T full chain, fair comparison: ExHdl transmitter -> unknown start,
-# carrier frequency offset, AWGN -> ExHdl receiver (own acquisition) and
+# DVB-T full chain, fair comparison: ExSdr transmitter -> unknown start,
+# carrier frequency offset, AWGN -> ExSdr receiver (own acquisition) and
 # gr-dtv receiver (podman image exhdl-gnuradio-dtv) on the identical samples.
 #   MIX_ENV=test mix run scripts/dvbt_compare.exs [snr_db ...]   (no args: noise-free)
 # Environment: DVBT_CFO (subcarriers, default 1.37), DVBT_DELAY (samples, default 3333)
-alias ExHdl.DVBT.{Channel, Receiver, TestSignal, Transmitter}
+alias ExSdr.DVBT.{Channel, Receiver, TestSignal, Transmitter}
 Nx.default_backend(EXLA.Backend)
 
 opts = [constellation: :qpsk, code_rate: {1, 2}, guard_interval: {1, 32}, cell_id: 0]
@@ -60,6 +60,6 @@ for snr <- snrs do
   end
   sg = score.(gr)
   IO.puts("#{label}:")
-  IO.puts("  ExHdl : #{pct.(so)} from source packet #{inspect(so.first)}, #{sync}, #{Float.round(t1 / 1.0e6, 2)} s")
+  IO.puts("  ExSdr : #{pct.(so)} from source packet #{inspect(so.first)}, #{sync}, #{Float.round(t1 / 1.0e6, 2)} s")
   IO.puts("  gr-dtv: #{pct.(sg)} from source packet #{inspect(sg.first)}, #{gr_time}")
 end

@@ -1,4 +1,4 @@
-defmodule ExHdl.GnuRadioReferenceTest do
+defmodule ExSdr.GnuRadioReferenceTest do
   @moduledoc """
   Two layers per shared DSP case (test/dsp_cases/*.json), both on the CPU:
 
@@ -13,7 +13,7 @@ defmodule ExHdl.GnuRadioReferenceTest do
   """
   use ExUnit.Case, async: true
 
-  alias ExHdl.Test.GnuRadioFixture, as: F
+  alias ExSdr.Test.GnuRadioFixture, as: F
 
   @moduletag timeout: 300_000
 
@@ -25,7 +25,7 @@ defmodule ExHdl.GnuRadioReferenceTest do
         data = F.load(case, path)
 
         {case["name"],
-         %{case: case, data: data, float: F.run_block(case, data.input, ExHdl.Num.float())}}
+         %{case: case, data: data, float: F.run_block(case, data.input, NxFixed.Num.float())}}
       end)
 
     %{runs: runs}

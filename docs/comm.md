@@ -1,4 +1,4 @@
-# Communication blocks (`ExHdl.Comm`)
+# Communication blocks (`ExSdr.Comm`)
 
 Generic, parameterised building blocks for digital transmission chains.
 A protocol is a configuration of these blocks plus whatever is truly
