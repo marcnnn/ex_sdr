@@ -168,7 +168,8 @@ defmodule ExSdr.Test.GnuRadioFixture do
       Enum.zip(reference, signal)
       |> Enum.reduce({0.0, 0.0}, fn {r, s}, {p, e} -> {p + mag2(r), e + mag2(sub(s, r))} end)
 
-    10 * :math.log10(power / max(error, 1.0e-200))
+    # as a difference of logs: the ratio itself overflows for an exact match of large (integer) values
+    10 * (:math.log10(power) - :math.log10(max(error, 1.0e-300)))
   end
 
   @doc "`{max error in Q15 LSB, sample index}`."
