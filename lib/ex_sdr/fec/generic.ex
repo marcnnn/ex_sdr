@@ -353,7 +353,12 @@ defmodule ExSdr.FEC.Generic do
     # (a padded terminated cc_decoder writes fewer, GNU Radio leaves the rest
     # as it was; here it is zero)
     want = if variable, do: round(nbits_in * rate) - diff, else: byte_size(bits)
-    bits = if byte_size(bits) < want, do: bits <> :binary.copy(<<0>>, want - byte_size(bits)), else: bits
+
+    bits =
+      if byte_size(bits) < want,
+        do: bits <> :binary.copy(<<0>>, want - byte_size(bits)),
+        else: bits
+
     bits = if packed, do: pack(bits, Keyword.get(opts, :rev_pack, true)), else: bits
     {{meta, bits}, state}
   end

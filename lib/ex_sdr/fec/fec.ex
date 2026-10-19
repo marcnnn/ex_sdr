@@ -35,7 +35,8 @@ defmodule ExSdr.FEC do
     polar_encoder: {:encoder, {ExSdr.FEC.Polar, :encoder, []}, "fec.polar_encoder"},
     polar_encoder_systematic:
       {:encoder, {ExSdr.FEC.Polar, :encoder_systematic, []}, "fec.polar_encoder_systematic"},
-    polar_decoder_sc: {:decoder, {ExSdr.FEC.PolarDecoder, :decoder, [:sc]}, "fec.polar_decoder_sc"},
+    polar_decoder_sc:
+      {:decoder, {ExSdr.FEC.PolarDecoder, :decoder, [:sc]}, "fec.polar_decoder_sc"},
     polar_decoder_sc_list:
       {:decoder, {ExSdr.FEC.PolarDecoder, :decoder, [:sc_list]}, "fec.polar_decoder_sc_list"},
     polar_decoder_sc_systematic:
@@ -99,13 +100,20 @@ defmodule ExSdr.FEC do
 
   def block(:extended_encoder, opts) do
     g = Keyword.fetch!(opts, :code)
-    fun = fn bits, st -> ExSdr.FEC.Extended.encode(g, bits, st, Keyword.get(opts, :puncpat, "11")) end
+
+    fun = fn bits, st ->
+      ExSdr.FEC.Extended.encode(g, bits, st, Keyword.get(opts, :puncpat, "11"))
+    end
+
     host(:extended_encoder, fun, g, "fec.extended_encoder")
   end
 
   def block(:extended_decoder, opts) do
     g = Keyword.fetch!(opts, :code)
-    fun = fn soft, st -> ExSdr.FEC.Extended.decode(g, soft, st, Keyword.get(opts, :puncpat, "11")) end
+
+    fun = fn soft, st ->
+      ExSdr.FEC.Extended.decode(g, soft, st, Keyword.get(opts, :puncpat, "11"))
+    end
 
     %{host(:extended_decoder, fun, g, "fec.extended_decoder") | init: Generic.decoder_init(g)}
   end

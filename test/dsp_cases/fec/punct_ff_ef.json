@@ -1,0 +1,32 @@
+{
+  "name": "punct_ff_ef",
+  "description": "puncture_ff 8, 0xEF on noise",
+  "samples": 2048,
+  "seed": 4,
+  "input": {
+    "type": "real",
+    "noise_rms": 0.3
+  },
+  "output": {
+    "type": "real"
+  },
+  "params": {},
+  "block": {
+    "name": "puncture_ff",
+    "opts": {
+      "puncsize": 8,
+      "puncpat": 239,
+      "delay": 0
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "fec.puncture_ff",
+      "args": [
+        8,
+        239,
+        0
+      ]
+    }
+  ]
+}

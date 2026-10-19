@@ -1,0 +1,32 @@
+{
+  "name": "punct_bb_ef",
+  "description": "puncture_bb 8, 0xEF (rate 7/8 from the K=7 rate 1/2 pattern)",
+  "samples": 2048,
+  "seed": 1,
+  "input": {
+    "type": "bytes",
+    "modulus": 2
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {},
+  "block": {
+    "name": "puncture_bb",
+    "opts": {
+      "puncsize": 8,
+      "puncpat": 239,
+      "delay": 0
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "fec.puncture_bb",
+      "args": [
+        8,
+        239,
+        0
+      ]
+    }
+  ]
+}

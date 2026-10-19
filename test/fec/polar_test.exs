@@ -35,6 +35,7 @@ defmodule ExSdr.FEC.PolarTest do
         z = Polar.z_parameters(eta, c["n"])
         cap = Polar.bec_capacities(eta, c["n"])
 
+        # (the parameters are stored for the small codes only; zip stops at the shorter)
         for {a, b} <- Enum.zip(z, c["z"]), do: assert_in_delta(a, b, 1.0e-12)
         for {a, b} <- Enum.zip(cap, c["capacities"]), do: assert_in_delta(a, b, 1.0e-12)
 
@@ -194,6 +195,32 @@ defmodule ExSdr.FEC.PolarTest do
   end
 
   describe "list decoder modes" do
+    test "the exact list decoder differs from GNU Radio only in rare frames", %{gr: gr} do
+      {frames, differing} =
+        for c <- gr["decoders"],
+            c["kind"] == "list",
+            {i, o} <- Enum.zip(c["inputs"], c["outputs"]),
+            reduce: {0, 0} do
+          {n, d} ->
+            dec =
+              PolarDecoder.decoder(:sc_list,
+                block_size: c["n"],
+                num_info_bits: c["k"],
+                frozen_bit_positions: c["frozen"],
+                frozen_bit_values: c["values"],
+                max_list_size: c["list"],
+                list_mode: :exact
+              )
+
+            {out, _} = Generic.work(dec, f32s(i), nil)
+            {n + 1, if(bit_string(out) == o, do: d, else: d + 1)}
+        end
+
+      # GNU Radio's buffer takeover flaw shows in a few frames (see docs/blocks/fec.md)
+      assert differing >= 1
+      assert differing * 20 <= frames
+    end
+
     test "the textbook list decoder is not worse than GNU Radio's bookkeeping (seeded)" do
       n = 128
       k = 64

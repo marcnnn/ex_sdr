@@ -53,8 +53,12 @@ defmodule ExSdr.FEC.GenericTest do
     test "encode and decode packets like GNU Radio", %{gr: gr} do
       for c <- gr["tagged"] do
         {e, d} = objects(c["name"], c["mtu"])
-        {encoded, _} = Generic.tagged_encode(e, Enum.map(c["packets"], &bitbin/1), Generic.init(e), c["mtu"])
-        assert Enum.map(encoded, &(&1 |> :binary.bin_to_list() |> Enum.join())) == c["encoded"], c["name"]
+
+        {encoded, _} =
+          Generic.tagged_encode(e, Enum.map(c["packets"], &bitbin/1), Generic.init(e), c["mtu"])
+
+        assert Enum.map(encoded, &(&1 |> :binary.bin_to_list() |> Enum.join())) == c["encoded"],
+               c["name"]
 
         soft =
           if String.starts_with?(c["name"], "cc"),
@@ -62,7 +66,9 @@ defmodule ExSdr.FEC.GenericTest do
             else: Enum.map(c["soft"], &Nx.from_binary(hex(&1), :f32))
 
         {decoded, _} = Generic.tagged_decode(d, soft, Generic.init(d), c["mtu"])
-        assert Enum.map(decoded, &(&1 |> :binary.bin_to_list() |> Enum.join())) == c["decoded"], c["name"]
+
+        assert Enum.map(decoded, &(&1 |> :binary.bin_to_list() |> Enum.join())) == c["decoded"],
+               c["name"]
       end
     end
 
@@ -78,7 +84,10 @@ defmodule ExSdr.FEC.GenericTest do
 
     test "packets larger than the MTU are rejected" do
       {e, _} = objects("repetition", 4)
-      assert_raise ArgumentError, fn -> Generic.tagged_encode(e, [:binary.copy(<<0>>, 33)], nil, 4) end
+
+      assert_raise ArgumentError, fn ->
+        Generic.tagged_encode(e, [:binary.copy(<<0>>, 33)], nil, 4)
+      end
     end
   end
 
@@ -98,12 +107,20 @@ defmodule ExSdr.FEC.GenericTest do
                 enc(o)
               end
 
-            assert out == c["out"], "#{c["code"]} packed #{c["packed"]} #{c["rev_unpack"]}/#{c["rev_pack"]}"
+            assert out == c["out"],
+                   "#{c["code"]} packed #{c["packed"]} #{c["rev_unpack"]}/#{c["rev_pack"]}"
 
           "decoder" ->
             out =
               for s <- c["soft"] do
-                {{%{}, o}, _} = Generic.async_decode(d, {%{}, Nx.from_binary(hex(s), :f32)}, Generic.init(d), opts)
+                {{%{}, o}, _} =
+                  Generic.async_decode(
+                    d,
+                    {%{}, Nx.from_binary(hex(s), :f32)},
+                    Generic.init(d),
+                    opts
+                  )
+
                 enc(o)
               end
 
@@ -191,7 +208,9 @@ defmodule ExSdr.FEC.GenericTest do
       data = for _ <- 1..90, do: :rand.uniform(2) - 1
       puncpat = "110110"
 
-      {coded, _} = ExSdr.FEC.Extended.encode(e, Nx.tensor(data, type: :u8), Generic.init(e), puncpat)
+      {coded, _} =
+        ExSdr.FEC.Extended.encode(e, Nx.tensor(data, type: :u8), Generic.init(e), puncpat)
+
       # 2 * (90 + 6) = 192 mother code bits, 4 of every 6 kept
       assert Nx.axis_size(coded, 0) == 128
 
@@ -203,11 +222,22 @@ defmodule ExSdr.FEC.GenericTest do
 
     test "polar packed encoder is unpacked by the chain" do
       frozen = ExSdr.FEC.Polar.frozen_bit_positions(64, 32)
-      e = ExSdr.FEC.Polar.encoder(block_size: 64, num_info_bits: 32, frozen_bit_positions: frozen, packed: true)
+
+      e =
+        ExSdr.FEC.Polar.encoder(
+          block_size: 64,
+          num_info_bits: 32,
+          frozen_bit_positions: frozen,
+          packed: true
+        )
+
       info = Nx.tensor(for(i <- 1..32, do: rem(i, 3) |> min(1)), type: :u8)
       {out, _} = ExSdr.FEC.Extended.encode(e, info, nil)
       assert Nx.axis_size(out, 0) == 64
-      plain = ExSdr.FEC.Polar.encoder(block_size: 64, num_info_bits: 32, frozen_bit_positions: frozen)
+
+      plain =
+        ExSdr.FEC.Polar.encoder(block_size: 64, num_info_bits: 32, frozen_bit_positions: frozen)
+
       {expected, _} = Generic.work(plain, info, nil)
       assert out == expected
     end
@@ -237,7 +267,10 @@ defmodule ExSdr.FEC.GenericTest do
           hard_in = for r <- rx, do: if(r > 0, do: 255, else: 0)
           {hard, _} = Generic.work(d, Nx.tensor(hard_in, type: :u8), Generic.init(d))
 
-          count = fn out -> out |> Nx.to_flat_list() |> Enum.zip(data) |> Enum.count(fn {a, b} -> a != b end) end
+          count = fn out ->
+            out |> Nx.to_flat_list() |> Enum.zip(data) |> Enum.count(fn {a, b} -> a != b end)
+          end
+
           {s + count.(soft), h + count.(hard)}
         end)
 
@@ -269,7 +302,8 @@ defmodule ExSdr.FEC.GenericTest do
         |> Enum.with_index()
         |> Enum.map(fn {b, i} -> if i in flips, do: 1 - b, else: b end)
 
-      {soft, _} = Generic.work(d, Nx.tensor(Enum.map(hard, &(&1 * 255)), type: :u8), Generic.init(d))
+      {soft, _} =
+        Generic.work(d, Nx.tensor(Enum.map(hard, &(&1 * 255)), type: :u8), Generic.init(d))
 
       reference =
         ExSdr.Comm.Convolutional.decode(code, hard, native: false)
@@ -277,6 +311,68 @@ defmodule ExSdr.FEC.GenericTest do
 
       assert Nx.to_flat_list(soft) == reference
       assert reference == data
+    end
+  end
+
+  describe "block declarations" do
+    @frozen ExSdr.FEC.Polar.frozen_bit_positions(32, 16)
+
+    defp sample(:cc_encoder), do: [frame_size: 20, k: 7, polys: [79, 109], mode: :terminated]
+    defp sample(:cc_decoder), do: sample(:cc_encoder)
+    defp sample(:repetition_encoder), do: [frame_size: 12, rep: 3]
+    defp sample(:repetition_decoder), do: [frame_size: 12, rep: 3]
+    defp sample(:dummy_encoder), do: [frame_size: 12]
+    defp sample(:dummy_decoder), do: [frame_size: 12]
+
+    defp sample(name) when name in [:polar_encoder, :polar_encoder_systematic],
+      do: [block_size: 32, num_info_bits: 16, frozen_bit_positions: @frozen]
+
+    defp sample(name) when name in [:polar_decoder_sc, :polar_decoder_sc_systematic],
+      do: [block_size: 32, num_info_bits: 16, frozen_bit_positions: @frozen]
+
+    defp sample(:polar_decoder_sc_list),
+      do: [block_size: 32, num_info_bits: 16, frozen_bit_positions: @frozen, max_list_size: 4]
+
+    test "rate, item types and GNU Radio names are true for every code block" do
+      for name <- ExSdr.FEC.blocks(),
+          String.contains?(Atom.to_string(name), "coder"),
+          name not in [
+            :encoder,
+            :decoder,
+            :tagged_encoder,
+            :tagged_decoder,
+            :async_encoder,
+            :async_decoder,
+            :extended_encoder,
+            :extended_decoder
+          ] do
+        b = ExSdr.FEC.block(name, sample(name))
+        {i, o} = b.rate
+        assert b.kind == :frame
+        assert String.starts_with?(b.gnuradio, "fec.")
+        assert b.hardware in [:stateless, :feed_forward, :memory, :transform]
+
+        # three frames in, three frames out
+        type = if elem(b.item, 0) == :real, do: :f32, else: :u8
+        input = Nx.broadcast(Nx.tensor(0, type: type), {3 * i})
+        {out, _} = ExSdr.FEC.run(b, input)
+
+        assert Nx.axis_size(out, 0) == NxFixed.Block.output_items(b, 3 * i),
+               "#{name}: #{inspect(b.rate)}"
+
+        assert Nx.axis_size(out, 0) == 3 * o
+      end
+    end
+
+    test "hardware classes follow the structure" do
+      assert ExSdr.FEC.block(:cc_encoder, sample(:cc_encoder)).hardware == :feed_forward
+      assert ExSdr.FEC.block(:cc_decoder, sample(:cc_decoder)).hardware == :memory
+
+      assert ExSdr.FEC.block(:repetition_encoder, sample(:repetition_encoder)).hardware ==
+               :stateless
+
+      assert ExSdr.FEC.block(:polar_decoder_sc, sample(:polar_decoder_sc)).hardware == :transform
+      assert ExSdr.FEC.block(:ber_bf, []).hardware == :control
     end
   end
 end

@@ -51,7 +51,11 @@ defmodule ExSdr.FEC.Ber do
     items = min(byte_size(a), byte_size(b))
     a = binary_part(a, 0, items)
     b = binary_part(b, 0, items)
-    s = if items > 0, do: %{s | errors: s.errors + bit_errors(a, b), total: s.total + items}, else: s
+
+    s =
+      if items > 0,
+        do: %{s | errors: s.errors + bit_errors(a, b), total: s.total + items},
+        else: s
 
     cond do
       not s.test_mode and items > 0 ->

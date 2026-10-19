@@ -55,14 +55,22 @@ defmodule ExSdr.FEC.RepetitionTest do
     {b, _} = ExSdr.FEC.run(enc, Nx.slice_along_axis(all, f, 2 * f), st)
     assert bit_string(Nx.concatenate([a, b])) == bit_string(whole)
 
-    dec = ExSdr.FEC.block(:repetition_decoder, frame_size: c["frame_size"], rep: c["rep"], ap_prob: c["ap_prob"])
+    dec =
+      ExSdr.FEC.block(:repetition_decoder,
+        frame_size: c["frame_size"],
+        rep: c["rep"],
+        ap_prob: c["ap_prob"]
+      )
+
     assert dec.rate == {f * c["rep"], f}
     assert dec.hardware == :stateless
   end
 
   test "dummy encoder and decoder equal GNU Radio", %{gr: gr} do
     for c <- gr["dummy_encoders"] do
-      enc = Dummy.encoder(frame_size: c["frame_size"], pack: c["pack"], packed_bits: c["packed_bits"])
+      enc =
+        Dummy.encoder(frame_size: c["frame_size"], pack: c["pack"], packed_bits: c["packed_bits"])
+
       assert Generic.input_size(enc) == c["input_size"]
       assert Generic.output_size(enc) == c["output_size"]
       assert Generic.input_conversion(enc) == c["input_conversion"]

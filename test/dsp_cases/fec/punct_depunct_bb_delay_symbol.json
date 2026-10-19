@@ -1,0 +1,34 @@
+{
+  "name": "punct_depunct_bb_delay_symbol",
+  "description": "depuncture_bb 6, 0b110101, delay 3, symbol 200",
+  "samples": 2000,
+  "seed": 7,
+  "input": {
+    "type": "bytes",
+    "modulus": 256
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {},
+  "block": {
+    "name": "depuncture_bb",
+    "opts": {
+      "puncsize": 6,
+      "puncpat": 53,
+      "delay": 3,
+      "symbol": 200
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "fec.depuncture_bb",
+      "args": [
+        6,
+        53,
+        3,
+        200
+      ]
+    }
+  ]
+}

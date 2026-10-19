@@ -35,8 +35,10 @@ def constructions():
         z = bhattacharyya_bounds(snr, n)
         cap = calculate_bec_channel_capacities(design_snr_to_bec_eta(snr), n)
         zpos = np.sort(np.argsort(-z, kind="stable")[: n - k])
+        small = n <= 256  # the parameters of the big codes only bloat the fixture
         out.append({"n": n, "k": k, "design_snr": snr, "frozen": [int(p) for p in pos],
-                    "z": [float(v) for v in z], "capacities": [float(v) for v in cap]})
+                    "z": [float(v) for v in z] if small else [],
+                    "capacities": [float(v) for v in cap] if small else []})
     return out
 
 

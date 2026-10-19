@@ -1,0 +1,32 @@
+{
+  "name": "punct_depunct_bb_ef",
+  "description": "depuncture_bb 8, 0xEF, default symbol 127",
+  "samples": 2100,
+  "seed": 6,
+  "input": {
+    "type": "bytes",
+    "modulus": 256
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {},
+  "block": {
+    "name": "depuncture_bb",
+    "opts": {
+      "puncsize": 8,
+      "puncpat": 239,
+      "delay": 0
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "fec.depuncture_bb",
+      "args": [
+        8,
+        239,
+        0
+      ]
+    }
+  ]
+}

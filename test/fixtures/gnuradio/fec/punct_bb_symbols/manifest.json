@@ -1,0 +1,6 @@
+{
+  "case": "punct_bb_symbols",
+  "case_sha256": "3c62d6741ee6b55b25db18759982c1ff0bbf9fd2ad2a69f141c0d753681f30c6",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

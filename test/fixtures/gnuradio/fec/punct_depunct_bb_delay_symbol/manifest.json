@@ -1,0 +1,6 @@
+{
+  "case": "punct_depunct_bb_delay_symbol",
+  "case_sha256": "a0f8a104532a976b7dc4cd81ea08ba94850f140b9605f752dd2f0970b4544c77",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

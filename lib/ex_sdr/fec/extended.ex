@@ -15,7 +15,8 @@ defmodule ExSdr.FEC.Extended do
   alias ExSdr.FEC.Puncture
 
   @doc "GNU Radio's `read_bitlist`: `\"1101\"` is 13."
-  def read_bitlist(s), do: s |> String.to_charlist() |> Enum.reduce(0, fn c, acc -> acc * 2 + (c - ?0) end)
+  def read_bitlist(s),
+    do: s |> String.to_charlist() |> Enum.reduce(0, fn c, acc -> acc * 2 + (c - ?0) end)
 
   @doc "`{encoded bits (u8 tensor), state}` for a whole number of frames."
   def encode(g, bits, state, puncpat \\ "11") do
@@ -33,8 +34,10 @@ defmodule ExSdr.FEC.Extended do
         do: out |> Nx.to_binary() |> ExSdr.Comm.Bits.unpack() |> Generic.to_tensor(:u8),
         else: out
 
-    {if(puncpat == "11", do: out, else: Puncture.puncture(out, String.length(puncpat), read_bitlist(puncpat), 0)),
-     state}
+    {if(puncpat == "11",
+       do: out,
+       else: Puncture.puncture(out, String.length(puncpat), read_bitlist(puncpat), 0)
+     ), state}
   end
 
   @doc "`{decoded bits | nil, state}`; `state` as made by `Generic.decoder_init/1`."

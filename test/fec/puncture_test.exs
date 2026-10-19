@@ -43,14 +43,27 @@ defmodule ExSdr.FEC.PunctureTest do
 
     test "as blocks: rate, item types and the stream in pieces", %{gr: gr} do
       c = hd(gr["puncture"])
-      b = ExSdr.FEC.block(:puncture_bb, puncsize: c["puncsize"], puncpat: c["puncpat"], delay: c["delay"])
+
+      b =
+        ExSdr.FEC.block(:puncture_bb,
+          puncsize: c["puncsize"],
+          puncpat: c["puncpat"],
+          delay: c["delay"]
+        )
+
       assert b.rate == {c["puncsize"], c["kept"]}
       assert b.hardware == :stateless
       data = Nx.from_binary(hex(c["data"]), :u8)
       {out, _} = ExSdr.FEC.run(b, data)
       assert enc(Nx.to_binary(out)) == c["punctured"]
 
-      d = ExSdr.FEC.block(:depuncture_bb, puncsize: c["puncsize"], puncpat: c["puncpat"], delay: c["delay"])
+      d =
+        ExSdr.FEC.block(:depuncture_bb,
+          puncsize: c["puncsize"],
+          puncpat: c["puncpat"],
+          delay: c["delay"]
+        )
+
       assert d.rate == {c["kept"], c["puncsize"]}
       {back, _} = ExSdr.FEC.run(d, out)
       assert enc(Nx.to_binary(back)) == c["depunctured"]
@@ -72,8 +85,14 @@ defmodule ExSdr.FEC.PunctureTest do
           :rand.seed(:exsss, {seed, 3, 4})
           items = for _ <- 1..(size * groups), do: :rand.uniform(200)
           t = Nx.tensor(items, type: :u8)
-          back = t |> Puncture.puncture(size, pat, delay) |> Puncture.depuncture(size, pat, delay, 0)
-          expected = for {x, i} <- Enum.with_index(items), do: if(Enum.at(pattern, rem(i, size)) == 1, do: x, else: 0)
+
+          back =
+            t |> Puncture.puncture(size, pat, delay) |> Puncture.depuncture(size, pat, delay, 0)
+
+          expected =
+            for {x, i} <- Enum.with_index(items),
+                do: if(Enum.at(pattern, rem(i, size)) == 1, do: x, else: 0)
+
           assert Nx.to_flat_list(back) == expected
         end
       end
