@@ -15,6 +15,7 @@ defmodule ExSdr.Digital do
   @behaviour NxFixed.Block
 
   alias ExSdr.Digital.Constellation
+  alias ExSdr.Digital.Framing
   alias ExSdr.Digital.Kernels, as: K
   alias ExSdr.Digital.Modulation
   alias NxFixed.Block
@@ -207,6 +208,102 @@ defmodule ExSdr.Digital do
 
   def block(name, opts) when name in [:gfsk_mod, :gmsk_mod], do: Modulation.fsk_mod(name, opts)
 
+  # -- framing and CRC (host blocks: packets are lists of binaries) ----------------------------
+
+  def block(:crc32_bb, opts) do
+    host(
+      :crc32_bb,
+      fn packets, st ->
+        {for(p <- packets, {:ok, out} <- [Framing.crc32_packet(p, opts)], do: out), st}
+      end,
+      {:packet, :packet},
+      nil,
+      "digital.crc32_bb"
+    )
+  end
+
+  def block(:crc_append, opts) do
+    host(
+      :crc_append,
+      fn pdus, st -> {Enum.map(pdus, &Framing.crc_append(&1, opts)), st} end,
+      {:packet, :packet},
+      nil,
+      "digital.crc_append"
+    )
+  end
+
+  def block(:crc_check, opts),
+    do: host(:crc_check, crc_check_fun(opts), {:packet, :packet}, nil, "digital.crc_check")
+
+  def block(:crc32_async_bb, opts), do: async_crc(:crc32_async_bb, Framing.crc32_pdu_opts(), opts)
+  def block(:crc16_async_bb, opts), do: async_crc(:crc16_async_bb, Framing.crc16_pdu_opts(), opts)
+
+  def block(:correlate_access_code_bb, opts) do
+    c = Framing.correlator(Keyword.fetch!(opts, :access_code), Keyword.fetch!(opts, :threshold))
+
+    host(
+      :correlate_access_code_bb,
+      fn bits, st -> Framing.correlate_access_code(st, bits) end,
+      {:bit, :bit},
+      c,
+      "digital.correlate_access_code_bb"
+    )
+  end
+
+  def block(:correlate_access_code_tag_bb, opts) do
+    c = Framing.correlator(Keyword.fetch!(opts, :access_code), Keyword.fetch!(opts, :threshold))
+
+    host(
+      :correlate_access_code_tag_bb,
+      fn bits, st -> Framing.correlate_access_code_tag(st, bits) end,
+      {:bit, :bit},
+      c,
+      "digital.correlate_access_code_tag_bb"
+    )
+  end
+
+  def block(:protocol_formatter_bb, opts) do
+    f =
+      Framing.header_format(
+        Keyword.get(opts, :kind, :default),
+        Keyword.fetch!(opts, :access_code),
+        Keyword.get(opts, :threshold, 0),
+        Keyword.get(opts, :bps, 1)
+      )
+
+    fun = fn payloads, counter ->
+      Enum.map_reduce(payloads, counter, fn p, n -> Framing.header(f, byte_size(p), n) end)
+    end
+
+    host(:protocol_formatter_bb, fun, {:packet, :packet}, 0, "digital.protocol_formatter_bb")
+  end
+
+  def block(:hdlc_framer_pb, _opts) do
+    host(
+      :hdlc_framer_pb,
+      fn pdus, st -> {Enum.map(pdus, &Framing.hdlc_frame/1), st} end,
+      {:packet, :bit},
+      nil,
+      "digital.hdlc_framer_pb"
+    )
+  end
+
+  def block(:hdlc_deframer_bp, opts) do
+    d =
+      Framing.hdlc_deframer(
+        Keyword.get(opts, :length_min, 32),
+        Keyword.get(opts, :length_max, 500)
+      )
+
+    host(
+      :hdlc_deframer_bp,
+      fn bits, st -> Framing.hdlc_deframe(st, bits) end,
+      {:bit, :packet},
+      d,
+      "digital.hdlc_deframer_bp"
+    )
+  end
+
   def block(:interp_fir_filter_fff, opts), do: interp_fir(:interp_fir_filter_fff, opts)
   def block(:interp_fir_filter_ccf, opts), do: interp_fir(:interp_fir_filter_ccf, opts)
 
@@ -276,6 +373,46 @@ defmodule ExSdr.Digital do
       hardware: :feed_forward,
       gnuradio: "filter.#{name}"
     }
+  end
+
+  defp host(name, fun, item, init, gnuradio) do
+    %Block{
+      name: name,
+      kind: :host,
+      fun: fun,
+      init: init,
+      item: item,
+      hardware: :control,
+      gnuradio: gnuradio
+    }
+  end
+
+  # PDUs in, `%{ok: pdus, fail: pdus}` out (the check ports)
+  defp crc_check_fun(opts) do
+    fn pdus, st ->
+      results = Enum.map(pdus, &Framing.crc_check(&1, opts))
+      {%{ok: for({:ok, p} <- results, do: p), fail: for({:fail, p} <- results, do: p)}, st}
+    end
+  end
+
+  defp async_crc(name, crc_opts, opts) do
+    if Keyword.get(opts, :check, false),
+      do:
+        host(
+          name,
+          crc_check_fun(crc_opts ++ [discard_crc: true]),
+          {:packet, :packet},
+          nil,
+          "digital.#{name}"
+        ),
+      else:
+        host(
+          name,
+          fn pdus, st -> {Enum.map(pdus, &Framing.crc_append(&1, crc_opts)), st} end,
+          {:packet, :packet},
+          nil,
+          "digital.#{name}"
+        )
   end
 
   defp stateless(name, fun, item, extra) do
