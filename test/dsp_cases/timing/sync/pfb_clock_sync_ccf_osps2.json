@@ -1,0 +1,46 @@
+{
+  "block": {
+    "name": "pfb_clock_sync_ccf",
+    "opts": {
+      "filter_size": 32,
+      "init_phase": 16.0,
+      "loop_bw": 0.0628,
+      "max_rate_deviation": 1.5,
+      "osps": 2,
+      "sps": 4.0
+    }
+  },
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest"
+      },
+      "max_error": 0.015,
+      "mer_db_tolerance": 0.2,
+      "rationale": "Fixed point keeps positions and periods as exact 32 bit fractions instead of f32, rounds samples and taps to the format and the loop gains to 22 bits, so its loop follows a slightly different trajectory. After lock (200 outputs) the timing estimates differ by a fraction of a table step: output differences stay within the interpolation over one or two of the 32 rows (max <= 0.015, rms <= 0.0025; measured max 0.0023-0.01, rms 1e-4-1.5e-3), and the MER is equal within 0.2 dB (measured <= 0.06 dB). The output count is the same.",
+      "rms_error": 0.0025,
+      "variant": "q15_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "lock_after": 200,
+    "max_error": 0.015,
+    "max_fraction_over_1e-4": 0.15,
+    "median_error": 1e-06,
+    "mer_db_tolerance": 0.1,
+    "rationale": "The loop and position arithmetic is GNU Radio's, step by step in f32 (f64 where GNU Radio uses double), so both walk the same positions; the interpolator sums differ by f32 rounding order (GNU Radio uses SIMD dot products), about 1e-7: median error <= 1e-6. When a fractional delay lies that close to the boundary between two of the 32 table rows, the two pick neighbouring rows for that sample: an error up to max|slope| / 32 (slope <= 0.9 per sample here, 0.0281), and a loop state difference of the same order that decays with the loop (the bound allows 0.015). Such events are rare (fraction of outputs off by more than 1e-4 <= 0.15, measured 0-0.10). After lock (200 outputs) the modulation error ratio (MER, over the common outputs) of both is equal within 0.1 dB."
+  },
+  "gnuradio": "digital.pfb_clock_sync_ccf(4.0, 0.0628, taps, 32, 16, 1.5, 2)",
+  "name": "pfb_clock_sync_ccf_osps2",
+  "signal": "qpsk_rrc_sps4",
+  "taps": {
+    "alpha": 0.35,
+    "fs": 128.0,
+    "gain": 32.0,
+    "kind": "rrc",
+    "ntaps": 1408,
+    "symbol_rate": 1.0
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "block": {
+    "name": "symbol_sync_cc",
+    "opts": {
+      "constellation": "bpsk",
+      "damping_factor": 1.0,
+      "loop_bw": 0.045,
+      "max_deviation": 1.5,
+      "n_filters": 128,
+      "osps": 2,
+      "resampling_type": "mmse",
+      "sps": 4.0,
+      "ted_gain": 1.0,
+      "ted_type": "gardner"
+    }
+  },
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest"
+      },
+      "max_error": 0.005,
+      "mer_db_tolerance": 0.2,
+      "rationale": "Fixed point keeps positions and periods as exact 32 bit fractions instead of f32, rounds samples and taps to the format and the loop gains to 22 bits, so its loop follows a slightly different trajectory. After lock (200 outputs) the timing estimates differ by a fraction of a table step: output differences stay within the interpolation over one or two of the 128 rows (max <= 0.005, rms <= 0.0015; measured max 0.0023-0.01, rms 1e-4-1.5e-3), and the MER is equal within 0.2 dB (measured <= 0.06 dB). The output count is the same.",
+      "rms_error": 0.0015,
+      "variant": "q15_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "lock_after": 200,
+    "max_error": 0.004,
+    "max_fraction_over_1e-4": 0.15,
+    "median_error": 1e-06,
+    "mer_db_tolerance": 0.1,
+    "rationale": "The loop and position arithmetic is GNU Radio's, step by step in f32 (f64 where GNU Radio uses double), so both walk the same positions; the interpolator sums differ by f32 rounding order (GNU Radio uses SIMD dot products), about 1e-7: median error <= 1e-6. When a fractional delay lies that close to the boundary between two of the 128 table rows, the two pick neighbouring rows for that sample: an error up to max|slope| / 128 (slope <= 0.9 per sample here, 0.007), and a loop state difference of the same order that decays with the loop (the bound allows 0.004). Such events are rare (fraction of outputs off by more than 1e-4 <= 0.15, measured 0-0.10). After lock (200 outputs) the modulation error ratio (MER, over the common outputs) of both is equal within 0.1 dB."
+  },
+  "gnuradio": "digital.symbol_sync_cc(digital.TED_GARDNER, 4.0, 0.045, 1.0, 1.0, 1.5, 2, digital.constellation_bpsk().base(), digital.IR_MMSE_8TAP, 128, taps)",
+  "name": "symbol_sync_cc_gardner_osps2",
+  "signal": "qpsk_rc_sps4"
+}

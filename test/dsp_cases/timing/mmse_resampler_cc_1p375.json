@@ -1,0 +1,76 @@
+{
+  "block": {
+    "name": "mmse_resampler_cc",
+    "opts": {
+      "phase_shift": "phase",
+      "resamp_ratio": "ratio"
+    }
+  },
+  "description": "mmse_resampler_cc at resampling ratio 1.375, initial mu 0.0",
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 3.5,
+      "rationale": "The ratio is an f32 value (exact on the 2^-32 position grid), so positions and table rows equal the float instance. Taps rounded to the format: sum of |tap rounding error| <= 8 * 0.5 LSB acting on a peak of 0.76 FS, plus 0.5 LSB output rounding: <= 3.5 LSB per component.",
+      "variant": "q15_nearest"
+    },
+    {
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 3.5,
+      "rationale": "The ratio is an f32 value (exact on the 2^-32 position grid), so positions and table rows equal the float instance. Taps rounded to the format: sum of |tap rounding error| <= 8 * 0.5 LSB acting on a peak of 0.76 FS, plus 0.5 LSB output rounding: <= 3.5 LSB per component.",
+      "variant": "q17_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 2e-06,
+    "rationale": "Positions are computed in double exactly like GNU Radio (same additions and floor), so both pick the same window and table row; the outputs differ only by f32 rounding of the 8-tap sum (GNU Radio uses a SIMD dot product): per component below 8 * 2^-24 * peak * sum|taps| (sum|taps| <= 1.06, peak 0.76) = 4e-7 for each order, the bound allows 2e-6."
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "phase",
+        "ratio"
+      ],
+      "block": "filter.mmse_resampler_cc"
+    }
+  ],
+  "input": {
+    "noise_rms": 0.002,
+    "tones": [
+      {
+        "amp": 0.35,
+        "freq": 0.013,
+        "phase": 0.0
+      },
+      {
+        "amp": 0.3,
+        "freq": -0.071,
+        "phase": 1.0
+      },
+      {
+        "amp": 0.1,
+        "freq": 0.12,
+        "phase": 2.0
+      }
+    ],
+    "type": "complex"
+  },
+  "name": "mmse_resampler_cc_1p375",
+  "output": {
+    "type": "complex"
+  },
+  "params": {
+    "phase": 0.0,
+    "ratio": 1.375
+  },
+  "samples": 2048,
+  "seed": 7070
+}
