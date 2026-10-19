@@ -48,8 +48,8 @@ defmodule ExSdr.FEC do
               extended_encoder extended_decoder)a
   @other ~w(puncture_bb puncture_ff depuncture_bb ber_bf)a
 
-  @doc "The names `block/2` knows."
-  def blocks, do: Map.keys(@code_blocks) ++ @generic ++ @other
+  @doc "The names `block/2` knows (LDPC blocks via `ExSdr.FEC.LDPC`)."
+  def blocks, do: Map.keys(@code_blocks) ++ @generic ++ @other ++ ExSdr.FEC.LDPC.blocks()
 
   @doc """
   Runs `block` (see `NxFixed.Block.run/4`): `{output, state}`. Frame blocks
@@ -148,6 +148,8 @@ defmodule ExSdr.FEC do
       gnuradio: "fec.ber_bf"
     }
   end
+
+  def block(name, opts), do: ExSdr.FEC.LDPC.block(name, opts)
 
   defp puncture(name, opts, item) do
     pat = ExSdr.FEC.Puncture.pattern(opts[:puncsize], opts[:puncpat], opts[:delay] || 0)

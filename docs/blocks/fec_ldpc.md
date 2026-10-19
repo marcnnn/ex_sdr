@@ -104,7 +104,7 @@ arguments (XLA compiles large constants slowly); results are identical
 
 | Test | What |
 |---|---|
-| `ldpc_gnuradio_test` | 14 cases (`test/dsp_cases/fec/ldpc_*.json`): every encoder equal, bit flip and sum-product decoders give equal bits; gr-fec's example matrices n = 8-1800 |
+| `ldpc_gnuradio_test` | 14 cases (`test/dsp_cases/fec/ldpc/`): every encoder equal, bit flip and sum-product decoders give equal bits; gr-fec's example matrices n = 8-1800 |
 | `ldpc_dvb_s2_test` | all 53 DVB-S2/S2X/T2 codes equal to gr-dtv's `dvb_ldpc_bb` (SHA-256 of a frame, parity bits for short frames), random IRA parameters, decoding a short frame |
 | `ldpc_code_test` | alist round trip; H c = 0 and information positions for random messages on every code kind and on random matrices (Richardson-Urbanke, G, rank deficient H) |
 | `ldpc_decoder_test` | dataflow equals loop; frames independent of batching; error-free input; fixed vs float; seeded BER/FER |
@@ -148,7 +148,7 @@ waterfall slope, and the 6-bit decoder to 0.1 dB of float min-sum.
 ## Regenerating the reference data
 
     podman run --rm -v "$PWD/test:/work/test:Z" -w /work exhdl-gnuradio \
-      python3 test/gnuradio/fec_ldpc_golden.py test/dsp_cases/fec \
+      python3 test/gnuradio/fec_ldpc_golden.py test/dsp_cases/fec/ldpc \
         test/fixtures/gnuradio/fec/ldpc_alist test/fixtures/gnuradio/fec
     podman run --rm -v "$PWD:/work:Z" -w /work exhdl-gnuradio-dtv \
       python3 test/gnuradio/fec_ldpc_golden.py dvb \

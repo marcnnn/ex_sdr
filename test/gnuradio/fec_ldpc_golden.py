@@ -4,7 +4,7 @@
 Usage: fec_ldpc_golden.py <cases dir> <alist dir> <output dir>
        fec_ldpc_golden.py dvb <tables file> <output file>
 
-Reads test/dsp_cases/fec/ldpc_*.json and writes, per case, a directory
+Reads test/dsp_cases/fec/ldpc/ldpc_*.json and writes, per case, a directory
 <output dir>/<name>/ with
 
   input.u8 (encoders: information bits, one per byte) or
@@ -17,7 +17,7 @@ Run it in the podman image (gr-fec ships the alist files used here, they
 are copied to test/fixtures/gnuradio/fec/ldpc_alist):
 
   podman run --rm -v "$PWD/test:/work/test:Z" -w /work exhdl-gnuradio \
-    python3 test/gnuradio/fec_ldpc_golden.py test/dsp_cases/fec \
+    python3 test/gnuradio/fec_ldpc_golden.py test/dsp_cases/fec/ldpc \
       test/fixtures/gnuradio/fec/ldpc_alist test/fixtures/gnuradio/fec
 """
 import glob

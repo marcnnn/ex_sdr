@@ -1,7 +1,7 @@
 defmodule ExSdr.FEC.LDPCGnuRadioTest do
   @moduledoc """
   The LDPC blocks against GNU Radio's gr-fec (reference data from
-  test/gnuradio/fec_ldpc_golden.py, cases in test/dsp_cases/fec/ldpc_*.json).
+  test/gnuradio/fec_ldpc_golden.py, cases in test/dsp_cases/fec/ldpc/).
   Encoders: equal codewords. Bit flip and sum-product decoders: equal
   decoded bits.
   """
@@ -9,7 +9,7 @@ defmodule ExSdr.FEC.LDPCGnuRadioTest do
 
   alias ExSdr.FEC.LDPC
 
-  @cases_dir Path.expand("../dsp_cases/fec", __DIR__)
+  @cases_dir Path.expand("../dsp_cases/fec/ldpc", __DIR__)
   @fixtures Path.expand("../fixtures/gnuradio/fec", __DIR__)
   @alist_dir Path.join(@fixtures, "ldpc_alist")
 

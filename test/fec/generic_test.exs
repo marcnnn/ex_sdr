@@ -334,7 +334,7 @@ defmodule ExSdr.FEC.GenericTest do
       do: [block_size: 32, num_info_bits: 16, frozen_bit_positions: @frozen, max_list_size: 4]
 
     test "rate, item types and GNU Radio names are true for every code block" do
-      for name <- ExSdr.FEC.blocks(),
+      for name <- ExSdr.FEC.blocks() -- ExSdr.FEC.LDPC.blocks(),
           String.contains?(Atom.to_string(name), "coder"),
           name not in [
             :encoder,
