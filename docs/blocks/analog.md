@@ -189,7 +189,7 @@ saturates in fixed point and is not saturated in the float instance).
   that is only accurate to about 3e-3. The committed fixtures were made on
   aarch64, so the `am_demod` and `am_demod_cf` bounds include that; on x86 the
   reference is exact and the same bound holds.
-* `warmup` of recursive blocks is `:infinity`: the output depends on the
+* `warmup` of recursive blocks is `:unbounded`: the output depends on the
   initial state for ever (decaying). Stateless blocks use a dummy scalar state
   (`NxFixed.Block.run/4` cannot carry `nil` through its scan loop).
 

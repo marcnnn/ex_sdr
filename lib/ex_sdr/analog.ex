@@ -46,7 +46,7 @@ defmodule ExSdr.Analog do
       opts: o,
       item: {:real, :complex},
       hardware: :feedback,
-      warmup: :infinity,
+      warmup: :unbounded,
       gnuradio: "analog.frequency_modulator_fc"
     }
   end
@@ -153,7 +153,7 @@ defmodule ExSdr.Analog do
       opts: o,
       item: {:complex, :complex},
       hardware: :feedback,
-      warmup: :infinity,
+      warmup: :unbounded,
       gnuradio: "analog.agc3_cc"
     }
   end
@@ -191,7 +191,7 @@ defmodule ExSdr.Analog do
       opts: o,
       item: item,
       hardware: :feedback,
-      warmup: :infinity,
+      warmup: :unbounded,
       gnuradio: "analog.#{name}"
     }
   end
@@ -243,7 +243,7 @@ defmodule ExSdr.Analog do
       opts: o,
       item: item,
       hardware: :feedback,
-      warmup: :infinity,
+      warmup: :unbounded,
       gnuradio: "analog.#{name}"
     }
   end
@@ -265,7 +265,7 @@ defmodule ExSdr.Analog do
       opts: o,
       item: {:real, :complex},
       hardware: :feedback,
-      warmup: :infinity,
+      warmup: :unbounded,
       gnuradio: "analog.nbfm_tx (audio_rate == quad_rate)"
     }
   end
@@ -288,7 +288,7 @@ defmodule ExSdr.Analog do
       opts: o,
       item: {:complex, :real},
       hardware: :feedback,
-      warmup: :infinity,
+      warmup: :unbounded,
       gnuradio: "analog.nbfm_rx without its audio filter"
     }
   end
@@ -323,7 +323,7 @@ defmodule ExSdr.Analog do
       init: K.iir1_init(f, Keyword.get(o, :guard, 8)),
       opts: o,
       hardware: :feedback,
-      warmup: :infinity,
+      warmup: :unbounded,
       gnuradio: gnuradio
     }
   end
@@ -339,7 +339,7 @@ defmodule ExSdr.Analog do
       opts: o,
       item: if(complex?, do: {:complex, :complex}, else: {:real, :real}),
       hardware: :feedback,
-      warmup: :infinity,
+      warmup: :unbounded,
       gnuradio: gnuradio
     }
   end
