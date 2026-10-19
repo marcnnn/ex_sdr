@@ -76,6 +76,10 @@ defmodule ExSdr.Timing.Loop do
     if ci == 0, do: Nx.multiply(x, i64(0)), else: x |> Nx.multiply(i64(ci)) |> round_shift(g)
   end
 
+  @doc "`n * c` for an s32 tensor `n` and an integer constant `c`, in the loop domain."
+  def mulc_int(n, c, %Format{kind: :float}), do: Nx.multiply(Nx.as_type(n, :f32), c * 1.0)
+  def mulc_int(n, c, %Format{kind: :fixed}), do: Nx.multiply(Nx.as_type(n, :s64), i64(c <<< @p))
+
   @doc """
   `c * err` with `err` a `NxFixed.Num` value (a timing error) and `c` a
   real constant, in the loop domain. Float: one f32 multiply.
@@ -244,7 +248,7 @@ defmodule ExSdr.Timing.Loop do
       t = raw(l)
       n = Nx.axis_size(t, 0)
       v = v |> raw() |> Nx.as_type(Nx.type(t)) |> Nx.reshape({1})
-      like(l, Nx.concatenate([Nx.slice(t, [1], [n - 1]), v]))
+      if n == 1, do: like(l, v), else: like(l, Nx.concatenate([Nx.slice(t, [1], [n - 1]), v]))
     end)
   end
 
