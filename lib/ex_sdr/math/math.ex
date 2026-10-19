@@ -224,6 +224,19 @@ defmodule ExSdr.Math do
     )
   end
 
+  defp spec(:float_to_short, format, opts) do
+    scale = param(Keyword.get(opts, :scale, 1.0), format)
+
+    stream(
+      :float_to_short,
+      &Stream.float_to_short/4,
+      [scale],
+      format,
+      {:real, :short},
+      "blocks.float_to_short"
+    )
+  end
+
   defp spec(name, format, opts) when name in [:stream_to_vector, :vector_to_stream] do
     item = Keyword.get(opts, :item, :real)
 
@@ -281,7 +294,7 @@ defmodule ExSdr.Math do
     }
   end
 
-  defp spec(name, _format, opts) when name in [:unpack_k_bits_bb, :packed_to_unpacked_bb] do
+  defp spec(name, _format, opts) when name == :unpack_k_bits_bb do
     k = Keyword.fetch!(opts, :k)
 
     %Block{
@@ -296,7 +309,7 @@ defmodule ExSdr.Math do
     }
   end
 
-  defp spec(name, _format, opts) when name in [:pack_k_bits_bb, :unpacked_to_packed_bb] do
+  defp spec(name, _format, opts) when name == :pack_k_bits_bb do
     k = Keyword.fetch!(opts, :k)
 
     %Block{
@@ -308,6 +321,42 @@ defmodule ExSdr.Math do
       opts: [k: k, endianness: Keyword.get(opts, :endianness, :msb)],
       rate: {k, 1},
       item: {:bit, :byte}
+    }
+  end
+
+  # GNU Radio packed_to_unpacked_bb: bytes into chunks of `k` bits, the byte
+  # side read in `:endianness` order, the first bit of a chunk its top bit.
+  defp spec(:packed_to_unpacked_bb, _format, opts) do
+    k = Keyword.fetch!(opts, :k)
+    order = Keyword.get(opts, :endianness, :msb)
+
+    %Block{
+      name: :packed_to_unpacked_bb,
+      kind: :host,
+      fun: Bits.repack_bits(8, k, in_order: order, out_order: :msb),
+      init: <<>>,
+      gnuradio: "blocks.packed_to_unpacked_bb",
+      rate: {8, k},
+      item: {:byte, :byte},
+      hardware: :control
+    }
+  end
+
+  # unpacked_to_packed_bb: chunks of `k` bits (top bit first) into bytes
+  # filled in `:endianness` order.
+  defp spec(:unpacked_to_packed_bb, _format, opts) do
+    k = Keyword.fetch!(opts, :k)
+    order = Keyword.get(opts, :endianness, :msb)
+
+    %Block{
+      name: :unpacked_to_packed_bb,
+      kind: :host,
+      fun: Bits.repack_bits(k, 8, in_order: :msb, out_order: order),
+      init: <<>>,
+      gnuradio: "blocks.unpacked_to_packed_bb",
+      rate: {k, 8},
+      item: {:byte, :byte},
+      hardware: :control
     }
   end
 

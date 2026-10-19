@@ -1,0 +1,78 @@
+{
+  "name": "multiply_ff",
+  "description": "multiply_ff, two real inputs",
+  "samples": 4096,
+  "seed": 2040,
+  "inputs": [
+    {
+      "type": "real",
+      "tones": [
+        {
+          "freq": 0.01,
+          "amp": 0.3,
+          "phase": 0.0
+        },
+        {
+          "freq": 0.09,
+          "amp": 0.2,
+          "phase": 1.0
+        }
+      ],
+      "noise_rms": 0.001
+    },
+    {
+      "type": "real",
+      "tones": [
+        {
+          "freq": 0.037,
+          "amp": 0.3,
+          "phase": 0.5
+        }
+      ],
+      "noise_rms": 0.001
+    }
+  ],
+  "params": {},
+  "block": {
+    "name": "mul_ff"
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.multiply_ff",
+      "args": [
+        1
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 1.6e-05,
+      "snr_db_min": 74.0,
+      "rationale": "The exact product (2^-30 grid) is rounded once to Q15: at most 0.5 LSB = 1.5e-5, bound 1.6e-5. The SNR is low because the product of the two tones is small (power about 0.01); measured 1.5e-5, 75.8 dB."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 4e-06,
+      "snr_db_min": 86.0,
+      "rationale": "As Q15 with 0.5 Q17 LSB = 3.8e-6. Measured 3.8e-6, 87.9 dB."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 100.0,
+    "rationale": "GNU Radio and the float instance do the same float32 operation; measured 0."
+  }
+}

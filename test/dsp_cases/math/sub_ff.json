@@ -1,0 +1,78 @@
+{
+  "name": "sub_ff",
+  "description": "sub_ff, two real inputs",
+  "samples": 4096,
+  "seed": 2031,
+  "inputs": [
+    {
+      "type": "real",
+      "tones": [
+        {
+          "freq": 0.01,
+          "amp": 0.3,
+          "phase": 0.0
+        },
+        {
+          "freq": 0.09,
+          "amp": 0.2,
+          "phase": 1.0
+        }
+      ],
+      "noise_rms": 0.001
+    },
+    {
+      "type": "real",
+      "tones": [
+        {
+          "freq": 0.037,
+          "amp": 0.3,
+          "phase": 0.5
+        }
+      ],
+      "noise_rms": 0.001
+    }
+  ],
+  "params": {},
+  "block": {
+    "name": "sub_ff"
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.sub_ff",
+      "args": [
+        1
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 1e-06,
+      "snr_db_min": 100.0,
+      "rationale": "The difference of two values on the Q15 grid is on the grid: exact in every format (measured 0)."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 1e-06,
+      "snr_db_min": 100.0,
+      "rationale": "The difference of two values on the Q15 grid is on the grid: exact in every format (measured 0)."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 100.0,
+    "rationale": "GNU Radio and the float instance do the same float32 operation; measured 0."
+  }
+}

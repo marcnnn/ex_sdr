@@ -140,6 +140,15 @@ defmodule ExSdr.Math.Stream do
     {to_char(x, scale, opts[:format]), state}
   end
 
+  @doc """
+  `round(x * scale)` saturated to a signed 16-bit short (s16). Fixed-point
+  output is in the format `NxFixed.Num.q(16, 0)`.
+  """
+  defn float_to_short(x, state, scale, opts \\ []) do
+    opts = keyword!(opts, [:format])
+    {to_short(x, scale, opts[:format]), state}
+  end
+
   # Float only (no fixed-point instance yet): sqrt, atan2 and log.
 
   @doc "Magnitude `sqrt(re^2 + im^2)`, float only."
@@ -317,6 +326,14 @@ defmodule ExSdr.Math.Stream do
 
   deftransformp to_char(x, scale, %Num.Format{kind: :fixed}) do
     x |> Num.mul(scale) |> Num.quantize(Num.q(8, 0, rounding: :nearest))
+  end
+
+  deftransformp to_short(x, scale, %Num.Format{kind: :float}) do
+    x |> Nx.multiply(scale) |> Nx.round() |> Nx.clip(-32768, 32767) |> Nx.as_type(:s16)
+  end
+
+  deftransformp to_short(x, scale, %Num.Format{kind: :fixed}) do
+    x |> Num.mul(scale) |> Num.quantize(Num.q(16, 0, rounding: :nearest))
   end
 
   defp raw(%Fixed{t: t}), do: t

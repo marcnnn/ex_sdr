@@ -1,0 +1,6 @@
+{
+  "case": "magphase_to_complex",
+  "case_sha256": "d6645d38f7ba6462d451dd4fd3d0067beeac41740e85f850191526c575a6ec24",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

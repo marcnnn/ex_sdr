@@ -1,0 +1,56 @@
+{
+  "name": "magphase_to_complex",
+  "description": "magphase_to_complex, magnitude 0.25 to 0.55, phase within 0.9 rad",
+  "samples": 4096,
+  "seed": 2053,
+  "inputs": [
+    {
+      "type": "real",
+      "tones": [
+        {
+          "freq": 0.02,
+          "amp": 0.15,
+          "phase": 0.0
+        }
+      ],
+      "noise_rms": 0.001,
+      "steps": [
+        {
+          "at": 0,
+          "amp": 0.4
+        }
+      ]
+    },
+    {
+      "type": "real",
+      "tones": [
+        {
+          "freq": 0.01,
+          "amp": 0.9,
+          "phase": 0.0
+        }
+      ],
+      "noise_rms": 0.0
+    }
+  ],
+  "params": {},
+  "block": {
+    "name": "magphase_to_complex"
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.magphase_to_complex",
+      "args": [
+        1
+      ]
+    }
+  ],
+  "output": {
+    "type": "complex"
+  },
+  "float_vs_gnuradio": {
+    "max_error": 1e-05,
+    "snr_db_min": 100.0,
+    "rationale": "m * cos(p) and m * sin(p) in float32 on both sides; GNU Radio's sincosf could differ in the last bits (measured 0)."
+  }
+}

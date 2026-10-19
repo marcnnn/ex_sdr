@@ -1,0 +1,6 @@
+{
+  "case": "add_cc",
+  "case_sha256": "f7c5ffd14cb4145c4e53694909ef1f3a42706fba275673b96ff322e639c79aae",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

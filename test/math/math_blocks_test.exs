@@ -73,6 +73,7 @@ defmodule ExSdr.MathBlocksTest do
       :div_cc,
       :char_to_float,
       :float_to_char,
+      :float_to_short,
       :stream_to_vector,
       :integrate_ff,
       :integrate_cc,
@@ -99,6 +100,7 @@ defmodule ExSdr.MathBlocksTest do
         :delay -> [delay: 3]
         :char_to_float -> [scale: 128.0]
         :float_to_char -> [scale: 127.0]
+        :float_to_short -> [scale: 32767.0]
         n when n in [:integrate_ff, :integrate_cc] -> [decim: 4]
         :repeat -> [interp: 2]
         n when n in [:max_ff, :min_ff] -> [vlen: 4]
@@ -300,10 +302,28 @@ defmodule ExSdr.MathBlocksTest do
       assert_in_delta Nx.to_number(im[1]), 0.0, 1.0e-6
     end
 
-    test "packed_to_unpacked_bb is the MSB-first unpack (GNU Radio default; not golden-checked)" do
-      block = Math.block(:packed_to_unpacked_bb, k: 2)
-      {out, _} = Block.run(block, Nx.tensor([2, 1], type: :u8), :init, [])
-      assert Nx.to_flat_list(out) == [1, 0, 0, 1]
+    test "packed_to_unpacked_bb cuts bytes into chunks, the byte read in the given order" do
+      input = Nx.tensor([0b10_01_11_00, 0b01], type: :u8)
+
+      {msb, _} = Block.run(Math.block(:packed_to_unpacked_bb, k: 2), input, :init, [])
+      assert msb == <<2, 1, 3, 0, 0, 0, 0, 1>>
+
+      # LSB first reads the bits 0, 0, 1, 1, ... and the chunk keeps the first bit on top
+      lsb_block = Math.block(:packed_to_unpacked_bb, k: 2, endianness: :lsb)
+      {lsb, _} = Block.run(lsb_block, input, :init, [])
+      assert lsb == <<0, 3, 2, 1, 2, 0, 0, 0>>
+    end
+
+    test "unpacked_to_packed_bb undoes packed_to_unpacked_bb, with the bits that wait in the state" do
+      for endianness <- [:msb, :lsb] do
+        bytes = Nx.tensor(Enum.map(1..24, &(&1 * 37 &&& 255)), type: :u8)
+        un = Math.block(:packed_to_unpacked_bb, k: 3, endianness: endianness)
+        re = Math.block(:unpacked_to_packed_bb, k: 3, endianness: endianness)
+        {chunks, left} = Block.run(un, bytes, :init, [])
+        assert byte_size(chunks) == 64 and left == <<>>
+        {back, _} = Block.run(re, Nx.tensor(:binary.bin_to_list(chunks), type: :u8), :init, [])
+        assert back == Nx.to_binary(bytes)
+      end
     end
   end
 
@@ -415,6 +435,7 @@ defmodule ExSdr.MathBlocksTest do
         check(:abs_ff, f, item(f, :real), [])
         check(:threshold_ff, f, item(f, :real), lo: -0.125, hi: 0.25)
         check(:float_to_char, f, item(f, :real), scale: 127.0)
+        check(:float_to_short, f, item(f, :real), scale: 32767.0)
         check(:add_ff, f, item(f, :pair), [])
         check(:sub_ff, f, item(f, :pair), [])
         check(:mul_ff, f, item(f, :pair), [])

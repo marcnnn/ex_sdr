@@ -1,0 +1,74 @@
+{
+  "name": "float_to_short",
+  "description": "float_to_short, scale 32767 (int16 out, rounded)",
+  "samples": 4096,
+  "seed": 2054,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.3,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.09,
+        "amp": 0.2,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "scale": 32767.0
+  },
+  "block": {
+    "name": "float_to_short",
+    "opts": {
+      "scale": "scale"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.float_to_short",
+      "args": [
+        1,
+        "scale"
+      ]
+    }
+  ],
+  "output": {
+    "type": "short"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 1.0,
+      "snr_db_min": 60.0,
+      "rationale": "The exact product is rounded once; differs from the float32 product by 1 only at ties."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 1.0,
+      "snr_db_min": 60.0,
+      "rationale": "As q15_nearest."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1.0,
+    "snr_db_min": 60.0,
+    "rationale": "Integer output. The float instance rounds half away from zero, GNU Radio's VOLK conversion rounds half to even, so they differ by 1 at exact ties only (scale 32767 makes ties rare). Measured 0."
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "name": "multiply_cc",
+  "description": "multiply_cc, two complex inputs",
+  "samples": 4096,
+  "seed": 2050,
+  "inputs": [
+    {
+      "type": "complex",
+      "tones": [
+        {
+          "freq": 0.01,
+          "amp": 0.3,
+          "phase": 0.0
+        },
+        {
+          "freq": 0.07,
+          "amp": 0.2,
+          "phase": 1.0
+        }
+      ],
+      "noise_rms": 0.001
+    },
+    {
+      "type": "complex",
+      "tones": [
+        {
+          "freq": 0.043,
+          "amp": 0.35,
+          "phase": 0.5
+        }
+      ],
+      "noise_rms": 0.001
+    }
+  ],
+  "params": {},
+  "block": {
+    "name": "mul_cc"
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.multiply_cc",
+      "args": [
+        1
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 2.3e-05,
+      "snr_db_min": 79.0,
+      "rationale": "Each component is an exact sum of two products, rounded once: at most 0.5 LSB per component, 0.71 LSB = 2.2e-5 in magnitude, bound 2.3e-5. Measured 2.1e-5, 80.1 dB."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 6e-06,
+      "snr_db_min": 91.0,
+      "rationale": "As Q15 with Q17 LSB: 0.71 * 7.6e-6 = 5.4e-6. Measured 5.4e-6, 92.1 dB."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 130.0,
+    "rationale": "GNU Radio computes the product in float32 (VOLK); differences are float32 rounding. Measured 1.5e-8, 151 dB."
+  }
+}

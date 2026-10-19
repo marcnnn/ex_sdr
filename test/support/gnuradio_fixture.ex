@@ -29,22 +29,46 @@ defmodule ExSdr.Test.GnuRadioFixture do
       raise "GNU Radio data for #{case["name"]} is stale (case file changed): run scripts/gnuradio_golden.sh"
     end
 
-    input =
-      if case["input"]["type"] == "bytes",
-        do: :binary.bin_to_list(File.read!(Path.join(dir, "input.u8"))),
-        else: for(<<v::little-signed-16 <- File.read!(Path.join(dir, "input.s16le"))>>, do: v)
+    inputs =
+      for {spec, i} <- Enum.with_index(input_specs(case)) do
+        name = "input" <> if(i == 0, do: "", else: Integer.to_string(i))
 
-    reference =
-      if output_type(case) == "bytes",
-        do: :binary.bin_to_list(File.read!(Path.join(dir, "gnuradio.u8"))),
-        else: for(<<v::little-float-32 <- File.read!(Path.join(dir, "gnuradio.f32le"))>>, do: v)
+        items =
+          if spec["type"] == "bytes",
+            do: :binary.bin_to_list(File.read!(Path.join(dir, name <> ".u8"))),
+            else:
+              for(<<v::little-signed-16 <- File.read!(Path.join(dir, name <> ".s16le"))>>, do: v)
+
+        if spec["type"] == "complex", do: pairs(items), else: items
+      end
+
+    references =
+      for {spec, j} <- Enum.with_index(output_specs(case)) do
+        name = "gnuradio" <> if(j == 0, do: "", else: Integer.to_string(j))
+        values = read_reference(Path.join(dir, name), spec["type"])
+        if spec["type"] == "complex", do: pairs(values), else: values
+      end
 
     %{
       manifest: manifest,
-      input: if(complex?(case), do: pairs(input), else: input),
-      reference: if(output_type(case) == "complex", do: pairs(reference), else: reference)
+      # one input: its items; several: one list of the inputs' items per sample
+      input: if(length(inputs) == 1, do: hd(inputs), else: Enum.zip_with(inputs, & &1)),
+      inputs: inputs,
+      reference: hd(references),
+      references: references
     }
   end
+
+  defp read_reference(base, "bytes"), do: :binary.bin_to_list(File.read!(base <> ".u8"))
+
+  defp read_reference(base, "short"),
+    do: for(<<v::little-signed-16 <- File.read!(base <> ".s16le")>>, do: v)
+
+  defp read_reference(base, "int"),
+    do: for(<<v::little-signed-32 <- File.read!(base <> ".s32le")>>, do: v)
+
+  defp read_reference(base, _type),
+    do: for(<<v::little-float-32 <- File.read!(base <> ".f32le")>>, do: v)
 
   @doc """
   Loads every case of `family` (cases in test/dsp_cases/<family>/,
@@ -59,8 +83,12 @@ defmodule ExSdr.Test.GnuRadioFixture do
     end
   end
 
-  defp complex?(case), do: case["input"]["type"] == "complex"
-  defp output_type(case), do: get_in(case, ["output", "type"]) || case["input"]["type"]
+  # "inputs" (several) or "input" (one); "outputs" or "output" (default: the input's type).
+  defp input_specs(case), do: case["inputs"] || [case["input"]]
+
+  defp output_specs(case),
+    do: case["outputs"] || [case["output"] || %{"type" => hd(input_specs(case))["type"]}]
+
   defp pairs(list), do: list |> Enum.chunk_every(2) |> Enum.map(&List.to_tuple/1)
 
   @doc "The `NxFixed.Num` format described by a case's `format` map."
@@ -87,7 +115,7 @@ defmodule ExSdr.Test.GnuRadioFixture do
 
     # All samples at once through the compiled loop (EXLA when available).
     samples =
-      if complex?(case) do
+      if hd(input_specs(case))["type"] == "complex" do
         {re, im} = Enum.unzip(input)
         {samples(re, format), samples(im, format)}
       else
@@ -140,7 +168,7 @@ defmodule ExSdr.Test.GnuRadioFixture do
       Enum.zip(reference, signal)
       |> Enum.reduce({0.0, 0.0}, fn {r, s}, {p, e} -> {p + mag2(r), e + mag2(sub(s, r))} end)
 
-    10 * :math.log10(power / max(error, 1.0e-300))
+    10 * :math.log10(power / max(error, 1.0e-200))
   end
 
   @doc "`{max error in Q15 LSB, sample index}`."

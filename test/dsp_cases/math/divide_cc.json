@@ -1,0 +1,84 @@
+{
+  "name": "divide_cc",
+  "description": "divide_cc, divisor magnitude above 0.3",
+  "samples": 4096,
+  "seed": 2051,
+  "inputs": [
+    {
+      "type": "complex",
+      "tones": [
+        {
+          "freq": 0.01,
+          "amp": 0.12,
+          "phase": 0.0
+        },
+        {
+          "freq": 0.07,
+          "amp": 0.06,
+          "phase": 1.0
+        }
+      ],
+      "noise_rms": 0.001
+    },
+    {
+      "type": "complex",
+      "tones": [
+        {
+          "freq": 0.043,
+          "amp": 0.2,
+          "phase": 0.5
+        }
+      ],
+      "noise_rms": 0.001,
+      "steps": [
+        {
+          "at": 0,
+          "amp": 0.5
+        }
+      ]
+    }
+  ],
+  "params": {},
+  "block": {
+    "name": "div_cc"
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.divide_cc",
+      "args": [
+        1
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 2.3e-05,
+      "snr_db_min": 86.0,
+      "rationale": "a * conj(b) / |b|^2 with one rounding per component: 0.71 LSB = 2.2e-5, bound 2.3e-5. Measured 2.1e-5, 87.4 dB."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 6e-06,
+      "snr_db_min": 98.0,
+      "rationale": "As Q15 with Q17 LSB. Measured 5.4e-6, 99.5 dB."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 125.0,
+    "rationale": "Float32 complex division on both sides, in a different operation order. Measured 9e-8, 144 dB."
+  }
+}
