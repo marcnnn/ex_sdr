@@ -1,0 +1,6 @@
+{
+  "case": "dc_blocker_ff_long_8",
+  "case_sha256": "9d2ad482932d29e14ba113dc088341ca45ef9c43aed8321eb568eefb18729aa1",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

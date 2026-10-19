@@ -1,0 +1,6 @@
+{
+  "case": "fir_ccc_band_decim2",
+  "case_sha256": "eb04b20b4837f308abfd5ce7360c9db4ee361f72f3e21e38219686e45f384667",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

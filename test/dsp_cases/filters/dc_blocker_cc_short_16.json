@@ -1,0 +1,86 @@
+{
+  "block": {
+    "name": "dc_blocker_cc",
+    "opts": {
+      "length": "length",
+      "long_form": "long_form"
+    }
+  },
+  "description": "DC blocker, short form, length 16, on complex samples with a step vs dc_blocker_cc",
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 0.735,
+      "rationale": "Taps rounded to Q23 (sum of |tap rounding error| 0.0) acting on an input peak of 0.555 FS per component, plus 0.5 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 0.52 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 76.0,
+      "variant": "q15_nearest"
+    },
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "truncate"
+      },
+      "max_error_lsb": 1.442,
+      "rationale": "Taps rounded to Q23 (sum of |tap rounding error| 0.0) acting on an input peak of 0.555 FS per component, plus 1.0 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 1.02 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 70.0,
+      "variant": "q15_truncate"
+    },
+    {
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 0.205,
+      "rationale": "Taps rounded to Q25 (sum of |tap rounding error| 0.0) acting on an input peak of 0.555 FS per component, plus 0.5 LSB of output rounding (Q17) and 0.02 Q15 LSB for the f32 reference itself; per component <= 0.145 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 88.0,
+      "variant": "q17_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.1782,
+    "rationale": "f32 rounding in an 31-tap sum: each of the n additions errs by at most 2^-24 of the partial sum (<= peak * sum|taps| = 1.0406250000000001); twice that covers both evaluation orders (GNU Radio uses SIMD kernels): 0.1782 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+    "snr_db_min": 3014.0
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "length",
+        "long_form"
+      ],
+      "block": "filter.dc_blocker_cc"
+    }
+  ],
+  "input": {
+    "noise_rms": 0.001,
+    "steps": [
+      {
+        "amp": 0.25,
+        "at": 1024
+      }
+    ],
+    "tones": [
+      {
+        "amp": 0.3,
+        "freq": 0.02,
+        "phase": 0.0
+      }
+    ],
+    "type": "complex"
+  },
+  "name": "dc_blocker_cc_short_16",
+  "params": {
+    "length": 16,
+    "long_form": false
+  },
+  "samples": 4096,
+  "seed": 2014
+}

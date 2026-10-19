@@ -1,0 +1,250 @@
+{
+  "block": {
+    "name": "fir_filter_ccc",
+    "opts": {
+      "decimation": "decim",
+      "taps": "taps"
+    }
+  },
+  "description": "complex band-pass taps on complex samples vs fir_filter_ccc, decimation 2",
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 19.954,
+      "rationale": "Taps rounded to Q15 (re + im tap errors 3.1964118263441764e-4 + 2.686243707545775e-4) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 14.109781385682666 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 76.6,
+      "variant": "q15_nearest"
+    },
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "truncate"
+      },
+      "max_error_lsb": 20.661,
+      "rationale": "Taps rounded to Q15 (re + im tap errors 3.1964118263441764e-4 + 2.686243707545775e-4) acting on an input peak of 0.705 FS per component, plus 1.0 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 14.609781385682666 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 75.5,
+      "variant": "q15_truncate"
+    },
+    {
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 4.763,
+      "rationale": "Taps rounded to Q17 (re + im tap errors 7.444308116960662e-5 + 6.507250794256483e-5) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q17) and 0.02 Q15 LSB for the f32 reference itself; per component <= 3.368011010939482 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 92.6,
+      "variant": "q17_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.3149,
+    "rationale": "f32 rounding in an 41-tap sum: each of the n additions errs by at most 2^-24 of the partial sum (<= peak * sum|taps| = 1.3905096320583528); twice that covers both evaluation orders (GNU Radio uses SIMD kernels): 0.3149 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+    "snr_db_min": 140.1
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "decim",
+        "[a + 1j*b for a, b in taps]"
+      ],
+      "block": "filter.fir_filter_ccc"
+    }
+  ],
+  "input": {
+    "noise_rms": 0.001,
+    "tones": [
+      {
+        "amp": 0.4,
+        "freq": 0.03,
+        "phase": 0.0
+      },
+      {
+        "amp": 0.3,
+        "freq": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "type": "complex"
+  },
+  "name": "fir_ccc_band_decim2",
+  "params": {
+    "decim": 2,
+    "taps": [
+      [
+        -9.37488963557222e-19,
+        -9.184742867650571e-34
+      ],
+      [
+        -0.00035952210657268024,
+        -0.0011064952686493082
+      ],
+      [
+        0.0013977153206322578,
+        -0.0010154996224839823
+      ],
+      [
+        0.0006104301062317585,
+        0.0004435034325522036
+      ],
+      [
+        0.0006077880120172972,
+        -0.0018705791586781054
+      ],
+      [
+        0.004566119955030271,
+        3.355130512470406e-18
+      ],
+      [
+        0.0011157508583399612,
+        0.0034339280483020643
+      ],
+      [
+        0.0020313480039691827,
+        -0.001475860714062412
+      ],
+      [
+        0.008136704411574738,
+        0.005911661792817889
+      ],
+      [
+        -0.00339292687750349,
+        0.01044235519373191
+      ],
+      [
+        6.328050504011247e-18,
+        3.099850717832068e-33
+      ],
+      [
+        0.0054220622812102045,
+        0.016687391820419572
+      ],
+      [
+        -0.020926497571991286,
+        0.015203990448252583
+      ],
+      [
+        -0.008530461733118692,
+        -0.00619774323263305
+      ],
+      [
+        -0.00782497998241388,
+        0.02408281207060108
+      ],
+      [
+        -0.05519824508165337,
+        -1.3519670831559587e-17
+      ],
+      [
+        -0.013211445929741486,
+        -0.04066064964024641
+      ],
+      [
+        -0.025247814792496766,
+        0.01834361118595174
+      ],
+      [
+        -0.11994677887172327,
+        -0.08714643594756186
+      ],
+      [
+        0.07928983615854929,
+        -0.24402902341049026
+      ],
+      [
+        0.3006181499416246,
+        0.0
+      ],
+      [
+        0.07928983615854929,
+        0.24402902341049026
+      ],
+      [
+        -0.11994677887172327,
+        0.08714643594756186
+      ],
+      [
+        -0.02524781479249677,
+        -0.018343611185951743
+      ],
+      [
+        -0.013211445929741491,
+        0.040660649640246425
+      ],
+      [
+        -0.055198245081653385,
+        1.351967083155959e-17
+      ],
+      [
+        -0.007824979982413882,
+        -0.024082812070601083
+      ],
+      [
+        -0.008530461733118692,
+        0.006197743232633051
+      ],
+      [
+        -0.020926497571991293,
+        -0.015203990448252588
+      ],
+      [
+        0.005422062281210206,
+        -0.016687391820419575
+      ],
+      [
+        6.328050504011248e-18,
+        -3.099850717832068e-33
+      ],
+      [
+        -0.0033929268775034905,
+        -0.010442355193731911
+      ],
+      [
+        0.008136704411574741,
+        -0.005911661792817891
+      ],
+      [
+        0.0020313480039691836,
+        0.0014758607140624123
+      ],
+      [
+        0.0011157508583399614,
+        -0.003433928048302065
+      ],
+      [
+        0.004566119955030272,
+        -3.3551305124704073e-18
+      ],
+      [
+        0.0006077880120172973,
+        0.0018705791586781058
+      ],
+      [
+        0.0006104301062317588,
+        -0.0004435034325522038
+      ],
+      [
+        0.0013977153206322578,
+        0.0010154996224839823
+      ],
+      [
+        -0.00035952210657268045,
+        0.001106495268649309
+      ],
+      [
+        -9.37488963557222e-19,
+        9.184742867650571e-34
+      ]
+    ]
+  },
+  "samples": 4096,
+  "seed": 2003
+}

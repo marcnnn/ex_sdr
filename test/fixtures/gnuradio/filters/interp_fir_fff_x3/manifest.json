@@ -1,0 +1,6 @@
+{
+  "case": "interp_fir_fff_x3",
+  "case_sha256": "c2e5d8294d7555c84d372b4b54bf71bf50a017620609e469cf1064e69475e7ce",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

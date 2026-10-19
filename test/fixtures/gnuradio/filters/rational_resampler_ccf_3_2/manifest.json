@@ -1,0 +1,6 @@
+{
+  "case": "rational_resampler_ccf_3_2",
+  "case_sha256": "2ec58ad3b33ae9a3acdb3a8b8b6cb214f5b786355f3c83e190d4e3a4660f51e0",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

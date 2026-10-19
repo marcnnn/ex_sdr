@@ -1,0 +1,6 @@
+{
+  "case": "iir_ffd_butter2_old",
+  "case_sha256": "392e5bfe0a636ff20de4e73aff817702ec00dcdafc22eb36499f5d9140d8e1b8",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

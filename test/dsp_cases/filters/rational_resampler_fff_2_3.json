@@ -1,0 +1,126 @@
+{
+  "block": {
+    "name": "rational_resampler_fff",
+    "opts": {
+      "decimation": "decim",
+      "interpolation": "interp",
+      "phase": "phase",
+      "taps": "taps"
+    }
+  },
+  "description": "rational resampler 2/3 on real samples vs rational_resampler_fff",
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 5.712,
+      "rationale": "Taps rounded to Q15 (sum of |tap rounding error| 2.2473564014636674e-4) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 5.711716906702882 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 84.1,
+      "variant": "q15_nearest"
+    },
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "truncate"
+      },
+      "max_error_lsb": 6.212,
+      "rationale": "Taps rounded to Q15 (sum of |tap rounding error| 2.2473564014636674e-4) acting on an input peak of 0.705 FS per component, plus 1.0 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 6.211716906702882 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 81.4,
+      "variant": "q15_truncate"
+    },
+    {
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 1.512,
+      "rationale": "Taps rounded to Q17 (sum of |tap rounding error| 5.9154206835085215e-5) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q17) and 0.02 Q15 LSB for the f32 reference itself; per component <= 1.511547359948311 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 94.3,
+      "variant": "q17_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.2736,
+    "rationale": "f32 rounding in an 33-tap sum: each of the n additions errs by at most 2^-24 of the partial sum (<= peak * sum|taps| = 2.1227343886170353); twice that covers both evaluation orders (GNU Radio uses SIMD kernels): 0.2736 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+    "snr_db_min": 141.4
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "interp",
+        "decim",
+        "taps"
+      ],
+      "block": "filter.rational_resampler_fff"
+    }
+  ],
+  "input": {
+    "noise_rms": 0.001,
+    "tones": [
+      {
+        "amp": 0.4,
+        "freq": 0.03,
+        "phase": 0.0
+      },
+      {
+        "amp": 0.3,
+        "freq": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "type": "real"
+  },
+  "name": "rational_resampler_fff_2_3",
+  "params": {
+    "decim": 3,
+    "interp": 2,
+    "phase": 2,
+    "taps": [
+      0.0018658959921439245,
+      0.0037601920346807616,
+      0.0030658114566696733,
+      -0.0023773023823563484,
+      -0.010804839671590877,
+      -0.01328161383471782,
+      8.489677880673792e-18,
+      0.025696605142975268,
+      0.040757622319274496,
+      0.01765002861261231,
+      -0.04453485592680911,
+      -0.10101897008781198,
+      -0.08072510909566258,
+      0.060327445746611565,
+      0.29133686857426344,
+      0.5090971810858173,
+      0.5983700800677999,
+      0.5090971810858173,
+      0.29133686857426344,
+      0.060327445746611565,
+      -0.08072510909566259,
+      -0.10101897008781198,
+      -0.04453485592680913,
+      0.017650028612612317,
+      0.04075762231927451,
+      0.025696605142975268,
+      8.48967788067379e-18,
+      -0.01328161383471783,
+      -0.010804839671590879,
+      -0.0023773023823563484,
+      0.0030658114566696763,
+      0.003760192034680764,
+      0.0018658959921439245
+    ]
+  },
+  "reference_shift": 10,
+  "reference_shift_note": "GNU Radio's first output is the full-rate filter output at position (K-1)*I = 32 (K = taps per branch); ours counts from 0 with :phase = 2, so GNU Radio output m is our output m + 10.",
+  "samples": 4092,
+  "seed": 2009
+}

@@ -1,0 +1,6 @@
+{
+  "case": "freq_xlating_fir_fcf",
+  "case_sha256": "e3be65c26f7737b3dcfec24fcfde3573a48eae6f827e6b58f8c164c8dc67b3eb",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}
