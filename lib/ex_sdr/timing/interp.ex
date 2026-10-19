@@ -122,28 +122,28 @@ defmodule ExSdr.Timing.Interp do
     if Keyword.get(opts, :raw, false), do: acc, else: Num.quantize(acc, f)
   end
 
-  # The row as a vector in window order (tap j multiplies sample n - 1 - j).
+  # The row as a vector in window order (tap j multiplies sample n - 1 - j):
+  # a constant for a fixed row, else one table lookup per tap.
+  defp coefficients(rows, arm, %Format{} = f, tf) when is_integer(arm) do
+    rows |> Enum.at(arm) |> Enum.reverse() |> const_tensor(f, tf)
+  end
+
   defp coefficients(rows, arm, %Format{} = f, tf) do
     n = length(hd(rows))
 
-    columns =
-      for j <- (n - 1)..0//-1 do
-        col = Enum.map(rows, &Enum.at(&1, j))
+    for j <- (n - 1)..0//-1 do
+      rows |> Enum.map(&Enum.at(&1, j)) |> const_tensor(f, tf) |> Nx.take(arm)
+    end
+    |> Nx.stack()
+  end
 
-        case f.kind do
-          :float ->
-            Nx.tensor(col, type: :f32, backend: Nx.BinaryBackend)
+  defp const_tensor(values, %Format{kind: :float}, _tf),
+    do: Nx.tensor(values, type: :f32, backend: Nx.BinaryBackend)
 
-          :fixed ->
-            ints = Enum.map(col, &round(&1 * Bitwise.bsl(1, tf)))
-            m = ints |> Enum.map(&abs/1) |> Enum.max()
-            type = if m < 32768, do: :s16, else: :s32
-            Nx.tensor(ints, type: type, backend: Nx.BinaryBackend)
-        end
-      end
-
-    arm = if is_integer(arm), do: Nx.tensor(arm, type: :s32), else: arm
-    columns |> Enum.map(&Nx.take(&1, arm)) |> Nx.stack()
+  defp const_tensor(values, %Format{kind: :fixed}, tf) do
+    ints = Enum.map(values, &round(&1 * Bitwise.bsl(1, tf)))
+    m = ints |> Enum.map(&abs/1) |> Enum.max()
+    Nx.tensor(ints, type: if(m < 32768, do: :s16, else: :s32), backend: Nx.BinaryBackend)
   end
 
   defp dot(%Fixed{t: x, frac: frac}, coef, _f, tf) do

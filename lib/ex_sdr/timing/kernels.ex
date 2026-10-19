@@ -54,23 +54,26 @@ defmodule ExSdr.Timing.Kernels do
     lanes = L.lanes(L.zero(opts[:out], f), opts[:max])
 
     {wait, s, lanes, count} =
-      Enum.reduce(1..opts[:iterations], {wait, s, lanes, L.i32(0)}, fn _,
-                                                                       {wait, s, lanes, count} ->
-        active = Nx.less_equal(wait, 0)
-        {emits, delta, s2} = body.(line, wait, s)
-        s = L.sel(active, s2, s)
-
-        {lanes, count} =
-          Enum.reduce(emits, {lanes, count}, fn {ok, v}, {lanes, count} ->
-            ok = if ok == true, do: active, else: Nx.logical_and(active, ok)
-            L.put_lane(lanes, count, v, ok)
-          end)
-
-        wait = Nx.add(wait, Nx.select(active, Nx.as_type(delta, :s32), 0))
-        {wait, s, lanes, count}
+      Enum.reduce(1..opts[:iterations], {wait, s, lanes, L.i32(0)}, fn _, acc ->
+        iterate(acc, line, body)
       end)
 
     {{lanes, count}, {line, Nx.as_type(wait, :s32), s}}
+  end
+
+  # One iteration if `wait <= 0` (computed always, selected in hardware style).
+  defp iterate({wait, s, lanes, count}, line, body) do
+    active = Nx.less_equal(wait, 0)
+    {emits, delta, s2} = body.(line, wait, s)
+    s = L.sel(active, s2, s)
+
+    {lanes, count} =
+      Enum.reduce(emits, {lanes, count}, fn {ok, v}, {lanes, count} ->
+        ok = if ok == true, do: active, else: Nx.logical_and(active, ok)
+        L.put_lane(lanes, count, v, ok)
+      end)
+
+    {Nx.add(wait, Nx.select(active, Nx.as_type(delta, :s32), 0)), s, lanes, count}
   end
 
   @doc "Initial machine state: zero line of `len` items, `wait`, block state `s`."

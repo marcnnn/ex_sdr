@@ -56,6 +56,13 @@ defmodule ExSdr.Timing do
     true = mu >= 0 and mu <= 1
     arm = rint(L.f32(mu) * ip.arms)
 
+    if arm >= length(ip.rows),
+      do:
+        raise(
+          ArgumentError,
+          "#{name}: mu #{mu} needs row #{arm}, the interpolator has #{length(ip.rows)}"
+        )
+
     %Block{
       name: name,
       kind: :stream,
@@ -66,7 +73,8 @@ defmodule ExSdr.Timing do
       warmup: ip.ntaps - 1,
       item: {kind, kind},
       hardware: :feed_forward,
-      gnuradio: "filter.mmse_resampler_#{suffix(name)} (resampling ratio 1)"
+      # checked against mmse_resampler at ratio 1 for the MMSE interpolator
+      gnuradio: if(ip.name == :mmse, do: "filter.mmse_resampler_#{suffix(name)}")
     }
   end
 
