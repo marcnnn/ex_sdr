@@ -54,6 +54,8 @@ defmodule ExSdr.Analog.TestHelper do
   defp step_block(case, %{"block" => b}, format),
     do: ExSdr.Analog.block(String.to_atom(b["name"]), block_opts(%{case | "block" => b}, format))
 
+  defp step_block(_case, %{"interp" => _}, _format), do: nil
+
   defp step_block(case, %{"fir" => key}, format) do
     %NxFixed.Block{
       name: :fir_real,
@@ -71,18 +73,31 @@ defmodule ExSdr.Analog.TestHelper do
     case = resolve_input_gain(case, raw_input)
     steps = pipeline(case)
     blocks = Enum.map(steps, &step_block(case, &1, format))
-    states = states || Enum.map(blocks, & &1.init)
+    states = states || Enum.map(blocks, &(&1 && &1.init))
 
     {out, new_states} =
       steps
       |> Enum.zip(blocks)
       |> Enum.zip(states)
-      |> Enum.reduce({input, []}, fn {{step, b}, state}, {x, acc} ->
-        {y, st} = NxFixed.Block.run(b, x, state)
-        {decimate(y, step["decim"] || 1), acc ++ [st]}
+      |> Enum.reduce({input, []}, fn
+        {{%{"interp" => l}, nil}, state}, {x, acc} ->
+          {zero_stuff(x, l), acc ++ [state]}
+
+        {{step, b}, state}, {x, acc} ->
+          {y, st} = NxFixed.Block.run(b, x, state)
+          {decimate(y, step["decim"] || 1), acc ++ [st]}
       end)
 
     {out, new_states}
+  end
+
+  # l - 1 zeros after every sample, as an interpolating FIR sees its input
+  defp zero_stuff(%NxFixed.Fixed{t: t} = x, l), do: %{x | t: zero_stuff(t, l)}
+
+  defp zero_stuff(t, l) do
+    n = Nx.axis_size(t, 0)
+    zeros = Nx.broadcast(Nx.tensor(0, type: Nx.type(t)), {n, l - 1})
+    t |> Nx.reshape({n, 1}) |> then(&Nx.concatenate([&1, zeros], axis: 1)) |> Nx.reshape({n * l})
   end
 
   defp decimate(y, 1), do: y
