@@ -1,0 +1,6 @@
+{
+  "case": "pwr_squelch_ff",
+  "case_sha256": "785e71bb05bd1d4f08e0e077644bbdf99b0ccbafc8c1fadd09870261ae84ee11",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

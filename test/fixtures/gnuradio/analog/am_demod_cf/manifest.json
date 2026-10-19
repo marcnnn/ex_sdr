@@ -1,0 +1,6 @@
+{
+  "case": "am_demod_cf",
+  "case_sha256": "d3b05ab1b49bccfd22df1b6ba86e7243aaa1e0e147be4c32ec0b9866e42b488e",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

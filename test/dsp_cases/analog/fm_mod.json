@@ -1,0 +1,72 @@
+{
+  "name": "fm_mod",
+  "description": "frequency_modulator_fc",
+  "samples": 4096,
+  "seed": 2001,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.011,
+        "amp": 0.7,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.0173,
+        "amp": 0.2,
+        "phase": 0.4
+      }
+    ]
+  },
+  "params": {
+    "sensitivity": 0.5
+  },
+  "block": {
+    "name": "frequency_modulator_fc",
+    "opts": {
+      "sensitivity": "sensitivity"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.frequency_modulator_fc",
+      "args": [
+        "sensitivity"
+      ]
+    }
+  ],
+  "output": {
+    "type": "complex"
+  },
+  "float_vs_gnuradio": {
+    "max_error_lsb": 2.5,
+    "snr_db_min": 85,
+    "rationale": "GNU Radio takes cos and sin from its 10 bit fxpt table (measured worst 1.4 LSB, 92 dB); the float instance evaluates them exactly"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 66,
+      "max_error_lsb": 27,
+      "rationale": "Phase rounded to 12 table bits: error at most pi/4096 rad = 25.1 LSB at amplitude 1, plus up to 1.5 LSB from table amplitude 2^15-1 and quantisation; rms phase error 2*pi/4096/sqrt(12) -> 67.1 dB (measured 25.4 LSB, 67.1 dB)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 78,
+      "max_error_lsb": 7,
+      "rationale": "Phase rounded to 14 table bits: error at most pi/16384 rad = 6.3 LSB at amplitude 1, plus the amplitude 2^17-1 and quantisation; rms -> 79.1 dB (measured 6.4 LSB, 79.1 dB)"
+    }
+  ]
+}

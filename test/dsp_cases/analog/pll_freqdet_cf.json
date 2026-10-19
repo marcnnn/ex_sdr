@@ -1,0 +1,76 @@
+{
+  "name": "pll_freqdet_cf",
+  "description": "pll_freqdet_cf",
+  "samples": 4000,
+  "seed": 2017,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.5,
+        "phase": 0.9
+      }
+    ],
+    "noise_rms": 0.002
+  },
+  "params": {
+    "loop_bw": 0.05,
+    "max_freq": 0.5,
+    "min_freq": -0.5
+  },
+  "block": {
+    "name": "pll_freqdet_cf",
+    "opts": {
+      "loop_bw": "loop_bw",
+      "max_freq": "max_freq",
+      "min_freq": "min_freq"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.pll_freqdet_cf",
+      "args": [
+        "loop_bw",
+        "max_freq",
+        "min_freq"
+      ]
+    }
+  ],
+  "output": {
+    "type": "real"
+  },
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.5,
+    "snr_db_min": 95,
+    "rationale": "Same loop in f32 and GNU Radio's volk/fxpt functions differ by 2e-6 rad (measured 0.004 LSB, 125 dB)"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 72.5,
+      "max_error_lsb": 1.6,
+      "rationale": "The frequency estimate integrates the phase error: the sine table noise (pi/4096 rad rms 4.4e-4) enters the loop of bandwidth 0.05 and leaves 1.3e-5 rad/sample of noise on the estimate of 0.063 (measured 1.3 LSB, 74.3 dB, from sample 200 on)",
+      "skip": 200
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 84,
+      "max_error_lsb": 0.4,
+      "rationale": "Table 14 bits: a quarter of that, 0.3 LSB (measured 0.3 LSB, 86.2 dB, from sample 200 on)",
+      "skip": 200
+    }
+  ]
+}

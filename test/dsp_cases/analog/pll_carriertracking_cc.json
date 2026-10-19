@@ -1,0 +1,73 @@
+{
+  "name": "pll_carriertracking_cc",
+  "description": "pll_carriertracking_cc",
+  "samples": 4000,
+  "seed": 2016,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.5,
+        "phase": 0.9
+      }
+    ],
+    "noise_rms": 0.002
+  },
+  "params": {
+    "loop_bw": 0.05,
+    "max_freq": 0.5,
+    "min_freq": -0.5
+  },
+  "block": {
+    "name": "pll_carriertracking_cc",
+    "opts": {
+      "loop_bw": "loop_bw",
+      "max_freq": "max_freq",
+      "min_freq": "min_freq"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.pll_carriertracking_cc",
+      "args": [
+        "loop_bw",
+        "max_freq",
+        "min_freq"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.5,
+    "snr_db_min": 95,
+    "rationale": "The loop is the same recurrence; GNU Radio's atan2 and sincos differ from exact by about 2e-6 (measured 0.027 LSB, 126 dB over all 4000 samples, transient included: lock within 51 samples to 1 % of the frequency)"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 65.5,
+      "max_error_lsb": 20,
+      "rationale": "The output is x * conj(NCO): sine table phase error pi/4096 rad times |x| 0.5 = 12.6 LSB, plus the loop following the table noise and the CORDIC residual, plus rounding (measured 17.4 LSB, 66.6 dB, from sample 200 on)",
+      "skip": 200
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 77.5,
+      "max_error_lsb": 6,
+      "rationale": "Table 14 bits: 3.1 LSB at |x| 0.5, plus loop and CORDIC effects (measured 5.1 LSB, 78.6 dB, from sample 200 on)",
+      "skip": 200
+    }
+  ]
+}

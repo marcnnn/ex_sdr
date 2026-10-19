@@ -1,0 +1,73 @@
+{
+  "name": "quad_demod",
+  "description": "quadrature_demod_cf",
+  "samples": 4096,
+  "seed": 2003,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.02,
+        "amp": 0.6,
+        "phase": 0.0
+      },
+      {
+        "freq": -0.05,
+        "amp": 0.15,
+        "phase": 0.3
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "gain": 2.0
+  },
+  "block": {
+    "name": "quadrature_demod_cf",
+    "opts": {
+      "gain": "gain"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.quadrature_demod_cf",
+      "args": [
+        "gain"
+      ]
+    }
+  ],
+  "output": {
+    "type": "real"
+  },
+  "float_vs_gnuradio": {
+    "max_error_lsb": 1.0,
+    "snr_db_min": 95,
+    "rationale": "GNU Radio's volk atan2 is a polynomial; measured worst 0.066 LSB = 2e-6 rad times the gain 2; bound allows 3e-5 rad on other volk kernels"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 76.5,
+      "max_error_lsb": 3.0,
+      "rationale": "CORDIC with 16 iterations leaves a residual angle below atan(2^-15) = 3.05e-5 rad; times gain 2 = 6.1e-5 = 2.0 LSB, plus 0.5 LSB output rounding and the Q15 product rounding of the guard bits (measured 2.5 LSB, 78.2 dB)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 77,
+      "max_error_lsb": 2.5,
+      "rationale": "Same CORDIC residual (2.0 LSB at gain 2) in the 18 bit format, plus 0.1 LSB rounding; the iteration count, not the format, limits it (measured 2.1 LSB, 78.5 dB; 20 iterations are tested separately)"
+    }
+  ]
+}

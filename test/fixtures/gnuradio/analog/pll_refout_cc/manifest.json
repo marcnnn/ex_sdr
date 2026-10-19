@@ -1,0 +1,6 @@
+{
+  "case": "pll_refout_cc",
+  "case_sha256": "58c136e1d1a9184006c859adfae9a2f68e5b14a1b229c3abe1fc7a743cd2ec95",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

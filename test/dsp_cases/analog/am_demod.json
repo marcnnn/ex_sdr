@@ -1,0 +1,81 @@
+{
+  "name": "am_demod",
+  "description": "complex_to_mag + add_const(-1)",
+  "samples": 4096,
+  "seed": 2004,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.05,
+        "amp": 0.5,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.062,
+        "amp": 0.12,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.038,
+        "amp": 0.12,
+        "phase": 0.7
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "offset": 1.0
+  },
+  "block": {
+    "name": "am_demod",
+    "opts": {
+      "offset": "offset"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.complex_to_mag"
+    },
+    {
+      "block": "blocks.add_const_ff",
+      "args": [
+        -1.0
+      ]
+    }
+  ],
+  "output": {
+    "type": "real"
+  },
+  "float_vs_gnuradio": {
+    "max_error_lsb": 120,
+    "snr_db_min": 50,
+    "rationale": "On aarch64 GNU Radio's complex_to_mag uses volk's NEON kernel, which is accurate to about 1e-3 (the reference output is on a 1/1024 grid: measured worst 98 LSB = 3.0e-3, 54.5 dB); the float instance computes sqrt exactly"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 93,
+      "max_error_lsb": 0.7,
+      "rationale": "Square root with 4 guard bits (floor) then rounding to Q15: 0.5 LSB rounding, 0.03 LSB root truncation (measured 0.5 LSB, 95.4 dB)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 105,
+      "max_error_lsb": 0.2,
+      "rationale": "Same in the 18 bit format: 0.125 LSB (Q15 scale) rounding (measured 0.1 LSB, 107 dB)"
+    }
+  ]
+}

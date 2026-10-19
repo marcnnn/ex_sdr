@@ -1,0 +1,6 @@
+{
+  "case": "rail_ff",
+  "case_sha256": "2dc4067e6102373db1dbf8f4ca8b4d6d31ec6374add6956aa35a0d5a84f16434",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

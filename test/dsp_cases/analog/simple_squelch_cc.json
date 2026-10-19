@@ -1,0 +1,74 @@
+{
+  "name": "simple_squelch_cc",
+  "description": "simple_squelch_cc",
+  "samples": 3000,
+  "seed": 2012,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.03,
+        "amp": 0.05,
+        "phase": 0.0
+      }
+    ],
+    "steps": [
+      {
+        "amp": 0.35,
+        "at": 1500
+      }
+    ],
+    "noise_rms": 0.002
+  },
+  "params": {
+    "threshold_db": -20.0,
+    "alpha": 0.01
+  },
+  "block": {
+    "name": "simple_squelch_cc",
+    "opts": {
+      "threshold_db": "threshold_db",
+      "alpha": "alpha"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.simple_squelch_cc",
+      "args": [
+        "threshold_db",
+        "alpha"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.01,
+    "snr_db_min": 120,
+    "rationale": "Output is the input or zero; the threshold crossing is at the same sample (measured: identical)"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 120,
+      "max_error_lsb": 0.01,
+      "rationale": "The power average has 8 more fractional bits than the square and the crossing is at the same sample, so the output is identical (measured: identical)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 120,
+      "max_error_lsb": 0.01,
+      "rationale": "As Q15 (measured: identical)"
+    }
+  ]
+}

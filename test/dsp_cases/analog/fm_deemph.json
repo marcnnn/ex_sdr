@@ -1,0 +1,73 @@
+{
+  "name": "fm_deemph",
+  "description": "fm_deemph 48 kHz 75 us",
+  "samples": 4096,
+  "seed": 2005,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.005,
+        "amp": 0.5,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.15,
+        "amp": 0.3,
+        "phase": 0.2
+      }
+    ],
+    "noise_rms": 0.01
+  },
+  "params": {
+    "fs": 48000.0,
+    "tau": 7.5e-05
+  },
+  "block": {
+    "name": "fm_deemph",
+    "opts": {
+      "fs": "fs",
+      "tau": "tau"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.fm_deemph",
+      "args": [
+        "fs",
+        "tau"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.05,
+    "snr_db_min": 120,
+    "rationale": "GNU Radio runs the section in double (iir_filter_ffd), the float instance in f32: difference below 1e-7 (measured 0.003 LSB, 142 dB)"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 90,
+      "max_error_lsb": 0.7,
+      "rationale": "One rounding of the output to Q15 (0.5 LSB); the state keeps 8 more bits so the pole at 0.75 adds nothing visible (measured 0.5 LSB, 92.1 dB)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 102,
+      "max_error_lsb": 0.2,
+      "rationale": "One rounding of the output to 17 fractional bits (0.125 LSB at Q15 scale) (measured 0.1 LSB, 104 dB)"
+    }
+  ]
+}

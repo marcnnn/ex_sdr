@@ -1,0 +1,6 @@
+{
+  "case": "pll_freqdet_cf",
+  "case_sha256": "58d0f84367d797a6b675f59687fb9dca2d9bf9d60e53535ee6cfaddd76d5c1f6",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

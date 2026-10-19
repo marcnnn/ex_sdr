@@ -1,0 +1,84 @@
+{
+  "name": "agc3_cc_decim4",
+  "description": "agc3_cc, iir_update_decim 4",
+  "samples": 6000,
+  "seed": 2028,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.03,
+        "amp": 0.2,
+        "phase": 0.1
+      }
+    ],
+    "steps": [
+      {
+        "amp": 0.1,
+        "at": 2500
+      }
+    ],
+    "noise_rms": 0.002
+  },
+  "params": {
+    "attack": 0.1,
+    "decay": 0.01,
+    "reference": 0.3,
+    "max_gain": 65536.0,
+    "iir_update_decim": 4
+  },
+  "block": {
+    "name": "agc3_cc",
+    "opts": {
+      "attack_rate": "attack",
+      "decay_rate": "decay",
+      "reference": "reference",
+      "gain": "from_input",
+      "iir_update_decim": "iir_update_decim",
+      "max_gain": "max_gain"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.agc3_cc",
+      "args": [
+        "attack",
+        "decay",
+        "reference",
+        1.0,
+        "iir_update_decim"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.1,
+    "snr_db_min": 100,
+    "rationale": "As agc3_cc, with updates every 4th sample (measured 0.005 LSB)"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 85,
+      "max_error_lsb": 1.0,
+      "rationale": "As agc3_cc (measured 0.7 LSB, 87.0 dB)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 97,
+      "max_error_lsb": 0.3,
+      "rationale": "As agc3_cc at 18 bits (measured 0.2 LSB, 98.5 dB)"
+    }
+  ]
+}

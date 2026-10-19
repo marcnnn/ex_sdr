@@ -1,0 +1,6 @@
+{
+  "case": "feedforward_agc_cc",
+  "case_sha256": "eff03a9cf41cb99ed30c0d9a1c2282fab4a765efa94706742af75a2e464c6025",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

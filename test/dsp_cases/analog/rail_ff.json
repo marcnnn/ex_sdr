@@ -1,0 +1,68 @@
+{
+  "name": "rail_ff",
+  "description": "rail_ff",
+  "samples": 2048,
+  "seed": 2015,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.013,
+        "amp": 0.9,
+        "phase": 0.0
+      }
+    ],
+    "noise_rms": 0.01
+  },
+  "params": {
+    "lo": -0.5,
+    "hi": 0.4
+  },
+  "block": {
+    "name": "rail_ff",
+    "opts": {
+      "lo": "lo",
+      "hi": "hi"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.rail_ff",
+      "args": [
+        "lo",
+        "hi"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.01,
+    "snr_db_min": 120,
+    "rationale": "A clip; f32 against f32 (measured 0.001 LSB)"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 98,
+      "max_error_lsb": 0.25,
+      "rationale": "The limits 0.4 and -0.5 are rounded to Q15: 0.4 * 32768 = 13107.2, error 0.2 LSB (measured 0.2 LSB, 100.7 dB)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 110,
+      "max_error_lsb": 0.1,
+      "rationale": "The limit 0.4 is rounded to 17 fractional bits: error 0.05 LSB at Q15 scale (measured 0.0 LSB, 112.8 dB)"
+    }
+  ]
+}

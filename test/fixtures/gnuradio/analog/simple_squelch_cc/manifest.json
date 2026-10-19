@@ -1,0 +1,6 @@
+{
+  "case": "simple_squelch_cc",
+  "case_sha256": "c6183ba9276dc1e4ce963c8511afad0df0564a3a7ab217ec4f78862bd351c239",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

@@ -1,0 +1,82 @@
+{
+  "name": "agc2_cc",
+  "description": "agc2_cc",
+  "samples": 6000,
+  "seed": 2009,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.03,
+        "amp": 0.2,
+        "phase": 0.1
+      }
+    ],
+    "steps": [
+      {
+        "amp": 0.1,
+        "at": 2500
+      }
+    ],
+    "noise_rms": 0.002
+  },
+  "params": {
+    "attack": 0.01,
+    "decay": 0.002,
+    "reference": 0.3,
+    "gain": 1.0,
+    "max_gain": 65536.0
+  },
+  "block": {
+    "name": "agc2_cc",
+    "opts": {
+      "attack_rate": "attack",
+      "decay_rate": "decay",
+      "reference": "reference",
+      "gain": "gain",
+      "max_gain": "max_gain"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.agc2_cc",
+      "args": [
+        "attack",
+        "decay",
+        "reference",
+        "gain"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.1,
+    "snr_db_min": 100,
+    "rationale": "Same recurrence in f32 including GNU Radio's attack test against the gain: identical in this run"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 85,
+      "max_error_lsb": 1.0,
+      "rationale": "As agc_cc (measured 0.7 LSB, 87.0 dB)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 97,
+      "max_error_lsb": 0.3,
+      "rationale": "As agc_cc at 18 bits (measured 0.2 LSB, 98.9 dB)"
+    }
+  ]
+}

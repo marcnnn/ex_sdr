@@ -1,0 +1,6 @@
+{
+  "case": "pll_carriertracking_cc",
+  "case_sha256": "40ef8e4fc626b077ff4393645c793d691908a87f8efaa531a12f2342b8401fc0",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

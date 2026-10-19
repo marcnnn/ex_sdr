@@ -1,0 +1,82 @@
+{
+  "name": "nbfm_tx",
+  "description": "nbfm_tx audio_rate = quad_rate",
+  "samples": 4096,
+  "seed": 2019,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.01,
+        "amp": 0.45,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.027,
+        "amp": 0.2,
+        "phase": 0.3
+      }
+    ]
+  },
+  "params": {
+    "rate": 48000,
+    "tau": 7.5e-05,
+    "max_dev": 5000.0,
+    "fh": -1.0
+  },
+  "block": {
+    "name": "nbfm_tx",
+    "opts": {
+      "quad_rate": "rate",
+      "tau": "tau",
+      "max_dev": "max_dev",
+      "fh": "fh"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.nbfm_tx",
+      "args": [
+        "rate",
+        "rate",
+        "tau",
+        "max_dev",
+        "fh"
+      ]
+    }
+  ],
+  "output": {
+    "type": "complex"
+  },
+  "float_vs_gnuradio": {
+    "max_error_lsb": 2.5,
+    "snr_db_min": 85,
+    "rationale": "fm_preemph in f32 against double plus the modulator's table (as fm_mod): measured 1.2 LSB, 93.7 dB"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 62.5,
+      "max_error_lsb": 60,
+      "rationale": "As fm_mod (table 25.1 LSB) plus the phase integrating the 0.5 LSB rounding of the pre-emphasised audio (sensitivity 0.654 rad per unit: a random walk of about 1e-5 rad per sample) (measured 53 LSB, 63.8 dB)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 73,
+      "max_error_lsb": 20,
+      "rationale": "Table 14 bits (6.3 LSB) plus the integrated audio rounding, four times smaller than at Q15 (measured 15.9 LSB, 74.2 dB)"
+    }
+  ]
+}

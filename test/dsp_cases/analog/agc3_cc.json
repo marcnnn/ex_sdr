@@ -1,0 +1,84 @@
+{
+  "name": "agc3_cc",
+  "description": "agc3_cc, iir_update_decim 1",
+  "samples": 6000,
+  "seed": 2025,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.03,
+        "amp": 0.2,
+        "phase": 0.1
+      }
+    ],
+    "steps": [
+      {
+        "amp": 0.1,
+        "at": 2500
+      }
+    ],
+    "noise_rms": 0.002
+  },
+  "params": {
+    "attack": 0.1,
+    "decay": 0.01,
+    "reference": 0.3,
+    "max_gain": 65536.0,
+    "iir_update_decim": 1
+  },
+  "block": {
+    "name": "agc3_cc",
+    "opts": {
+      "attack_rate": "attack",
+      "decay_rate": "decay",
+      "reference": "reference",
+      "gain": "from_input",
+      "iir_update_decim": "iir_update_decim",
+      "max_gain": "max_gain"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.agc3_cc",
+      "args": [
+        "attack",
+        "decay",
+        "reference",
+        1.0,
+        "iir_update_decim"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.1,
+    "snr_db_min": 100,
+    "rationale": "Same recurrence in f32 with GNU Radio's start gain (reference over the mean magnitude of the first block): measured 0.006 LSB; the ratio reference/|x| rounds differently in f32 than in the volk magnitude"
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "snr_db_min": 85,
+      "max_error_lsb": 1.0,
+      "rationale": "Gain 3 to 9 times the input: 0.5 LSB rounding plus the input rounding times the gain and the 16 bit rate constants (measured 0.7 LSB, 86.9 dB)"
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "snr_db_min": 97,
+      "max_error_lsb": 0.3,
+      "rationale": "Same at 18 bits (measured 0.2 LSB, 98.5 dB)"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "case": "quad_demod",
+  "case_sha256": "65d54587616dd5085f924711d32b4cb4ce4980a4c26ea79f8468fe140f3d5e55",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}
