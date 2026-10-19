@@ -179,6 +179,7 @@ defmodule ExSdr.FEC.LDPC.Code do
   the code's kind.
   """
   def encode(%__MODULE__{kind: :h_matrix, ru: ru}, bits), do: ru_encode(ru, bits)
+  def encode(%__MODULE__{kind: :ira} = c, bits), do: ExSdr.FEC.LDPC.IRA.encode(c, bits)
 
   def encode(%__MODULE__{} = c, bits) do
     s = Matrix.bits_of(for {1, j} <- Enum.with_index(bits), do: j)

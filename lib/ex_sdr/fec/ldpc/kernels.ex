@@ -38,7 +38,7 @@ defmodule ExSdr.FEC.LDPC.Kernels do
     n = opts[:n]
     k = opts[:k]
     frames = div(Nx.size(bits), k)
-    g = Nx.tensor(opts[:generator], type: :s32, backend: Nx.BinaryBackend)
+    g = (opts[:tables] || tables(opts)).generator
     s = bits |> Nx.reshape({frames, k}) |> Nx.transpose() |> Nx.as_type(:s32)
 
     c =
@@ -52,6 +52,48 @@ defmodule ExSdr.FEC.LDPC.Kernels do
     {c, state}
   end
 
+  @doc """
+  Encoder of a structured repeat-accumulate code (`ExSdr.FEC.LDPC.IRA`):
+  each parity bit accumulates its information bits (`opts[:lut]`, `m`
+  rows padded with `k`), then a prefix XOR over the parity bits
+  (computed in `log2(m)` shift-and-XOR steps).
+  """
+  def ira_encode(bits, state, opts) do
+    n = opts[:n]
+    k = opts[:k]
+    m = n - k
+    frames = div(Nx.size(bits), k)
+    lut = (opts[:tables] || tables(opts)).lut
+    s = bits |> Nx.reshape({frames, k}) |> Nx.transpose()
+
+    acc =
+      [s, zeros_like_row(s, :u8)]
+      |> Nx.concatenate()
+      |> Nx.take(lut)
+      |> Nx.as_type(:s32)
+      |> Nx.sum(axes: [1])
+      |> Nx.bitwise_and(1)
+      |> Nx.as_type(:u8)
+
+    p = prefix_xor(acc, 1, m)
+    c = [s, p] |> Nx.concatenate() |> Nx.transpose() |> Nx.reshape({frames * n})
+    {c, state}
+  end
+
+  defp prefix_xor(x, shift, m) when shift >= m, do: x
+
+  defp prefix_xor(x, shift, m) do
+    frames = Nx.axis_size(x, 1)
+
+    shifted =
+      Nx.concatenate([
+        Nx.broadcast(Nx.tensor(0, type: :u8), {shift, frames}),
+        Nx.slice_along_axis(x, 0, m - shift, axis: 0)
+      ])
+
+    prefix_xor(Nx.bitwise_xor(x, shifted), 2 * shift, m)
+  end
+
   # -- bit flipping -------------------------------------------------------------------
 
   @doc """
@@ -62,9 +104,10 @@ defmodule ExSdr.FEC.LDPC.Kernels do
   def bit_flip(llr, state, opts) do
     {ch, frames} = channel_bits(llr, opts[:n])
     x = ch
-    s0 = %{x: x, active: any_failed(x, opts)}
+    t = opts[:tables] || tables(opts)
+    s0 = %{x: x, active: any_failed(x, t)}
 
-    final = loop(s0, opts, &bit_flip_iteration(&1, &2, opts), &tables(&1, :bit_flip))
+    final = loop(s0, t, opts, &bit_flip_iteration(&1, &2, opts))
     {output(final.x, frames, opts), state}
   end
 
@@ -93,8 +136,8 @@ defmodule ExSdr.FEC.LDPC.Kernels do
   def soft(llr, state, opts) do
     {ch, frames} = channel(llr, opts)
     x = Nx.less(ch, zero(ch)) |> Nx.as_type(:u8)
-    t0 = tables(opts, :soft)
-    active = any_failed(x, t0)
+    t = opts[:tables] || tables(opts)
+    active = any_failed(x, t)
 
     s0 =
       case opts[:schedule] do
@@ -116,7 +159,7 @@ defmodule ExSdr.FEC.LDPC.Kernels do
         :layered -> &layered_iteration(&1, &2, opts)
       end
 
-    final = loop(s0, opts, iteration, &tables(&1, :soft))
+    final = loop(s0, t, opts, iteration)
     {output(final.x, frames, opts), state}
   end
 
@@ -133,6 +176,7 @@ defmodule ExSdr.FEC.LDPC.Kernels do
   def layered_iteration(s, t, opts) do
     {l, rs} =
       t.layers
+      |> Tuple.to_list()
       |> Enum.with_index()
       |> Enum.reduce({s.l, []}, fn {layer, i}, {l, rs} ->
         r_old = elem(s.r, i)
@@ -352,11 +396,9 @@ defmodule ExSdr.FEC.LDPC.Kernels do
     |> Nx.as_type(:u8)
   end
 
-  defp any_failed(x, %{row_vars: _} = t) do
+  defp any_failed(x, t) do
     x |> syndrome(t) |> Nx.as_type(:s32) |> Nx.sum(axes: [0]) |> Nx.greater(0) |> Nx.as_type(:u8)
   end
-
-  defp any_failed(x, opts) when is_list(opts), do: any_failed(x, tables(opts, :bit_flip))
 
   # Maximum over axis 0 by halving (n padded with zeros to a power of two).
   defp tree_max(x) do
@@ -440,17 +482,29 @@ defmodule ExSdr.FEC.LDPC.Kernels do
     end
   end
 
-  # The graph tables as constant tensors.
-  defp tables(opts, kind) do
+  @doc """
+  The index tables of a block's kernel options as tensors (a map), or
+  `nil` for a kernel without tables. Kernels build them as constants
+  unless they are passed in as `opts[:tables]` (as arguments of a
+  compiled function, which XLA compiles much faster than large constants).
+  """
+  def tables(opts) do
     c = &Nx.tensor(&1, type: :s32, backend: Nx.BinaryBackend)
     n = opts[:n]
-    t = %{row_vars: c.(opts[:row_vars])}
 
-    case kind do
-      :bit_flip ->
-        Map.put(t, :var_checks, c.(opts[:var_checks]))
+    cond do
+      opts[:generator] ->
+        %{generator: c.(opts[:generator])}
 
-      :soft ->
+      opts[:lut] ->
+        %{lut: c.(opts[:lut])}
+
+      opts[:var_checks] ->
+        %{row_vars: c.(opts[:row_vars]), var_checks: c.(opts[:var_checks])}
+
+      opts[:var_edges] ->
+        t = %{row_vars: c.(opts[:row_vars])}
+
         pad = fn rv ->
           Nx.tensor(for(r <- rv, do: for(v <- r, do: if(v == n, do: 1, else: 0))),
             type: :u8,
@@ -471,33 +525,34 @@ defmodule ExSdr.FEC.LDPC.Kernels do
               in_layer: Nx.tensor(l.in_layer, type: :u8, backend: Nx.BinaryBackend)
             }
           end
+          |> List.to_tuple()
         )
+
+      true ->
+        nil
     end
   end
 
   # -- iteration drivers ----------------------------------------------------------------
 
-  defp loop(s0, opts, iteration, make_tables) do
+  defp loop(s0, t, opts, iteration) do
     case opts[:loop] || :unrolled do
       :unrolled ->
-        t = make_tables.(opts)
         Enum.reduce(1..opts[:max_iter]//1, s0, fn _, s -> iteration.(s, t) end)
 
       :while ->
-        while_loop(s0,
-          step: fn s -> iteration.(s, make_tables.(opts)) end,
-          max_iter: opts[:max_iter]
-        )
+        while_loop(s0, t, step: iteration, max_iter: opts[:max_iter])
     end
   end
 
-  defn while_loop(s0, opts \\ []) do
+  # The tables travel through the loop unchanged.
+  defn while_loop(s0, t, opts \\ []) do
     step = opts[:step]
     max_iter = opts[:max_iter]
 
-    {s, _} =
-      while {s = s0, i = 0}, i < max_iter and Nx.sum(s.active) > 0 do
-        {step.(s), i + 1}
+    {s, _, _} =
+      while {s = s0, t, i = 0}, i < max_iter and Nx.sum(s.active) > 0 do
+        {step.(s, t), t, i + 1}
       end
 
     s

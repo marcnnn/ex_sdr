@@ -2,6 +2,7 @@
 """GNU Radio reference data for the LDPC blocks of gr-fec.
 
 Usage: fec_ldpc_golden.py <cases dir> <alist dir> <output dir>
+       fec_ldpc_golden.py dvb <tables file> <output file>
 
 Reads test/dsp_cases/fec/ldpc_*.json and writes, per case, a directory
 <output dir>/<name>/ with
@@ -111,5 +112,62 @@ def main(cases_dir, alist_dir, out_root):
         print(case["name"], "n", n, "k", k, "frames", frames)
 
 
+def dvb_bits(count):
+    """Information bits shared with the Elixir test: bit i is bit 27 of
+    (i + 1) * 2654435761 mod 2^32."""
+    i = np.arange(1, count + 1, dtype=np.uint64)
+    return (((i * 2654435761) & 0xFFFFFFFF) >> 27 & 1).astype(np.uint8)
+
+
+def dvb(tables, out_file):
+    """gr-dtv's dvb_ldpc_bb for every code in lib/ex_sdr/fec/ldpc/dvb_s2_tables.txt:
+    one frame each, the output's SHA-256 and, for short frames, the parity
+    bits packed (MSB first). Needs the image with gr-dtv (exhdl-gnuradio-dtv):
+
+      podman run --rm -v "$PWD:/work:Z" -w /work exhdl-gnuradio-dtv \
+        python3 test/gnuradio/fec_ldpc_golden.py dvb \
+          lib/ex_sdr/fec/ldpc/dvb_s2_tables.txt test/fixtures/gnuradio/fec/ldpc_dvb_s2/dvb.json
+    """
+    from gnuradio import dtv
+
+    codes = [l.split()[1:] for l in open(tables) if l.startswith("code ")]
+    result = []
+    for frame, rate, std, n, k, q in codes:
+        n, k = int(n), int(k)
+        info = dvb_bits(k)
+        blk = dtv.dvb_ldpc_bb(
+            dtv.STANDARD_DVBT2 if std == "dvbt2" else dtv.STANDARD_DVBS2,
+            dtv.FECFRAME_NORMAL if frame == "normal" else dtv.FECFRAME_SHORT,
+            getattr(dtv, "C" + rate.replace("/", "_")),
+            dtv.MOD_OTHER,
+        )
+        src = blocks.vector_source_b(info.tolist(), False)
+        snk = blocks.vector_sink_b()
+        tb = gr.top_block()
+        tb.connect(src, blk, snk)
+        tb.run()
+        out = np.array(snk.data(), dtype=np.uint8)
+        assert len(out) == n, (frame, rate, len(out))
+        entry = {
+            "frame": frame,
+            "rate": rate,
+            "standard": std,
+            "n": n,
+            "k": k,
+            "sha256": hashlib.sha256(out.tobytes()).hexdigest(),
+        }
+        if frame == "short":
+            entry["parity_hex"] = np.packbits(out[k:]).tobytes().hex()
+        result.append(entry)
+        print(frame, rate, std, "ok")
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
+    with open(out_file, "w") as f:
+        json.dump({"gnuradio": gr.version(), "codes": result}, f, indent=1)
+        f.write("\n")
+
+
 if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    if sys.argv[1] == "dvb":
+        dvb(sys.argv[2], sys.argv[3])
+    else:
+        main(*sys.argv[1:4])

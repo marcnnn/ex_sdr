@@ -14,6 +14,11 @@ defmodule ExSdr.FEC.LDPC do
 
     * `:ldpc_par_mtrx_encoder`, `:ldpc_gen_mtrx_encoder`, `:ldpc_encoder`
       - `code:` (or `alist:` and `gap:`); bits (`u8`) in, `k` -> `n`.
+    * `:ldpc_ira_encoder` - `code:` from `ExSdr.FEC.LDPC.IRA.code/1`
+      (structured repeat-accumulate codes from parameters).
+    * `:dvb_ldpc_bb` - gr-dtv's DVB-S2/S2X/T2 encoder: `frame:` (`:normal`,
+      `:short`), `rate:` (`"1/2"`), `standard:` (`:dvbs2`, `:dvbt2`), see
+      `ExSdr.FEC.LDPC.DVBS2`.
     * `:ldpc_bit_flip_decoder` - `code:`, `max_iter:`; LLRs in (only the
       signs are used), `n` -> `k` bits.
     * `:ldpc_decoder` - gr-fec's sum-product decoder (tanh rule, flooding,
@@ -36,11 +41,12 @@ defmodule ExSdr.FEC.LDPC do
 
   import Bitwise
 
-  alias ExSdr.FEC.LDPC.{Code, Graph, Kernels}
+  alias ExSdr.FEC.LDPC.{Code, DVBS2, Graph, Kernels}
   alias NxFixed.{Block, Fixed, Num}
 
-  @blocks ~w(ldpc_par_mtrx_encoder ldpc_gen_mtrx_encoder ldpc_encoder ldpc_bit_flip_decoder
-             ldpc_decoder ldpc_bp_decoder ldpc_min_sum_decoder)a
+  @blocks ~w(ldpc_par_mtrx_encoder ldpc_gen_mtrx_encoder ldpc_encoder ldpc_ira_encoder
+             dvb_ldpc_bb ldpc_bit_flip_decoder ldpc_decoder ldpc_bp_decoder
+             ldpc_min_sum_decoder)a
 
   @doc "The names `block/2` knows."
   def blocks, do: @blocks
@@ -58,18 +64,40 @@ defmodule ExSdr.FEC.LDPC do
   def block(name, opts \\ [])
 
   def block(name, opts)
-      when name in [:ldpc_par_mtrx_encoder, :ldpc_gen_mtrx_encoder, :ldpc_encoder] do
+      when name in [
+             :ldpc_par_mtrx_encoder,
+             :ldpc_gen_mtrx_encoder,
+             :ldpc_encoder,
+             :ldpc_ira_encoder,
+             :dvb_ldpc_bb
+           ] do
     code = code(name, opts)
+
+    {fun, kernel} =
+      case code.kind do
+        :ira ->
+          deg = code.ru.lut |> Enum.map(&length/1) |> Enum.max()
+          lut = Enum.map(code.ru.lut, &(&1 ++ List.duplicate(code.k, deg - length(&1))))
+          {&Kernels.ira_encode/3, [lut: lut]}
+
+        _ ->
+          {&Kernels.encode/3, [generator: Code.generator_dense(code)]}
+      end
 
     %Block{
       name: name,
       kind: :frame,
-      fun: &Kernels.encode/3,
-      opts: [n: code.n, k: code.k, generator: Code.generator_dense(code)],
+      fun: fun,
+      opts: [n: code.n, k: code.k] ++ kernel,
       rate: {code.k, code.n},
       item: {:bit, :bit},
       hardware: :transform,
-      gnuradio: "fec.#{name}"
+      gnuradio:
+        case name do
+          :dvb_ldpc_bb -> "dtv.dvb_ldpc_bb"
+          :ldpc_ira_encoder -> nil
+          _ -> "fec.#{name}"
+        end
     }
   end
 
@@ -202,6 +230,13 @@ defmodule ExSdr.FEC.LDPC do
       {:ok, %Code{} = c} ->
         c
 
+      :error when name == :dvb_ldpc_bb ->
+        DVBS2.code(
+          Keyword.fetch!(opts, :frame),
+          Keyword.fetch!(opts, :rate),
+          Keyword.get(opts, :standard, :dvbs2)
+        )
+
       :error ->
         alist = Keyword.fetch!(opts, :alist)
 
@@ -242,22 +277,36 @@ defmodule ExSdr.FEC.LDPC do
   """
   def run(%Block{} = b, input, state \\ nil) do
     opts = Keyword.put(b.opts, :loop, :while)
+    hash = :erlang.phash2(opts)
+    exla? = Elixir.Code.ensure_loaded?(EXLA)
+    tables = cached({__MODULE__, :tables, hash}, fn -> device(Kernels.tables(opts), exla?) end)
     template = Nx.Defn.Composite.traverse(input, &Nx.to_template/1)
-    key = {__MODULE__, b.name, :erlang.phash2(opts), template}
 
     f =
-      case :persistent_term.get(key, nil) do
-        nil ->
-          compiler = if Elixir.Code.ensure_loaded?(EXLA), do: EXLA, else: Nx.Defn.Evaluator
-          fun = fn x -> b.fun.(x, nil, opts) |> elem(0) end
-          f = Nx.Defn.compile(fun, [template], compiler: compiler)
-          :persistent_term.put(key, f)
-          f
+      cached({__MODULE__, b.name, hash, template}, fn ->
+        compiler = if exla?, do: EXLA, else: Nx.Defn.Evaluator
+        fun = fn x, t -> b.fun.(x, nil, Keyword.put(opts, :tables, t)) |> elem(0) end
+        t_template = Nx.Defn.Composite.traverse(tables, &Nx.to_template/1)
+        Nx.Defn.compile(fun, [template, t_template], compiler: compiler)
+      end)
 
-        f ->
-          f
-      end
-
-    {f.(input) |> Nx.backend_transfer(Nx.BinaryBackend), state}
+    {f.(input, tables) |> Nx.backend_transfer(Nx.BinaryBackend), state}
   end
+
+  defp cached(key, fun) do
+    case :persistent_term.get(key, nil) do
+      nil ->
+        v = fun.()
+        :persistent_term.put(key, v)
+        v
+
+      v ->
+        v
+    end
+  end
+
+  defp device(tables, true),
+    do: Nx.Defn.Composite.traverse(tables, &Nx.backend_transfer(&1, EXLA.Backend))
+
+  defp device(tables, false), do: tables
 end

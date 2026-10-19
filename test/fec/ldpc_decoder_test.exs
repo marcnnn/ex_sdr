@@ -8,6 +8,7 @@ defmodule ExSdr.FEC.LDPCDecoderTest do
   use ExUnit.Case, async: true
 
   alias ExSdr.FEC.LDPC
+  alias ExSdr.FEC.LDPC.Kernels
   alias NxFixed.{Fixed, Num}
 
   @alist_dir Path.expand("../fixtures/gnuradio/fec/ldpc_alist", __DIR__)
@@ -44,8 +45,13 @@ defmodule ExSdr.FEC.LDPCDecoderTest do
 
   defp unrolled(b, input) do
     compiler = if Code.ensure_loaded?(EXLA), do: EXLA, else: Nx.Defn.Evaluator
-    f = Nx.Defn.jit(fn x -> b.fun.(x, {}, b.opts) |> elem(0) end, compiler: compiler)
-    f.(input) |> Nx.backend_transfer(Nx.BinaryBackend)
+    # index tables as arguments: same values as the constants, faster XLA compile
+    f =
+      Nx.Defn.jit(fn x, t -> b.fun.(x, {}, Keyword.put(b.opts, :tables, t)) |> elem(0) end,
+        compiler: compiler
+      )
+
+    f.(input, Kernels.tables(b.opts)) |> Nx.backend_transfer(Nx.BinaryBackend)
   end
 
   defp input(llr, nil), do: llr
@@ -105,7 +111,7 @@ defmodule ExSdr.FEC.LDPCDecoderTest do
       {whole, _} = LDPC.run(b, x)
 
       parts =
-        for {start, len} <- [{0, 7}, {7, 13}] do
+        for {start, len} <- [{0, 10}, {10, 10}] do
           part =
             case x do
               %Fixed{t: t} = f -> %{f | t: Nx.slice(t, [start * code.n], [len * code.n])}
