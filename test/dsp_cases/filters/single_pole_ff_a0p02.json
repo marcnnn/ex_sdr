@@ -1,0 +1,83 @@
+{
+  "block": {
+    "name": "single_pole_iir_filter_ff",
+    "opts": {
+      "alpha": "alpha"
+    }
+  },
+  "description": "single pole IIR alpha = 0.02 on real samples vs single_pole_iir_filter_ff",
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 32.46,
+      "rationale": "Coefficients rounded to Q15 change the impulse response by ||dh||_1 = 4.083659869736903e-4 (times the input peak 0.555), and each output rounding (0.5 LSB of Q15, plus 0.02 Q15 LSB for the f32 reference) is shaped by the feedback 1/A(z), ||g||_1 = 50.02748091603043: <= 32.46038230495562 Q15 LSB per component. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 72.5,
+      "variant": "q15_nearest"
+    },
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "truncate"
+      },
+      "max_error_lsb": 57.474,
+      "rationale": "Coefficients rounded to Q15 change the impulse response by ||dh||_1 = 4.083659869736903e-4 (times the input peak 0.555), and each output rounding (1.0 LSB of Q15, plus 0.02 Q15 LSB for the f32 reference) is shaped by the feedback 1/A(z), ||g||_1 = 50.02748091603043: <= 57.474122762970836 Q15 LSB per component. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 48.0,
+      "variant": "q15_truncate"
+    },
+    {
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 8.54,
+      "rationale": "Coefficients rounded to Q17 change the impulse response by ||dh||_1 = 1.2475469737416317e-4 (times the input peak 0.555), and each output rounding (0.5 LSB of Q17, plus 0.02 Q15 LSB for the f32 reference) is shaped by the feedback 1/A(z), ||g||_1 = 50.00839374284627: <= 8.539868085429685 Q15 LSB per component. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 84.1,
+      "variant": "q17_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.2168,
+    "rationale": "GNU Radio keeps the state in double, this is f32: each step rounds the sum (terms of total size 0.5549999999999998) by 4 * 2^-24 at most, amplified by ||1/A(z)||_1 = 49.99999999999983: 0.2168 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+    "snr_db_min": 119.9
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "alpha"
+      ],
+      "block": "filter.single_pole_iir_filter_ff"
+    }
+  ],
+  "input": {
+    "noise_rms": 0.001,
+    "steps": [
+      {
+        "amp": 0.25,
+        "at": 1024
+      }
+    ],
+    "tones": [
+      {
+        "amp": 0.3,
+        "freq": 0.02,
+        "phase": 0.0
+      }
+    ],
+    "type": "real"
+  },
+  "name": "single_pole_ff_a0p02",
+  "params": {
+    "alpha": 0.02
+  },
+  "samples": 4096,
+  "seed": 2016
+}

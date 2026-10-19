@@ -1,0 +1,6 @@
+{
+  "case": "rational_resampler_fff_2_3",
+  "case_sha256": "ffb7f3f6fd05be42c2ff95394ad1df8da9d5622adcac74aaeda56ee8080aea36",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

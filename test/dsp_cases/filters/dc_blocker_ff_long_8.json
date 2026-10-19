@@ -1,0 +1,86 @@
+{
+  "block": {
+    "name": "dc_blocker_ff",
+    "opts": {
+      "length": "length",
+      "long_form": "long_form"
+    }
+  },
+  "description": "DC blocker, long form, length 8, on real samples with a step vs dc_blocker_ff",
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 0.52,
+      "rationale": "Taps rounded to Q23 (sum of |tap rounding error| 0.0) acting on an input peak of 0.555 FS per component, plus 0.5 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 0.52 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 70.3,
+      "variant": "q15_nearest"
+    },
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "truncate"
+      },
+      "max_error_lsb": 1.02,
+      "rationale": "Taps rounded to Q23 (sum of |tap rounding error| 0.0) acting on an input peak of 0.555 FS per component, plus 1.0 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 1.02 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 64.3,
+      "variant": "q15_truncate"
+    },
+    {
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 0.145,
+      "rationale": "Taps rounded to Q25 (sum of |tap rounding error| 0.0) acting on an input peak of 0.555 FS per component, plus 0.5 LSB of output rounding (Q17) and 0.02 Q15 LSB for the f32 reference itself; per component <= 0.145 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 82.4,
+      "variant": "q17_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.1152,
+    "rationale": "f32 rounding in an 29-tap sum: each of the n additions errs by at most 2^-24 of the partial sum (<= peak * sum|taps| = 1.01677734375); twice that covers both evaluation orders (GNU Radio uses SIMD kernels): 0.1152 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+    "snr_db_min": 102.7
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "length",
+        "long_form"
+      ],
+      "block": "filter.dc_blocker_ff"
+    }
+  ],
+  "input": {
+    "noise_rms": 0.001,
+    "steps": [
+      {
+        "amp": 0.25,
+        "at": 1024
+      }
+    ],
+    "tones": [
+      {
+        "amp": 0.3,
+        "freq": 0.02,
+        "phase": 0.0
+      }
+    ],
+    "type": "real"
+  },
+  "name": "dc_blocker_ff_long_8",
+  "params": {
+    "length": 8,
+    "long_form": true
+  },
+  "samples": 4096,
+  "seed": 2015
+}

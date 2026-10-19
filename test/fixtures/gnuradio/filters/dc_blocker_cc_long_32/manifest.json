@@ -1,0 +1,6 @@
+{
+  "case": "dc_blocker_cc_long_32",
+  "case_sha256": "b30d500ff69aad671668fabb8232c9fc1679db263f13d8168d859294f77579bc",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

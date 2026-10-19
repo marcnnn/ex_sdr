@@ -1,0 +1,6 @@
+{
+  "case": "hilbert_fc_65",
+  "case_sha256": "b72546a4c9a0c609c0fc424148c3ca16ccf1267077237a6097e1708124671ba8",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

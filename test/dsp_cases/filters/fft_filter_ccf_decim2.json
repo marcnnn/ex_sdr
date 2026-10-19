@@ -1,0 +1,112 @@
+{
+  "block": {
+    "name": "fft_filter_ccf",
+    "opts": {
+      "decimation": "decim",
+      "taps": "taps"
+    }
+  },
+  "description": "fft_filter_ccf (decimation 2) vs the direct FIR",
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 5.123,
+      "rationale": "Taps rounded to Q15 (sum of |tap rounding error| 1.3430981883075682e-4) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 3.622750221129599 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 83.7,
+      "variant": "q15_nearest"
+    },
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "truncate"
+      },
+      "max_error_lsb": 5.83,
+      "rationale": "Taps rounded to Q15 (sum of |tap rounding error| 1.3430981883075682e-4) acting on an input peak of 0.705 FS per component, plus 1.0 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 4.122750221129598 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 81.1,
+      "variant": "q15_truncate"
+    },
+    {
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 1.244,
+      "rationale": "Taps rounded to Q17 (sum of |tap rounding error| 3.1787986866849835e-5) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q17) and 0.02 Q15 LSB for the f32 reference itself; per component <= 0.8793482713253195 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 99.1,
+      "variant": "q17_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.1466,
+    "rationale": "f32 rounding in an 25-tap sum: each of the n additions errs by at most 2^-24 of the partial sum (<= peak * sum|taps| = 1.0613051569394778); twice that covers both evaluation orders (GNU Radio uses SIMD kernels): 0.1466 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+    "snr_db_min": 137.4
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "decim",
+        "taps",
+        1
+      ],
+      "block": "filter.fft_filter_ccf"
+    }
+  ],
+  "input": {
+    "noise_rms": 0.001,
+    "tones": [
+      {
+        "amp": 0.4,
+        "freq": 0.03,
+        "phase": 0.0
+      },
+      {
+        "amp": 0.3,
+        "freq": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "type": "complex"
+  },
+  "name": "fft_filter_ccf_decim2",
+  "params": {
+    "decim": 2,
+    "taps": [
+      0.0012437503563049374,
+      0.0026255113992609503,
+      -2.2020476932317066e-18,
+      -0.007202182355254399,
+      -0.007229298946022436,
+      0.011218892224390167,
+      0.027167809725285916,
+      -1.0247064136175714e-17,
+      -0.05810892635686153,
+      -0.05380893877430058,
+      0.08753250888649769,
+      0.2971330913115605,
+      0.3988555650582774,
+      0.2971330913115605,
+      0.0875325088864977,
+      -0.053808938774300596,
+      -0.05810892635686155,
+      -1.0247064136175714e-17,
+      0.02716780972528592,
+      0.011218892224390174,
+      -0.007229298946022436,
+      -0.007202182355254401,
+      -2.2020476932317085e-18,
+      0.0026255113992609534,
+      0.0012437503563049374
+    ]
+  },
+  "samples": 4096,
+  "seed": 2005
+}

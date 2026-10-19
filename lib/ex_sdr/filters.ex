@@ -107,16 +107,7 @@ defmodule ExSdr.Filters do
     fc = Keyword.fetch!(opts, :center_freq)
     fs = Keyword.fetch!(opts, :sampling_freq)
     w0 = 2 * :math.pi() * fc / fs
-
-    ctaps =
-      taps
-      |> Enum.with_index()
-      |> Enum.map(fn {t, i} ->
-        {tr, ti} = if is_tuple(t), do: t, else: {t, 0.0}
-        {c, s} = {:math.cos(w0 * i), :math.sin(w0 * i)}
-        {tr * c - ti * s, tr * s + ti * c}
-      end)
-
+    ctaps = xlating_taps(taps, fc, fs)
     inc = round(-w0 * d / (2 * :math.pi()) * 65536) |> Bitwise.band(0xFFFF)
     item = items(name)
     n = length(Kernels.pad_taps(ctaps))
@@ -125,7 +116,8 @@ defmodule ExSdr.Filters do
       name: name,
       kind: :frame,
       fun: &Kernels.fir_rotate_frame/3,
-      init: {line(f, {elem(item, 0), :complex}, n - 1), Nx.u16(0)},
+      # the NCO advances before use; GNU Radio's first output is not rotated
+      init: {line(f, {elem(item, 0), :complex}, n - 1), Nx.u16(Bitwise.band(-inc, 0xFFFF))},
       opts: [format: f, taps: ctaps, tap_frac: tf, phase_inc: inc, decimation: d],
       rate: {d, 1},
       latency: div(group_delay(taps), d),
@@ -301,6 +293,22 @@ defmodule ExSdr.Filters do
   # Zero delay line of `n` items for items of type `item`'s input side.
   defp line(f, {:complex, _}, n), do: {Num.zeros({n}, f), Num.zeros({n}, f)}
   defp line(f, {:real, _}, n), do: Num.zeros({n}, f)
+
+  @doc """
+  The composite taps of `freq_xlating_fir_filter`: each tap is turned by
+  `2 pi fc / fs * (i - (n - 1) / 2)`, so the filter is centred on the carrier
+  (GNU Radio 3.10). The output is then rotated down by `fc` per input item.
+  """
+  def xlating_taps(taps, center_freq, sampling_freq) do
+    w0 = 2 * :math.pi() * center_freq / sampling_freq
+    mid = (length(taps) - 1) / 2
+
+    for {t, i} <- Enum.with_index(taps) do
+      {tr, ti} = if is_tuple(t), do: t, else: {t, 0.0}
+      {c, s} = {:math.cos(w0 * (i - mid)), :math.sin(w0 * (i - mid))}
+      {tr * c - ti * s, tr * s + ti * c}
+    end
+  end
 
   @doc """
   Taps of GNU Radio's DC blocker as an equivalent FIR: the input delayed by

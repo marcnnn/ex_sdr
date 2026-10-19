@@ -1,0 +1,85 @@
+{
+  "block": {
+    "name": "hilbert_fc",
+    "opts": {
+      "ntaps": "ntaps"
+    }
+  },
+  "description": "65-tap Hamming Hilbert transformer vs hilbert_fc",
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 8.681,
+      "rationale": "Taps rounded to Q15 (tap errors 0.0 (re), 2.4320568616811042e-4 (im)) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 6.138401566671432 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 87.0,
+      "variant": "q15_nearest"
+    },
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "truncate"
+      },
+      "max_error_lsb": 9.388,
+      "rationale": "Taps rounded to Q15 (tap errors 0.0 (re), 2.4320568616811042e-4 (im)) acting on an input peak of 0.705 FS per component, plus 1.0 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 6.638401566671432 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 84.9,
+      "variant": "q15_truncate"
+    },
+    {
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 1.997,
+      "rationale": "Taps rounded to Q17 (tap errors 0.0 (re), 5.4857002718416373e-5 (im)) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q17) and 0.02 Q15 LSB for the f32 reference itself; per component <= 1.4122757568793327 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 102.6,
+      "variant": "q17_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.8952,
+    "rationale": "f32 rounding in an 65-tap sum: each of the n additions errs by at most 2^-24 of the partial sum (<= peak * sum|taps| = 2.492948747499832); twice that covers both evaluation orders (GNU Radio uses SIMD kernels): 0.8952 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+    "snr_db_min": 137.4
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "ntaps"
+      ],
+      "block": "filter.hilbert_fc"
+    }
+  ],
+  "input": {
+    "noise_rms": 0.001,
+    "tones": [
+      {
+        "amp": 0.4,
+        "freq": 0.03,
+        "phase": 0.0
+      },
+      {
+        "amp": 0.3,
+        "freq": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "type": "real"
+  },
+  "name": "hilbert_fc_65",
+  "output": {
+    "type": "complex"
+  },
+  "params": {
+    "ntaps": 65
+  },
+  "samples": 4096,
+  "seed": 2012
+}

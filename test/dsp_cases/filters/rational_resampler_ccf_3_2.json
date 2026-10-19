@@ -1,0 +1,130 @@
+{
+  "block": {
+    "name": "rational_resampler_ccf",
+    "opts": {
+      "decimation": "decim",
+      "interpolation": "interp",
+      "phase": "phase",
+      "taps": "taps"
+    }
+  },
+  "description": "rational resampler 3/2 on complex samples vs rational_resampler_ccf",
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 9.4,
+      "rationale": "Taps rounded to Q15 (sum of |tap rounding error| 2.6521894606276156e-4) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 6.646939569332122 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 86.8,
+      "variant": "q15_nearest"
+    },
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "truncate"
+      },
+      "max_error_lsb": 10.107,
+      "rationale": "Taps rounded to Q15 (sum of |tap rounding error| 2.6521894606276156e-4) acting on an input peak of 0.705 FS per component, plus 1.0 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 7.146939569332122 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 83.6,
+      "variant": "q15_truncate"
+    },
+    {
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 2.436,
+      "rationale": "Taps rounded to Q17 (sum of |tap rounding error| 6.829965464654722e-5) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q17) and 0.02 Q15 LSB for the f32 reference itself; per component <= 1.7228203738379317 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 99.9,
+      "variant": "q17_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.6735,
+    "rationale": "f32 rounding in an 37-tap sum: each of the n additions errs by at most 2^-24 of the partial sum (<= peak * sum|taps| = 3.295274454745636); twice that covers both evaluation orders (GNU Radio uses SIMD kernels): 0.6735 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+    "snr_db_min": 143.4
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "interp",
+        "decim",
+        "taps"
+      ],
+      "block": "filter.rational_resampler_ccf"
+    }
+  ],
+  "input": {
+    "noise_rms": 0.001,
+    "tones": [
+      {
+        "amp": 0.4,
+        "freq": 0.03,
+        "phase": 0.0
+      },
+      {
+        "amp": 0.3,
+        "freq": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "type": "complex"
+  },
+  "name": "rational_resampler_ccf_3_2",
+  "params": {
+    "decim": 2,
+    "interp": 3,
+    "phase": 0,
+    "taps": [
+      -0.00403881516294941,
+      -0.0015108631330108535,
+      0.0037819124021122247,
+      0.009021712800430461,
+      0.007526601531520454,
+      -0.005549119953238336,
+      -0.02347561313464345,
+      -0.026891831386559904,
+      1.6152327932446915e-17,
+      0.04638088867248981,
+      0.07041299959021945,
+      0.029413884790158343,
+      -0.07207561067383161,
+      -0.15969869612342333,
+      -0.12529649112228508,
+      0.09235622539828163,
+      0.4417619398256147,
+      0.7676126485170991,
+      0.9005364543240312,
+      0.7676126485170992,
+      0.4417619398256147,
+      0.09235622539828163,
+      -0.1252964911222851,
+      -0.15969869612342336,
+      -0.07207561067383164,
+      0.029413884790158343,
+      0.07041299959021945,
+      0.046380888672489816,
+      1.615232793244692e-17,
+      -0.026891831386559893,
+      -0.02347561313464348,
+      -0.005549119953238338,
+      0.007526601531520458,
+      0.009021712800430457,
+      0.0037819124021122247,
+      -0.0015108631330108535,
+      -0.00403881516294941
+    ]
+  },
+  "reference_shift": 18,
+  "reference_shift_note": "GNU Radio's first output is the full-rate filter output at position (K-1)*I = 36 (K = taps per branch); ours counts from 0 with :phase = 0, so GNU Radio output m is our output m + 18.",
+  "samples": 4092,
+  "seed": 2008
+}

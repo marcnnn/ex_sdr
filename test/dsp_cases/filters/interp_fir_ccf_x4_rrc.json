@@ -1,0 +1,127 @@
+{
+  "block": {
+    "name": "interp_fir_filter_ccf",
+    "opts": {
+      "interpolation": "interp",
+      "taps": "taps"
+    }
+  },
+  "description": "interpolation by 4 with a root raised cosine on complex samples vs interp_fir_filter_ccf",
+  "fixed_vs_float": [
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 9.26,
+      "rationale": "Taps rounded to Q15 (sum of |tap rounding error| 2.609336720246821e-4) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 6.547943568257871 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 89.2,
+      "variant": "q15_nearest"
+    },
+    {
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 10,
+        "rounding": "truncate"
+      },
+      "max_error_lsb": 9.967,
+      "rationale": "Taps rounded to Q15 (sum of |tap rounding error| 2.609336720246821e-4) acting on an input peak of 0.705 FS per component, plus 1.0 LSB of output rounding (Q15) and 0.02 Q15 LSB for the f32 reference itself; per component <= 7.047943568257871 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 84.5,
+      "variant": "q15_truncate"
+    },
+    {
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 10,
+        "rounding": "nearest"
+      },
+      "max_error_lsb": 3.021,
+      "rationale": "Taps rounded to Q17 (sum of |tap rounding error| 8.617887629108929e-5) acting on an input peak of 0.705 FS per component, plus 0.5 LSB of output rounding (Q17) and 0.02 Q15 LSB for the f32 reference itself; per component <= 2.135856139906022 Q15 LSB, x sqrt(2) for the complex magnitude. SNR minimum is the measured value minus 1 dB.",
+      "snr_db_min": 98.7,
+      "variant": "q17_nearest"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.9617,
+    "rationale": "f32 rounding in an 41-tap sum: each of the n additions errs by at most 2^-24 of the partial sum (<= peak * sum|taps| = 4.246223721879612); twice that covers both evaluation orders (GNU Radio uses SIMD kernels): 0.9617 Q15 LSB. SNR minimum is the measured value minus 1 dB.",
+    "snr_db_min": 142.6
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "interp",
+        "taps"
+      ],
+      "block": "filter.interp_fir_filter_ccf"
+    }
+  ],
+  "input": {
+    "noise_rms": 0.001,
+    "tones": [
+      {
+        "amp": 0.4,
+        "freq": 0.03,
+        "phase": 0.0
+      },
+      {
+        "amp": 0.3,
+        "freq": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "type": "complex"
+  },
+  "name": "interp_fir_ccf_x4_rrc",
+  "params": {
+    "interp": 4,
+    "taps": [
+      0.007519586379600819,
+      -0.0023831409359724126,
+      -0.011652884872265264,
+      -0.010293863066195863,
+      0.0020476248198860914,
+      0.013350356388925481,
+      0.009594003250546193,
+      -0.009570651303702264,
+      -0.025511180547748234,
+      -0.014808543047599104,
+      0.02567286502027592,
+      0.06549202434756128,
+      0.057248353428866104,
+      -0.02212250277224728,
+      -0.1354694875554198,
+      -0.1890592354434777,
+      -0.08488160332048214,
+      0.20733858303920516,
+      0.6091467371930426,
+      0.9592883773540043,
+      1.0981091632863942,
+      0.9592883773540043,
+      0.6091467371930426,
+      0.20733858303920516,
+      -0.08488160332048214,
+      -0.1890592354434777,
+      -0.1354694875554198,
+      -0.02212250277224728,
+      0.057248353428866104,
+      0.06549202434756128,
+      0.02567286502027592,
+      -0.014808543047599104,
+      -0.025511180547748234,
+      -0.009570651303702264,
+      0.009594003250546193,
+      0.013350356388925481,
+      0.0020476248198860914,
+      -0.010293863066195863,
+      -0.011652884872265264,
+      -0.0023831409359724126,
+      0.007519586379600819
+    ]
+  },
+  "samples": 4096,
+  "seed": 2007
+}

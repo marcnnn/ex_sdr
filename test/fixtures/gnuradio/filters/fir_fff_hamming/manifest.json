@@ -1,0 +1,6 @@
+{
+  "case": "fir_fff_hamming",
+  "case_sha256": "ccd509a879ab1e320d0469bfc4678f430328a980c79a80accf1defae6ec1041f",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

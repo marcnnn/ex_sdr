@@ -307,6 +307,14 @@ defmodule ExSdr.Filters.Kernels do
             if bound < 1 <<< 31, do: :s32, else: :s64
           end
 
+        # Inputs and delay lines are in the format's range by contract; the
+        # clip states it for the width check (and sizes the multipliers)
+        # where the container is wider than the format.
+        data =
+          if kind == :fixed,
+            do: Nx.clip(data, -(1 <<< (f.bits - 1)), (1 <<< (f.bits - 1)) - 1),
+            else: data
+
         columns =
           for {_, j} <- kept do
             data
