@@ -3,19 +3,24 @@
 #
 #   scripts/gnuradio_golden.sh            # regenerate test/fixtures/gnuradio/
 #   scripts/gnuradio_golden.sh <out dir>  # write elsewhere (used by the live tests)
+#   scripts/gnuradio_golden.sh <out dir> <cases dir>
+#       # another case directory, e.g. test/dsp_cases/filters
+#       #   -> test/fixtures/gnuradio/filters
 #
 # Uses a native GNU Radio if /usr/bin/python3 can import it, otherwise the
 # podman image from test/gnuradio/Containerfile (rootless, no sudo).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 out=${1:-test/fixtures/gnuradio}
+cases=${2:-test/dsp_cases}
 mkdir -p "$out"
 out=$(cd "$out" && pwd)
+cases=$(cd "$cases" && pwd)
 
 if /usr/bin/python3 -c "import gnuradio" 2>/dev/null; then
-  /usr/bin/python3 test/gnuradio/golden.py test/dsp_cases "$out"
+  /usr/bin/python3 test/gnuradio/golden.py "$cases" "$out"
 else
   podman build -q -t exhdl-gnuradio test/gnuradio >/dev/null
-  podman run --rm -v "$PWD/test:/work/test:ro,Z" -v "$out:/out:Z" -w /work exhdl-gnuradio \
-    python3 test/gnuradio/golden.py test/dsp_cases /out 2>&1 | grep -v vmcircbuf_prefs
+  podman run --rm -v "$PWD/test:/work/test:ro,Z" -v "$cases:/cases:ro,Z" -v "$out:/out:Z" -w /work \
+    exhdl-gnuradio python3 test/gnuradio/golden.py /cases /out 2>&1 | grep -v vmcircbuf_prefs
 fi

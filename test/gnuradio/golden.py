@@ -3,6 +3,11 @@
 
 Usage: golden.py <cases dir> <output dir>   (normally via scripts/gnuradio_golden.sh)
 
+Input types: "complex", "real" (Q15) or "bytes"; the case's optional
+"output": {"type": ...} ("complex", "real", "bytes") when the chain changes
+the item type (modulators, demodulators). Bytes are stored as input.u8 and
+gnuradio.u8.
+
 For every case it generates the input signal (seeded numpy), quantises it to
 Q15 exactly as ExSdr sees it, runs the case's GNU Radio block chain and
 writes <output dir>/<case>/:
@@ -34,7 +39,11 @@ def q15(x):
 
 
 def make_input(spec, samples, rng):
-    """The input signal described by a case's "input" section, as Q15 ints."""
+    """The input signal described by a case's "input" section: Q15 ints, or
+    uint8 for "bytes" (random values below "modulus", default 256)."""
+    if spec["type"] == "bytes":
+        return rng.integers(0, spec.get("modulus", 256), samples).astype(np.uint8)
+
     n = np.arange(samples)
     complex_input = spec["type"] == "complex"
     x = np.zeros(samples, dtype=np.complex128 if complex_input else np.float64)
@@ -69,11 +78,21 @@ def run_case(case):
     x16 = make_input(case["input"], case["samples"], rng)
     complex_input = case["input"]["type"] == "complex"
 
-    if complex_input:
+    in_type = case["input"]["type"]
+    # The output type defaults to the input type ("bytes" in, "bytes" out).
+    out_type = case.get("output", {}).get("type", in_type)
+
+    if in_type == "bytes":
+        source = blocks.vector_source_b(x16.tolist())
+    elif complex_input:
         data = (x16[0::2] + 1j * x16[1::2]).astype(np.complex64) / FULL_SCALE
-        source, sink = blocks.vector_source_c(data), blocks.vector_sink_c()
+        source = blocks.vector_source_c(data)
     else:
-        source, sink = blocks.vector_source_f(x16.astype(np.float32) / FULL_SCALE), blocks.vector_sink_f()
+        source = blocks.vector_source_f(x16.astype(np.float32) / FULL_SCALE)
+
+    sink = {"bytes": blocks.vector_sink_b, "complex": blocks.vector_sink_c, "real": blocks.vector_sink_f}[
+        out_type
+    ]()
 
     chain = [make_block(b, case["params"]) for b in case["gnuradio"]]
     tb = gr.top_block()
@@ -81,7 +100,9 @@ def run_case(case):
     tb.run()
 
     out = np.asarray(sink.data())
-    if complex_input:
+    if out_type == "bytes":
+        return x16, out.astype(np.uint8)
+    if out_type == "complex":
         out = np.stack([out.real, out.imag], axis=1).reshape(-1)
     return x16, out.astype(np.float32)
 
@@ -95,8 +116,14 @@ def main(cases_dir, out_dir):
 
         case_dir = os.path.join(out_dir, case["name"])
         os.makedirs(case_dir, exist_ok=True)
-        x16.astype("<i2").tofile(os.path.join(case_dir, "input.s16le"))
-        ref.astype("<f4").tofile(os.path.join(case_dir, "gnuradio.f32le"))
+        if x16.dtype == np.uint8:
+            x16.tofile(os.path.join(case_dir, "input.u8"))
+        else:
+            x16.astype("<i2").tofile(os.path.join(case_dir, "input.s16le"))
+        if ref.dtype == np.uint8:
+            ref.tofile(os.path.join(case_dir, "gnuradio.u8"))
+        else:
+            ref.astype("<f4").tofile(os.path.join(case_dir, "gnuradio.f32le"))
         manifest = {
             "case": case["name"],
             "case_sha256": hashlib.sha256(raw).hexdigest(),
