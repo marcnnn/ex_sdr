@@ -1,0 +1,8 @@
+{
+  "name": "ldpc_enc_n0100_k0042",
+  "block": "ldpc_encoder",
+  "alist": "n_0100_k_0042_gap_02.alist",
+  "frames": 24,
+  "seed": 7,
+  "rationale": "cldpc encoding (Gaussian elimination of H, column permutation): codewords must be equal bit for bit."
+}

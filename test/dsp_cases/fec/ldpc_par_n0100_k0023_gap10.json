@@ -1,0 +1,9 @@
+{
+  "name": "ldpc_par_n0100_k0023_gap10",
+  "block": "ldpc_par_mtrx_encoder",
+  "alist": "n_0100_k_0023_gap_10.alist",
+  "gap": 10,
+  "frames": 24,
+  "seed": 2,
+  "rationale": "Richardson-Urbanke encoding is exact GF(2) arithmetic: codewords must be equal bit for bit."
+}

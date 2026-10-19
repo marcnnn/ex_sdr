@@ -1,0 +1,16 @@
+{
+  "name": "ldpc_flip_h_n0100_k0042",
+  "block": "ldpc_bit_flip_decoder",
+  "matrix": "H",
+  "alist": "n_0100_k_0042_gap_02.alist",
+  "gap": 2,
+  "max_iter": 100,
+  "ebn0_db": [
+    3.0,
+    5.0,
+    7.0
+  ],
+  "frames": 100,
+  "seed": 9,
+  "rationale": "Hard decisions and integer counts only: decoded bits must be equal. Input: GNU Radio's encoder output, BPSK (bit 1 -> +1) in AWGN, LLR 2y/sigma^2, at each Eb/N0 for frames/len(ebn0_db) frames."
+}

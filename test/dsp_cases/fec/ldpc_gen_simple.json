@@ -1,0 +1,8 @@
+{
+  "name": "ldpc_gen_simple",
+  "block": "ldpc_gen_mtrx_encoder",
+  "alist": "simple_g_matrix.alist",
+  "frames": 16,
+  "seed": 6,
+  "rationale": "G^T s over GF(2): codewords must be equal bit for bit."
+}
