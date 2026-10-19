@@ -39,7 +39,8 @@ Case fields:
       evaluated with: pi, math, np/numpy, the modules gr, blocks, filter,
       analog, digital, fec, channels (those the image has), the case's
       params as bare names when they are valid identifiers, and the dict `p`
-      with all of them (p["pass"] for names that are Python keywords).
+      with all of them (p["pass"] for names that are Python keywords; an arg
+      that is just a param name gives the param, whatever its name).
       Args can construct objects, e.g. "digital.constellation_qpsk().base()"
       or "blocks.GR_MSB_FIRST".
 
@@ -135,12 +136,20 @@ def expression_env(params):
     return env
 
 
+def evaluate(arg, env, params):
+    """A non-string arg as is; a string that is a param name (also "pass") as
+    that param; any other string as a Python expression."""
+    if not isinstance(arg, str):
+        return arg
+    return params[arg] if arg in params else eval(arg, env)
+
+
 def make_block(spec, params):
     """Instantiates e.g. {"block": "blocks.rotator_cc", "args": ["2 * pi * phase_inc / 65536"]}."""
     module, name = spec["block"].rsplit(".", 1)
     cls = getattr(importlib.import_module("gnuradio." + module), name)
     env = expression_env(params)
-    args = [eval(a, env) if isinstance(a, str) else a for a in spec.get("args", [])]
+    args = [evaluate(a, env, params) for a in spec.get("args", [])]
     return cls(*args)
 
 

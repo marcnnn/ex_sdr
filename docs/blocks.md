@@ -62,7 +62,8 @@ no local GNU Radio needed) and writes the fixture:
 * **Arguments.** Strings in a block's `"args"` are Python expressions with `pi`,
   `math`, `np`, the modules `gr`, `blocks`, `filter`, `analog`, `digital`, `fec`,
   `channels`, and the case's `params` as bare names (when they are valid
-  identifiers) or as the dict `p` (`p["pass"]`). They can build objects
+  identifiers) or as the dict `p` (`p["pass"]`; an argument that is just a param
+  name always gives that param). They can build objects
   (`digital.constellation_qpsk().base()`) and name enums (`gr.GR_MSB_FIRST`).
 * **Other fixtures.** Taps, tagged streams and PDUs do not fit the case format.
   Scripts listed in `HOOKS` in `golden.py` write them when the family's cases
@@ -79,10 +80,11 @@ Look at `test/dsp_cases/fir_ccf_31tap.json` and
 cases `add_ff`, `float_to_short` and `packed_to_unpacked_bb_msb` for two inputs,
 an int16 output and an enum.
 
-GNU Radio is not always repeatable on the byte: the output of
-`filters/fft_filter_ccf_decim2` changes in float rounding (up to 1e-7) from run
-to run, with the old runner as well. Regenerating a family can therefore show a
-diff there; keep the committed file unless the case changed.
+GNU Radio is not always repeatable on the byte: `filters/fft_filter_ccf_decim2`
+changes in float rounding (up to 1e-7) and `filters/rational_resampler_ccf_5_3`
+sometimes ends one item later, from run to run, with the old runner as well.
+Regenerating the filters family can therefore show a diff there; keep the
+committed files unless the case changed.
 
 Per block, as far as it applies:
 
