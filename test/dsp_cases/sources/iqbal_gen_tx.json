@@ -1,0 +1,76 @@
+{
+  "name": "iqbal_gen_tx",
+  "description": "iqbal_gen TX mode, -1 dB, 4 degrees",
+  "samples": 4096,
+  "seed": 21,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.05,
+        "amp": 0.45,
+        "phase": 0.0
+      },
+      {
+        "freq": -0.17,
+        "amp": 0.2,
+        "phase": 0.3
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "mag": -1.0,
+    "phase": 4.0,
+    "mode": 0
+  },
+  "block": {
+    "name": "iqbal_gen",
+    "opts": {
+      "magnitude": -1.0,
+      "phase": 4.0,
+      "mode": 0
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "channels.iqbal_gen",
+      "args": [
+        "mag",
+        "phase",
+        "mode"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.05,
+    "snr_db_min": 120.0,
+    "rationale": "The same two products and a sum in f32."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 1.6,
+      "snr_db_min": 85.0,
+      "rationale": "Two constants rounded to Q15 (|x| * 2^-16 each, 0.66 LSB worst for both inputs), two product roundings (0.5 LSB each) and the sum: under 2 LSB; measured 1.2."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 0.45,
+      "snr_db_min": 98.0,
+      "rationale": "As above with 2 more fraction bits, measured in Q15 LSB (0.3)."
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "name": "channel_model_clean",
+  "description": "channel_model without noise: timing offset 1.0007, taps, frequency offset 0.0031",
+  "samples": 4096,
+  "seed": 5,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.05,
+        "amp": 0.45,
+        "phase": 0.0
+      },
+      {
+        "freq": -0.17,
+        "amp": 0.2,
+        "phase": 0.3
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "fo": 0.0031,
+    "eps": 1.0006999969482422
+  },
+  "block": {
+    "name": "channel_model",
+    "opts": {
+      "frequency_offset": 0.0031,
+      "epsilon": 1.0006999969482422,
+      "taps": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.3
+        ],
+        [
+          -0.2,
+          0.1
+        ]
+      ]
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "channels.channel_model",
+      "args": [
+        0.0,
+        "fo",
+        "eps",
+        "[1+0j, 0.3j, -0.2+0.1j]",
+        0
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.5,
+    "snr_db_min": 100.0,
+    "rationale": "Resampler (0.03 LSB, see mmse_resampler_cc), 3 complex taps in f32 and the NCO of rotator_cc; GNU Radio's frequency offset is a fixed point NCO whose frequency is converted through float32 (0.1 LSB). Measured 0.16 LSB."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "max_error_lsb": 24,
+      "snr_db_min": 66.0,
+      "rationale": "Dominated by the rotator's phase rounding to 12 table bits (|y| * pi / 2^12 = 23 LSB for |y| <= 0.95, SNR 67 dB), plus resampler and tap rounding (about 3 LSB). Measured 17 LSB, 66.9 dB."
+    }
+  ]
+}

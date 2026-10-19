@@ -1,0 +1,6 @@
+{
+  "case": "noise_laplacian_f",
+  "case_sha256": "59bece8b6199f42cff8c5b99d79889069caae617e39a276dce25c9bef3ce2203",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

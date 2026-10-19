@@ -1,0 +1,6 @@
+{
+  "case": "channel_model_default",
+  "case_sha256": "494958a2620db6a8bef1c02bd32c0663a9c2e2604432a0554891dac6dd356f02",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

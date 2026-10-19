@@ -1,0 +1,86 @@
+{
+  "name": "sig_source_f_sin",
+  "description": "sig_source_f sin wave, amplitude 0.7, offset 0.1, phase 0.3",
+  "samples": 4096,
+  "seed": 1,
+  "input": {
+    "type": "none"
+  },
+  "output": {
+    "type": "real"
+  },
+  "params": {
+    "fs": 48000.0,
+    "freq": 590.4,
+    "amp": 0.7,
+    "offset": 0.1,
+    "phase": 0.3
+  },
+  "block": {
+    "name": "sig_source_f",
+    "opts": {
+      "waveform": "sin",
+      "frequency": 590.4,
+      "sample_rate": 48000.0,
+      "amplitude": 0.7,
+      "offset": 0.1,
+      "phase": 0.3
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.sig_source_f",
+      "args": [
+        "fs",
+        "analog.GR_SIN_WAVE",
+        "freq",
+        "amp",
+        "offset",
+        "phase"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.5,
+    "snr_db_min": 95.0,
+    "rationale": "GNU Radio's fixed point NCO (32 bit phase, table sine) is accurate to about 1.5e-5 of the amplitude; the float instance computes the exact sine of the same phase word. Measured 0.3 LSB and 102 dB; the bound has margin for the phase word rounding (GNU Radio converts the frequency through float32, which shifts the phase by up to 2e-5 rad over 4096 samples)."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut10_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 145,
+      "snr_db_min": 48.5,
+      "rationale": "Phase truncated to 10 table bits: error power amp^2 (2 pi / 2^10)^2 / 3 -> 49.0 dB; worst sample amp * 2 pi / 2^10 = 140.8 LSB (amp 0.7) plus 1 LSB of rounding."
+    },
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "max_error_lsb": 19,
+      "snr_db_min": 66.5,
+      "rationale": "Phase rounded to 12 table bits: error power amp^2 (2 pi / 2^12)^2 / 12 -> 67.1 dB; worst sample amp * pi / 2^12 = 17.6 LSB plus 1 LSB of rounding."
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "max_error_lsb": 5.5,
+      "snr_db_min": 78.5,
+      "rationale": "Phase rounded to 14 table bits: 79.1 dB; worst sample amp * pi / 2^14 = 4.4 LSB (in Q15 units) plus rounding."
+    }
+  ]
+}

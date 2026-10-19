@@ -1,0 +1,6 @@
+{
+  "case": "sig_source_c_square",
+  "case_sha256": "7d7a4071b0cf8302a7c7ad910b7b0a5485719a5d5b93e161563c86427748e956",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

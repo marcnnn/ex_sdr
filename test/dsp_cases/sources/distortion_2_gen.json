@@ -1,0 +1,70 @@
+{
+  "name": "distortion_2_gen",
+  "description": "distortion_2_gen with beta 0.1",
+  "samples": 4096,
+  "seed": 22,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.05,
+        "amp": 0.45,
+        "phase": 0.0
+      },
+      {
+        "freq": -0.17,
+        "amp": 0.2,
+        "phase": 0.3
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "beta": 0.1
+  },
+  "block": {
+    "name": "distortion_2_gen",
+    "opts": {
+      "beta": 0.1
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "channels.distortion_2_gen",
+      "args": [
+        "beta"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.05,
+    "snr_db_min": 115.0,
+    "rationale": "Same polynomial in f32."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 1.5,
+      "snr_db_min": 85.0,
+      "rationale": "The squared terms are rounded to Q15 (0.5 LSB), scaled by beta (error times 0.1 plus the rounding of beta, 0.5 LSB * 0.84) and rounded again; measured 0.9 LSB."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 0.4,
+      "snr_db_min": 98.0,
+      "rationale": "Same with Q17 intermediates, measured in Q15 LSB (0.2)."
+    }
+  ]
+}

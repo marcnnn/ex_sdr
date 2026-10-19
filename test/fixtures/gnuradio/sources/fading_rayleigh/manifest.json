@@ -1,0 +1,6 @@
+{
+  "case": "fading_rayleigh",
+  "case_sha256": "07775159b1bbdc9de594f7789e904380c7bcc62c5089ef9936a673c0137763d7",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

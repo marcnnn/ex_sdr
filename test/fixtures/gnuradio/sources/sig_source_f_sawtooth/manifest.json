@@ -1,0 +1,6 @@
+{
+  "case": "sig_source_f_sawtooth",
+  "case_sha256": "9f2a36da3dd3cb65b798e034d64935f6f69a9192d961b5062da27fa2025d23c2",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

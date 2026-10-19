@@ -1,0 +1,6 @@
+{
+  "case": "distortion_2_gen",
+  "case_sha256": "cd4cc5efee4eb35b5f5578b88bfb702d99629b3fc5db73fe60316c92afe7026f",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

@@ -1,0 +1,35 @@
+{
+  "name": "noise_gaussian_c",
+  "description": "noise_source_c gaussian, amplitude 0.2, statistics against GNU Radio",
+  "samples": 100000,
+  "seed": 1,
+  "input": {
+    "type": "none"
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {
+    "amp": 0.2,
+    "nseed": 42
+  },
+  "block": {
+    "name": "noise_source_c",
+    "opts": {
+      "type": "gaussian",
+      "amplitude": 0.2,
+      "seed": 42
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.noise_source_c",
+      "args": [
+        "analog.GR_GAUSSIAN",
+        "amp",
+        "nseed"
+      ]
+    }
+  ],
+  "stats_only": true
+}

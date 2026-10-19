@@ -1,0 +1,35 @@
+{
+  "name": "noise_laplacian_f",
+  "description": "noise_source_f laplacian, amplitude 0.08, statistics against GNU Radio",
+  "samples": 100000,
+  "seed": 1,
+  "input": {
+    "type": "none"
+  },
+  "output": {
+    "type": "real"
+  },
+  "params": {
+    "amp": 0.08,
+    "nseed": 42
+  },
+  "block": {
+    "name": "noise_source_f",
+    "opts": {
+      "type": "laplacian",
+      "amplitude": 0.08,
+      "seed": 42
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.noise_source_f",
+      "args": [
+        "analog.GR_LAPLACIAN",
+        "amp",
+        "nseed"
+      ]
+    }
+  ],
+  "stats_only": true
+}

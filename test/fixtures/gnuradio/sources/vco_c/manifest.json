@@ -1,0 +1,6 @@
+{
+  "case": "vco_c",
+  "case_sha256": "f4b14332aa7367169e1056f2dd8edb985d1f19bdd482f190292de3488078a5be",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

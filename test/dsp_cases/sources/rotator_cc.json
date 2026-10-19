@@ -1,0 +1,94 @@
+{
+  "name": "rotator_cc",
+  "description": "rotator_cc with phase increment 2 pi 0.0123 vs the NCO rotator",
+  "samples": 4096,
+  "seed": 1000,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.05,
+        "amp": 0.45,
+        "phase": 0.0
+      },
+      {
+        "freq": -0.17,
+        "amp": 0.2,
+        "phase": 0.3
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "phase_inc": 0.07728317927830891
+  },
+  "block": {
+    "name": "rotator_cc",
+    "opts": {
+      "frequency": 0.0123
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.rotator_cc",
+      "args": [
+        "phase_inc"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 2.0,
+    "snr_db_min": 85.0,
+    "rationale": "rotator_cc advances its phase by multiplying with a complex64 increment, so its phase drifts linearly (see ddc_rotator: about 1 LSB after 4000 samples); the float instance uses the exact phase word."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut10_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 135,
+      "snr_db_min": 48.5,
+      "rationale": "Phase truncated to 10 table bits: error power (2 pi / 2^10)^2 / 3 -> 49.0 dB; worst sample |x| * 2 pi / 2^10 = 132.7 LSB for |x| <= 0.66, plus requantisation."
+    },
+    {
+      "variant": "q15_lut10_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 68,
+      "snr_db_min": 54.5,
+      "rationale": "Phase rounded to 10 table bits: 55.0 dB; |x| * pi / 2^10 = 66.4 LSB plus requantisation."
+    },
+    {
+      "variant": "q15_lut12_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 12
+      },
+      "max_error_lsb": 36,
+      "snr_db_min": 60.5,
+      "rationale": "Phase truncated to 12 table bits: 61.1 dB; |x| * 2 pi / 2^12 = 33.2 LSB plus requantisation."
+    },
+    {
+      "variant": "q17_lut12_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "max_error_lsb": 18,
+      "snr_db_min": 66.5,
+      "rationale": "Phase rounded to 12 table bits: 67.1 dB; |x| * pi / 2^12 = 16.6 LSB plus requantisation."
+    }
+  ]
+}

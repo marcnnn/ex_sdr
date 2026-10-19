@@ -1,0 +1,6 @@
+{
+  "case": "sig_source_f_triangle",
+  "case_sha256": "152f19ed3bbd95ccc8b7c3d12e18c5c906868a23464e14f6dd6f140a475cc6f2",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

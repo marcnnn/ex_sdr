@@ -1,0 +1,59 @@
+{
+  "name": "mmse_resampler_cc_slow",
+  "description": "fractional resampler, input step 1.0017000436782837 (a float32 value, like GNU Radio) per output, vs mmse_resampler_cc",
+  "samples": 4096,
+  "seed": 4,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.05,
+        "amp": 0.45,
+        "phase": 0.0
+      },
+      {
+        "freq": -0.17,
+        "amp": 0.2,
+        "phase": 0.3
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "ratio": 1.0017000436782837
+  },
+  "block": {
+    "name": "mmse_resampler_cc",
+    "opts": {
+      "ratio": 1.0017000436782837
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "filter.mmse_resampler_cc",
+      "args": [
+        0.0,
+        "ratio"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.25,
+    "snr_db_min": 105.0,
+    "rationale": "Same polyphase structure and phase quantisation (1/128); the taps are a least squares design that agrees with GNU Radio's table to 1.2e-5, worst case 8 * 1.2e-5 * 0.66 = 2 LSB, measured 0.03 LSB. The input step is a float32 value so both accumulate the same phase."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 3.2,
+      "snr_db_min": 85.0,
+      "rationale": "Eight taps rounded to Q15 (8 * 0.5 * 0.66 = 2.6 LSB worst case) plus output rounding. Measured 1.7 LSB."
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "name": "vector_source_f",
+  "description": "vector_source_f repeating a 7 value vector",
+  "samples": 50,
+  "seed": 1,
+  "input": {
+    "type": "none"
+  },
+  "output": {
+    "type": "real"
+  },
+  "params": {
+    "data": [
+      0.1,
+      -0.25,
+      0.5,
+      0.75,
+      -0.9,
+      0.0,
+      0.3333
+    ]
+  },
+  "block": {
+    "name": "vector_source_f",
+    "opts": {
+      "data": [
+        0.1,
+        -0.25,
+        0.5,
+        0.75,
+        -0.9,
+        0.0,
+        0.3333
+      ]
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.vector_source_f",
+      "args": [
+        "data",
+        true
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.01,
+    "snr_db_min": 100.0,
+    "rationale": "A stored vector: the same f32 values."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 0.5,
+      "snr_db_min": 70.0,
+      "rationale": "Each value rounded to Q15: at most half an LSB."
+    },
+    {
+      "variant": "q17",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error_lsb": 0.13,
+      "snr_db_min": 85.0,
+      "rationale": "Each value rounded to Q17: at most 0.125 LSB in Q15 units."
+    }
+  ]
+}

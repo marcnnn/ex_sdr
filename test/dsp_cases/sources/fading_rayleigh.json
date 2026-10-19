@@ -1,0 +1,45 @@
+{
+  "name": "fading_rayleigh",
+  "description": "fading_model Rayleigh, fDTs 0.01, N 8, on a constant 0.5; statistics against GNU Radio",
+  "samples": 100000,
+  "seed": 8,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.0,
+        "amp": 0.5,
+        "phase": 0.0
+      }
+    ],
+    "noise_rms": 0.0
+  },
+  "params": {
+    "n": 8,
+    "fdts": 0.01,
+    "k": 4.0,
+    "nseed": 7
+  },
+  "block": {
+    "name": "fading_model",
+    "opts": {
+      "n": 16,
+      "fdts": 0.01,
+      "los": false,
+      "seed": 7
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "channels.fading_model",
+      "args": [
+        "n",
+        "fdts",
+        false,
+        "k",
+        "nseed"
+      ]
+    }
+  ],
+  "stats_only": true
+}

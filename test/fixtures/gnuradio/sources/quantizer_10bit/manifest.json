@@ -1,0 +1,6 @@
+{
+  "case": "quantizer_10bit",
+  "case_sha256": "eea0a9bf9c5d1390ecf62711dc22282617bc5adaabee3c659e79b4a484c30b06",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

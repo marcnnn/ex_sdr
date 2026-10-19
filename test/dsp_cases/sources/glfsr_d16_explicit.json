@@ -1,0 +1,36 @@
+{
+  "name": "glfsr_d16_explicit",
+  "description": "glfsr_source_b degree 16, mask 0xb400, seed 0xace1",
+  "samples": 4096,
+  "seed": 1,
+  "input": {
+    "type": "none"
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {
+    "deg": 16,
+    "mask": 46080,
+    "seed": 44257
+  },
+  "block": {
+    "name": "glfsr_source_b",
+    "opts": {
+      "degree": 16,
+      "mask": 46080,
+      "seed": 44257
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.glfsr_source_b",
+      "args": [
+        "deg",
+        true,
+        "mask",
+        "seed"
+      ]
+    }
+  ]
+}
