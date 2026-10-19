@@ -1,0 +1,85 @@
+{
+  "name": "multiply_const_cc_complex",
+  "description": "multiply_const_cc by the complex constant 0.6 - 0.3j",
+  "samples": 4096,
+  "seed": 2003,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.03,
+        "amp": 0.4,
+        "phase": 0.0
+      },
+      {
+        "freq": 0.3,
+        "amp": 0.3,
+        "phase": 1.0
+      }
+    ],
+    "noise_rms": 0.001
+  },
+  "params": {
+    "k": [
+      0.6,
+      -0.3
+    ]
+  },
+  "block": {
+    "name": "multiply_const_cc",
+    "opts": {
+      "k": "k"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "blocks.multiply_const_cc",
+      "args": [
+        "complex(k[0], k[1])"
+      ]
+    }
+  ],
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 3.6e-05,
+      "snr_db_min": 80.0,
+      "rationale": "k in Q15: 0.6 -> 19661 (0.2 LSB off), -0.3 -> -9830 (0.4 LSB off), |dk| = 0.45 LSB; times |x| <= 1 gives <= 0.45 LSB, plus output rounding 0.5 LSB per component (0.71 LSB complex): <= 1.16 LSB = 3.5e-5. Measured 2.8e-5. SNR minimum: about 3 dB below the real-constant case's rounding-only level, for the constant's error."
+    },
+    {
+      "variant": "q15_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 10
+      },
+      "max_error": 5.7e-05,
+      "snr_db_min": 78.0,
+      "rationale": "As q15_nearest, but truncation costs up to 1 LSB per component (1.41 LSB complex): <= 1.86 LSB = 5.7e-5. Measured 5.0e-5. SNR minimum: about 3 dB below the real-constant case's rounding-only level, for the constant's error."
+    },
+    {
+      "variant": "q17_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_error": 1.1e-05,
+      "snr_db_min": 92.0,
+      "rationale": "k in Q17 is off by <= 0.5 Q17 LSB per component (0.71 complex), times |x| <= 1, plus 0.71 Q17 LSB output rounding: <= 1.42 Q17 LSB = 1.08e-5. Measured 6.8e-6. SNR minimum: about 3 dB below the real-constant case's rounding-only level, for the constant's error."
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error": 1e-06,
+    "snr_db_min": 120.0,
+    "rationale": "Both compute the complex product in float32; the order of the four products and two sums differs (measured 4.2e-8)."
+  }
+}

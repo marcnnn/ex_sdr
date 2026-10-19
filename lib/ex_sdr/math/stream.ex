@@ -183,6 +183,10 @@ defmodule ExSdr.Math.Stream do
   # width check bounds the products and sums by the format, not the container.
   deftransformp qin(x, format), do: Num.quantize(x, format)
 
+  # Complex constant: a complex product (multiply_const_cc with k = {re, im}).
+  deftransformp scale({_, _} = x, {_, _} = k, format),
+    do: x |> Num.cmul(k) |> Num.quantize(format)
+
   deftransformp scale({re, im}, k, format),
     do: {scale(re, k, format), scale(im, k, format)}
 
