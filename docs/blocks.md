@@ -81,10 +81,13 @@ cases `add_ff`, `float_to_short` and `packed_to_unpacked_bb_msb` for two inputs,
 an int16 output and an enum.
 
 GNU Radio is not always repeatable on the byte: `filters/fft_filter_ccf_decim2`
-changes in float rounding (up to 1e-7) and `filters/rational_resampler_ccf_5_3`
-sometimes ends one item later, from run to run, with the old runner as well.
-Regenerating the filters family can therefore show a diff there; keep the
-committed files unless the case changed.
+and `carrier/corr_est_cc_sync32` (FFT filtering) change in float rounding (up
+to 1e-7), and `filters/rational_resampler_ccf_5_3` sometimes ends one item
+later, from run to run. Regenerating these families can therefore show a diff
+there; keep the committed files unless the case changed.
+
+Families whose cases need their own runner are listed in `RUNNERS` in
+`golden.py` (carrier); `scripts/gnuradio_golden.sh` dispatches to it.
 
 Per block, as far as it applies:
 

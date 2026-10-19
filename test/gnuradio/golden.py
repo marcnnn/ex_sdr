@@ -67,6 +67,9 @@ from gnuradio import blocks, gr
 FULL_SCALE = 32768.0
 
 # Scripts for fixtures that are not sample streams: family -> [(script, file in the output dir)].
+# Families whose cases need their own runner (same arguments: cases dir, output dir).
+RUNNERS = {"carrier": "carrier_golden.py"}
+
 HOOKS = {
     "digital": [("digital_framing_golden.py", "framing.json")],
     "filters": [("filters_taps.py", "taps.json"), ("filters_pfb.py", "pfb.json")],
@@ -292,6 +295,11 @@ def write_case(case, raw, xs, refs, out_dir):
 
 
 def main(cases_dir, out_dir, family=""):
+    here = os.path.dirname(os.path.abspath(__file__))
+    if family in RUNNERS:
+        subprocess.run([sys.executable, os.path.join(here, RUNNERS[family]), cases_dir, out_dir], check=True)
+        return
+
     for path in sorted(glob.glob(os.path.join(cases_dir, "*.json"))):
         with open(path, "rb") as f:
             raw = f.read()
@@ -299,7 +307,6 @@ def main(cases_dir, out_dir, family=""):
         xs, refs = run_case(case)
         write_case(case, raw, xs, refs, out_dir)
 
-    here = os.path.dirname(os.path.abspath(__file__))
     for script, target, *cases in HOOKS.get(family, []):
         args = [os.path.join(cases_dir, c) for c in cases] + [os.path.join(out_dir, target)]
         subprocess.run([sys.executable, os.path.join(here, script)] + args, check=True)

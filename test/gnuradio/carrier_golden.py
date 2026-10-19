@@ -38,6 +38,8 @@ Run it with (rootless podman, image exhdl-gnuradio):
     -v "$PWD/test/dsp_cases/carrier:/cases:ro,Z" \\
     -v "$PWD/test/fixtures/gnuradio/carrier:/out:Z" -w /work exhdl-gnuradio \\
     python3 test/gnuradio/carrier_golden.py /cases /out
+
+or simply: scripts/gnuradio_golden.sh test/fixtures/gnuradio/carrier test/dsp_cases/carrier
 """
 import glob
 import hashlib
