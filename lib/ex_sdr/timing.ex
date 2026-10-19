@@ -25,6 +25,28 @@ defmodule ExSdr.Timing do
   Common options: `:format`, `:tap_frac` (fixed point: fractional bits of
   the interpolator taps, default the format's), `:iterations` (iterations
   per input item; the default covers the block's parameters).
+
+  Options use GNU Radio's parameter names:
+
+    * `:fractional_delay_cc | :ff` - `:mu` (0..1), `:interpolator` (`:mmse`,
+      `{:pfb_no_mf, n}`, `{:pfb_mf, taps, n}`, `{:polyphase, taps, n}`)
+    * `:mmse_resampler_cc | :ff` - `:resamp_ratio`, `:phase_shift`
+    * `:pfb_arb_resampler_ccf | :fff` - `:rate`, `:taps`, `:filter_size` (32),
+      `:mu_bits` (fixed point, 18)
+    * `:clock_recovery_mm_cc | :ff` - `:omega`, `:gain_omega`, `:mu` (0.5),
+      `:gain_mu`, `:omega_relative_limit` (0.001)
+    * `:symbol_sync_cc | :ff` - `:ted_type` (`:mueller_muller`,
+      `:modified_mueller_muller`, `:zero_crossing`, `:gardner`, `:early_late`,
+      `:dandrea_mengali_gen_msk`, `:mengali_dandrea_gmsk`,
+      `:signal_times_slope_ml`, `:signum_times_slope_ml`), `:sps`, `:loop_bw`,
+      `:damping_factor` (1.0), `:ted_gain` (1.0), `:max_deviation` (1.5),
+      `:osps` (1), `:constellation` (an `ExSdr.Digital.Constellation`, BPSK),
+      `:resampling_type` (`:mmse`, `:pfb_no_mf`, `:pfb_mf`), `:n_filters` (128),
+      `:taps`
+    * `:pfb_clock_sync_ccf | :fff` - `:sps`, `:loop_bw`, `:taps`,
+      `:filter_size` (32), `:init_phase` (0), `:max_rate_deviation` (1.5),
+      `:osps` (1), `:margin` (2, see docs/blocks/timing.md)
+    * `:msk_timing_recovery_cc` - `:sps`, `:gain`, `:limit`, `:osps` (1 or 2)
   """
   @behaviour NxFixed.Block
 
