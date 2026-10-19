@@ -1,0 +1,63 @@
+{
+  "compare": "probe",
+  "description": "probe_density_b, alpha 0.1",
+  "samples": 2000,
+  "seed": 1993,
+  "input": {
+    "type": "bytes",
+    "modulus": 2
+  },
+  "output": {
+    "type": "real"
+  },
+  "params": {
+    "alpha": 0.1
+  },
+  "block": {
+    "name": "probe_density_b",
+    "opts": {
+      "alpha": "alpha"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.probe_density_b",
+      "args": [
+        "alpha"
+      ]
+    }
+  ],
+  "outputs": [],
+  "probe": [
+    "density"
+  ],
+  "name": "probe_density_b_a0p1",
+  "float_vs_gnuradio": {
+    "abs": 1e-07,
+    "rationale": "probe_density_b: GNU Radio's recurrence in double against ours in f32: 5e-8 after 2000 steps; probe_signal: the last sample exactly."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "abs": 1e-08,
+      "rationale": "Density in 40 bits with 32 fractional bits, the difference to alpha (in - d) rounded to 24: measured 4e-10; probe_signal is exact."
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "abs": 1e-08,
+      "rationale": "As q15."
+    }
+  ]
+}

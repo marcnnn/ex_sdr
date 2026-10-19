@@ -14,6 +14,18 @@ defmodule ExSdr.Carrier.TestHelper do
   def case_paths,
     do: Path.wildcard(Path.join([F.cases_dir(), "carrier", "*.json"])) |> Enum.sort()
 
+  @doc "`[{path, case}]` of the cases with `\"compare\": kind` (for generating tests at compile time)."
+  def cases_of(kind) do
+    for path <- case_paths(),
+        case = path |> File.read!() |> JSON.decode!(),
+        (case["compare"] || "ports") == kind,
+        do: {path, case}
+  end
+
+  @doc "`[{variant, format}]` of a case's fixed-point variants."
+  def fixed_formats(case),
+    do: for(v <- case["fixed_vs_float"] || [], do: {v, format(v["format"])})
+
   @doc "`{case, data}` with the GNU Radio data: `data.ports` (all outputs), `data.tags`."
   def load(path) do
     case = F.read_case(path)
@@ -63,6 +75,18 @@ defmodule ExSdr.Carrier.TestHelper do
   defp value("outputs", names, _), do: Enum.map(names, &String.to_atom/1)
   defp value("constellation", spec, _), do: constellation(spec)
   defp value("algorithm", name, _), do: String.to_atom(name)
+
+  defp value("type", name, _), do: String.to_atom(name)
+  defp value("item", name, _), do: String.to_atom(name)
+
+  # symbol lists (training sequence, sync word): the constellation points at the
+  # indices of a params list
+  defp value(_, %{"from" => key, "constellation" => spec}, params) do
+    c = constellation(spec)
+    for i <- Map.fetch!(params, key), do: Enum.at(c.points, i)
+  end
+
+  defp value("initial_taps", taps, _), do: Enum.map(taps, &List.to_tuple/1)
   defp value(_, "$" <> name, params), do: Map.fetch!(params, name)
   defp value(_, v, params) when is_binary(v), do: Map.get(params, v, v)
   defp value(_, v, _), do: v
@@ -90,7 +114,12 @@ defmodule ExSdr.Carrier.TestHelper do
     case case["input"]["type"] do
       "complex" ->
         {re, im} = Enum.unzip(data.input)
-        {samples(re, format), samples(im, format)}
+        x = {samples(re, format), samples(im, format)}
+
+        case case["input"]["tags"] do
+          nil -> x
+          tags -> {x, flags(length(re), Enum.map(tags, & &1["offset"]))}
+        end
 
       "real" ->
         samples(data.input, format)
@@ -98,6 +127,12 @@ defmodule ExSdr.Carrier.TestHelper do
       "bytes" ->
         Nx.tensor(data.input, type: :u8)
     end
+  end
+
+  # a u8 flag stream, 1 at the tagged offsets
+  defp flags(n, offsets) do
+    set = MapSet.new(offsets)
+    Nx.tensor(for(i <- 0..(n - 1), do: if(i in set, do: 1, else: 0)), type: :u8)
   end
 
   defp samples(ints, format), do: Num.from_int(Nx.tensor(ints, type: :s16), 15, format)
@@ -192,6 +227,9 @@ defmodule ExSdr.Carrier.TestHelper do
 
     pieces |> Enum.zip_with(&Enum.concat/1)
   end
+
+  defp slice_items({{_, _} = x, flags}, from, len),
+    do: {slice_items(x, from, len), slice_items(flags, from, len)}
 
   defp slice_items({a, b}, from, len), do: {slice_items(a, from, len), slice_items(b, from, len)}
 

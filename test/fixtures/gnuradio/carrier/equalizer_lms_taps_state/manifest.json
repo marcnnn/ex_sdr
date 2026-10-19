@@ -1,0 +1,6 @@
+{
+  "case": "equalizer_lms_taps_state",
+  "case_sha256": "f410944a84b56448f16f6620c54ae6bec8fe2cc29581bf5db8d36a4e0a0ff80f",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

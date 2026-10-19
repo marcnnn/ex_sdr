@@ -1,0 +1,84 @@
+{
+ "tags": [
+  {
+   "key": "corr_start",
+   "offset": 210,
+   "value": 12.36977767944336
+  },
+  {
+   "key": "phase_est",
+   "offset": 210,
+   "value": -1.173816442489624
+  },
+  {
+   "key": "time_est",
+   "offset": 210,
+   "value": 0.09018341546528541
+  },
+  {
+   "key": "corr_est",
+   "offset": 210,
+   "value": 12.36977767944336
+  },
+  {
+   "key": "corr_start",
+   "offset": 215,
+   "value": 16.130531311035156
+  },
+  {
+   "key": "phase_est",
+   "offset": 215,
+   "value": -1.1881468296051025
+  },
+  {
+   "key": "time_est",
+   "offset": 215,
+   "value": -0.046627994279585305
+  },
+  {
+   "key": "corr_est",
+   "offset": 215,
+   "value": 16.130531311035156
+  },
+  {
+   "key": "corr_start",
+   "offset": 713,
+   "value": 16.324562072753906
+  },
+  {
+   "key": "phase_est",
+   "offset": 713,
+   "value": -1.1953229904174805
+  },
+  {
+   "key": "time_est",
+   "offset": 713,
+   "value": 0.07796168220273492
+  },
+  {
+   "key": "corr_est",
+   "offset": 713,
+   "value": 16.324562072753906
+  },
+  {
+   "key": "corr_start",
+   "offset": 717,
+   "value": 10.5127534866333
+  },
+  {
+   "key": "phase_est",
+   "offset": 717,
+   "value": -1.2646385431289673
+  },
+  {
+   "key": "time_est",
+   "offset": 717,
+   "value": -0.20243933074163145
+  },
+  {
+   "key": "corr_est",
+   "offset": 717,
+   "value": 10.5127534866333
+  }
+ ]
+}

@@ -18,13 +18,17 @@ defmodule ExSdr.Carrier do
   """
   @behaviour NxFixed.Block
 
+  alias ExSdr.Carrier.Equalizer
+  alias ExSdr.Carrier.Estimators
   alias ExSdr.Carrier.Kernels, as: K
   alias ExSdr.Carrier.Loop
   alias ExSdr.Digital.Constellation
   alias NxFixed.Block
   alias NxFixed.Num
 
-  @names ~w(costas_loop_cc fll_band_edge_cc constellation_receiver_cb)a
+  @names ~w(costas_loop_cc fll_band_edge_cc constellation_receiver_cb linear_equalizer
+            cma_equalizer_cc lms_dd_equalizer_cc corr_est_cc mpsk_snr_est_cc
+            probe_mpsk_snr_est_c probe_density_b probe_signal)a
 
   @doc "The block names `block/2` knows."
   def names, do: @names
@@ -132,7 +136,146 @@ defmodule ExSdr.Carrier do
     }
   end
 
+  def block(:linear_equalizer, opts) do
+    {_f, o} =
+      common(opts,
+        num_taps: :required,
+        algorithm: :required,
+        mu: :required,
+        sps: 1,
+        modulus: 1.0,
+        adapt_after_training: true
+      )
+
+    equalizer_block(:linear_equalizer, o, "digital.linear_equalizer")
+  end
+
+  def block(:cma_equalizer_cc, opts) do
+    {_f, o} = common(opts, num_taps: :required, mu: :required, modulus: 1.0, sps: 1)
+    o = Keyword.put(o, :algorithm, :cma)
+    equalizer_block(:cma_equalizer_cc, o, "digital.linear_equalizer with adaptive_algorithm_cma")
+  end
+
+  def block(:lms_dd_equalizer_cc, opts) do
+    {_f, o} = common(opts, num_taps: :required, mu: :required, sps: 1)
+    o = Keyword.put(o, :algorithm, :lms)
+
+    equalizer_block(
+      :lms_dd_equalizer_cc,
+      o,
+      "digital.linear_equalizer with adaptive_algorithm_lms"
+    )
+  end
+
+  def block(:corr_est_cc, opts) do
+    {_f, o} =
+      common(opts, symbols: :required, sps: 1, mark_delay: 0, threshold: 0.9, tap_frac: 20)
+
+    n = length(o[:symbols])
+    isps = trunc(o[:sps] + 0.5)
+    o = Keyword.put(o, :mark_delay, min(o[:mark_delay], n - 1))
+
+    %Block{
+      name: :corr_est_cc,
+      kind: :stream,
+      fun: &Estimators.corr_est/3,
+      init: Estimators.corr_init(o),
+      opts: o,
+      item: {:complex, :corr_est},
+      latency: n,
+      warmup: n + isps + 2,
+      hardware: :control,
+      gnuradio: "digital.corr_est_cc"
+    }
+  end
+
+  def block(name, opts) when name in [:mpsk_snr_est_cc, :probe_mpsk_snr_est_c] do
+    {_f, o} = common(opts, type: :required, alpha: 0.001)
+
+    unless o[:type] in [:simple, :skew, :m2m4, :svr],
+      do: raise(ArgumentError, "#{name}: type must be :simple, :skew, :m2m4 or :svr")
+
+    %Block{
+      name: name,
+      kind: :stream,
+      fun: &Estimators.snr_est/3,
+      init: Estimators.snr_init(o),
+      opts: o,
+      item: {:complex, :snr_registers},
+      latency: 1,
+      warmup: :unbounded,
+      hardware: :feedback,
+      gnuradio: "digital.#{name}"
+    }
+  end
+
+  def block(:probe_density_b, opts) do
+    {f, o} = common(opts, alpha: :required)
+
+    %Block{
+      name: :probe_density_b,
+      kind: :stream,
+      fun: &Estimators.probe_density/3,
+      init: Estimators.density_init(f),
+      opts: o,
+      item: {:byte, :density},
+      hardware: :feedback,
+      warmup: :unbounded,
+      gnuradio: "digital.probe_density_b"
+    }
+  end
+
+  def block(:probe_signal, opts) do
+    {f, o} = common(opts, item: :real)
+
+    init =
+      case o[:item] do
+        :byte -> Nx.tensor(0, type: :u8)
+        :complex -> {Num.zeros({}, f), Num.zeros({}, f)}
+        :real -> Num.zeros({}, f)
+      end
+
+    %Block{
+      name: :probe_signal,
+      kind: :stream,
+      fun: &Estimators.probe_signal/3,
+      init: init,
+      opts: o,
+      item: {o[:item], o[:item]},
+      hardware: :feed_forward,
+      warmup: 1,
+      gnuradio: "blocks.probe_signal_#{%{real: "f", complex: "c", byte: "b"}[o[:item]]}"
+    }
+  end
+
   def block(name, _opts), do: raise(ArgumentError, "unknown carrier block #{inspect(name)}")
+
+  defp equalizer_block(name, o, gnuradio) do
+    unless o[:num_taps] >= 2, do: raise(ArgumentError, "#{name}: num_taps must be at least 2")
+    unless o[:algorithm] in [:lms, :nlms, :cma], do: raise(ArgumentError, "unknown algorithm")
+
+    o =
+      if o[:algorithm] == :cma and not Keyword.has_key?(o, :constellation),
+        do: o,
+        else: Keyword.put(o, :points, points(o[:constellation]))
+
+    o = Keyword.delete(o, :constellation)
+    training? = Keyword.get(o, :training, []) != []
+    sps = o[:sps]
+
+    %Block{
+      name: name,
+      kind: :stream,
+      fun: &Equalizer.step/3,
+      init: Equalizer.init(o),
+      opts: o,
+      rate: if(sps == 1, do: {1, 1}, else: {:variable, 1}),
+      item: {if(training?, do: :complex_flag, else: :complex), out_item(:complex, o)},
+      hardware: :feedback,
+      warmup: :unbounded,
+      gnuradio: gnuradio
+    }
+  end
 
   # -- helpers ---------------------------------------------------------------------------
 

@@ -1,0 +1,77 @@
+{
+  "compare": "snr",
+  "description": "mpsk_snr_est_cc, SIMPLE estimator, QPSK at about 12 dB",
+  "samples": 3000,
+  "seed": 1903,
+  "input": {
+    "type": "complex",
+    "source": {
+      "constellation": "scaled(digital.constellation_qpsk(), 0.25)",
+      "sps": 1,
+      "rms": 0.5,
+      "noise_rms": 0.0707
+    }
+  },
+  "params": {
+    "type": "simple",
+    "alpha": 0.01,
+    "tagn": 1000
+  },
+  "block": {
+    "name": "mpsk_snr_est_cc",
+    "opts": {
+      "type": "simple",
+      "alpha": 0.01
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.mpsk_snr_est_cc",
+      "args": [
+        "digital.SNR_EST_SIMPLE",
+        "tagn",
+        "alpha"
+      ]
+    }
+  ],
+  "output": {
+    "type": "complex"
+  },
+  "outputs": [
+    {
+      "type": "complex"
+    }
+  ],
+  "tags": [
+    "snr"
+  ],
+  "name": "snr_est_simple_12db",
+  "float_vs_gnuradio": {
+    "db": 0.003,
+    "rationale": "The estimator registers in f32 against GNU Radio's doubles, then the same formulas in f64: M2M4 and SVR subtract nearly equal terms (noise = y1 - sqrt(2 y1^2 - y2)), which amplifies the 1e-7 relative f32 error by the signal to noise ratio (100 at 20 dB): measured 0.0006 dB at 20 dB, below 1e-4 dB at 12 dB."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "db": 0.002,
+      "rationale": "Registers with 40 fractional bits (simple: y2 at 32), |z|^2 rounded to 28; measured below 1e-4 dB from the float instance, 6e-4 at 20 dB where M2M4 amplifies by the SNR."
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "db": 0.002,
+      "rationale": "As q15, 17 bit samples are exact in the same registers."
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "case": "equalizer_lms_small_mu",
+  "case_sha256": "eb2ce417e1b376ba53775dd95ca0a7715f9ad03bbe53baf45351ac810b128abf",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

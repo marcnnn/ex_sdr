@@ -1,0 +1,165 @@
+{
+  "compare": "corr_est",
+  "description": "corr_est_cc, same data, sps 1: the flanks of the triangle are peaks too",
+  "samples": 1000,
+  "seed": 2477,
+  "input": {
+    "type": "complex",
+    "source": {
+      "constellation": "scaled(digital.constellation_qpsk(), 0.25)",
+      "sps": 1,
+      "phase": -1.2,
+      "rms": 0.5,
+      "noise_rms": 0.02,
+      "inserts": [
+        {
+          "at": 200,
+          "indices": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "at": 700,
+          "indices": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  },
+  "params": {
+    "sync": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "sps": 1,
+    "mark_delay": 2,
+    "threshold": 0.6
+  },
+  "block": {
+    "name": "corr_est_cc",
+    "opts": {
+      "symbols": {
+        "from": "sync",
+        "constellation": {
+          "name": "qpsk",
+          "scale": 0.25
+        }
+      },
+      "sps": "sps",
+      "mark_delay": "mark_delay",
+      "threshold": "threshold"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.corr_est_cc",
+      "args": [
+        "[points[i] for i in sync]",
+        "sps",
+        "mark_delay",
+        "threshold",
+        "digital.THRESHOLD_ABSOLUTE"
+      ]
+    }
+  ],
+  "output": {
+    "type": "complex"
+  },
+  "outputs": [
+    {
+      "type": "complex"
+    },
+    {
+      "type": "complex"
+    }
+  ],
+  "tags": [
+    "corr_start",
+    "phase_est",
+    "time_est",
+    "corr_est"
+  ],
+  "name": "corr_est_cc_holdoff_sps1",
+  "float_vs_gnuradio": {
+    "corr": 1e-05,
+    "phase": 1e-05,
+    "time_est": 1e-05,
+    "corr_est_rel": 1e-05,
+    "rationale": "The correlation is a complex FIR in f32 on both sides (GNU Radio through an FFT filter): 1e-6 absolute on values up to 8. The phase is atan2 of it (GNU Radio's fast_atan2f: measured 1e-6 rad), time_est and corr_est are functions of the squared magnitudes (measured 2e-7 relative)."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "corr": 3e-05,
+      "phase": 0.0001,
+      "time_est": 1e-05,
+      "corr_est_rel": 1e-05,
+      "rationale": "Taps rounded to 20 fractional bits (the correlation error 1e-5 on a peak of 8, 1e-6 relative), the CORDIC arctangent (16 iterations, residual 3e-5 rad), time_est on 22 fractional bits (2.4e-7). Detections must be equal: the peaks are 20 dB above the threshold."
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "corr": 3e-05,
+      "phase": 0.0001,
+      "time_est": 1e-05,
+      "corr_est_rel": 1e-05,
+      "rationale": "As q15: the correlation format is 28 bits whatever the sample format, so the same error (measured identical)."
+    }
+  ]
+}

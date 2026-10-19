@@ -275,32 +275,41 @@ defmodule ExSdr.Carrier.Kernels do
     {out, {phase1, freq1}}
   end
 
-  # -- vector helpers (complex or real, either instance) ------------------------------------------
+  # -- vector helpers (complex or real, either instance), shared by the other carrier modules ------
 
-  defp cmap({a, b}, fun), do: {fun.(a), fun.(b)}
-  defp cmap(a, fun), do: fun.(a)
+  @doc false
+  def cmap({a, b}, fun), do: {fun.(a), fun.(b)}
+  @doc false
+  def cmap(a, fun), do: fun.(a)
 
-  defp cmap2({a, b}, {c, d}, fun), do: {fun.(a, c), fun.(b, d)}
-  defp cmap2(a, c, fun), do: fun.(a, c)
+  @doc false
+  def cmap2({a, b}, {c, d}, fun), do: {fun.(a, c), fun.(b, d)}
+  @doc false
+  def cmap2(a, c, fun), do: fun.(a, c)
 
-  defp first(%Fixed{t: t, frac: frac}),
+  @doc false
+  def first(%Fixed{t: t, frac: frac}),
     do: %Fixed{t: t |> Nx.slice([0], [1]) |> Nx.reshape({}), frac: frac}
 
-  defp first(t), do: t |> Nx.slice([0], [1]) |> Nx.reshape({})
+  def first(t), do: t |> Nx.slice([0], [1]) |> Nx.reshape({})
 
-  defp scalar(%Fixed{t: t, frac: frac}), do: %Fixed{t: Nx.reshape(t, {}), frac: frac}
-  defp scalar(t), do: Nx.reshape(t, {})
+  @doc false
+  def scalar(%Fixed{t: t, frac: frac}), do: %Fixed{t: Nx.reshape(t, {}), frac: frac}
+  def scalar(t), do: Nx.reshape(t, {})
 
-  defp drop_first(%Fixed{t: t, frac: frac}),
+  @doc false
+  def drop_first(%Fixed{t: t, frac: frac}),
     do: %Fixed{t: Nx.slice(t, [1], [Nx.axis_size(t, 0) - 1]), frac: frac}
 
-  defp drop_first(t), do: Nx.slice(t, [1], [Nx.axis_size(t, 0) - 1])
+  def drop_first(t), do: Nx.slice(t, [1], [Nx.axis_size(t, 0) - 1])
 
   # line (vector) followed by one item
-  defp append(%Fixed{t: t, frac: frac}, %Fixed{t: x}),
+  @doc false
+  def append(%Fixed{t: t, frac: frac}, %Fixed{t: x}),
     do: %Fixed{t: Nx.concatenate([t, Nx.reshape(x, {1})]), frac: frac}
 
-  defp append(t, x), do: Nx.concatenate([t, Nx.reshape(x, {1})])
+  def append(t, x), do: Nx.concatenate([t, Nx.reshape(x, {1})])
 
-  defp shift_in(line, x), do: line |> append(x) |> drop_first()
+  @doc false
+  def shift_in(line, x), do: line |> append(x) |> drop_first()
 end

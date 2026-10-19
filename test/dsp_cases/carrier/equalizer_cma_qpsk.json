@@ -1,0 +1,112 @@
+{
+  "block": {
+    "name": "linear_equalizer",
+    "opts": {
+      "adapt_after_training": "adapt",
+      "algorithm": "cma",
+      "constellation": {
+        "name": "qpsk",
+        "scale": 0.25
+      },
+      "modulus": "modulus",
+      "mu": "mu",
+      "num_taps": "num_taps",
+      "outputs": [],
+      "sps": "sps"
+    }
+  },
+  "description": "linear_equalizer with CMA, blind (no training)",
+  "fixed_vs_float": [
+    {
+      "bounds": [
+        5e-05
+      ],
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 12,
+        "rounding": "nearest"
+      },
+      "rationale": "Output rounded to the format (half an LSB, 1.5e-5 at Q15) and the weights in 28 fractional bits; the weights follow the float ones within 1e-6 because the step is applied to 13 bits finer weights than the samples; the output error is the rounding of the output only.",
+      "skip": 0,
+      "variant": "q15_lut12"
+    },
+    {
+      "bounds": [
+        2e-05
+      ],
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 14,
+        "rounding": "nearest"
+      },
+      "rationale": "Output rounded to the format (half an LSB, 1.5e-5 at Q15) and the weights in 28 fractional bits; the weights follow the float ones within 1e-6 because the step is applied to 13 bits finer weights than the samples; the output error is the rounding of the output only.",
+      "skip": 0,
+      "variant": "q17_lut14"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "bounds": [
+      1e-05
+    ],
+    "rationale": "The same recurrence in f32 on both sides; GNU Radio forms the dot product and the update with volk kernels in another summation order: differences of 3e-7 (measured) that the adaptation does not amplify at these step sizes.",
+    "skip": 0
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "num_taps",
+        "sps",
+        "digital.adaptive_algorithm_cma(scaled(digital.constellation_qpsk(), 0.25), mu, modulus)",
+        "adapt",
+        "[]",
+        "''"
+      ],
+      "block": "digital.linear_equalizer"
+    }
+  ],
+  "input": {
+    "source": {
+      "constellation": "scaled(digital.constellation_qpsk(), 0.25)",
+      "multipath": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.4,
+          0.2
+        ],
+        [
+          -0.15,
+          -0.1
+        ]
+      ],
+      "noise_rms": 0.01,
+      "rms": 0.5,
+      "rolloff": 0.35,
+      "sps": 1
+    },
+    "type": "complex"
+  },
+  "name": "equalizer_cma_qpsk",
+  "output": {
+    "type": "complex"
+  },
+  "outputs": [
+    {
+      "type": "complex"
+    }
+  ],
+  "params": {
+    "adapt": true,
+    "head": [],
+    "modulus": 0.25,
+    "mu": 0.05,
+    "num_taps": 9,
+    "sps": 1
+  },
+  "samples": 3000,
+  "seed": 1920
+}

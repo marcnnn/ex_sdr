@@ -1,0 +1,6 @@
+{
+  "case": "equalizer_cma_qpsk",
+  "case_sha256": "17fe04a5ff81c89d794868e8b904fc315af51ca7c14341c1bf9fdffcd25968e3",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

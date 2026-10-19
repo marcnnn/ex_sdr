@@ -19,7 +19,8 @@ cannot express:
   Without "source" the input comes from golden.make_input (tones, noise).
 * "input.tags": [{"offset": n, "key": "train_start", "value": 0}]: stream tags
   on the source.
-* "outputs": [{"type": ...}, ...]: the output ports of the last block. Port 0
+* "outputs": [{"type": ..., "vlen": n}, ...]: the output ports of the last block
+  (types complex, real, bytes, ushort; ushort is stored as float32). Port 0
   goes to gnuradio.f32le (or .u8 for bytes) like golden.py, port k to
   out<k>.f32le / out<k>.u8. Without it the case's "output" type is port 0.
 * "tags": [key, ...]: the stream tags of output port 0 with those keys, in
@@ -171,8 +172,13 @@ def run_case(case):
         if "outputs" in case
         else [{"type": case.get("output", {}).get("type", in_spec["type"])}]
     )
-    kinds = {"bytes": blocks.vector_sink_b, "complex": blocks.vector_sink_c, "real": blocks.vector_sink_f}
-    sinks = [kinds[o["type"]]() for o in out_specs]
+    kinds = {
+        "bytes": blocks.vector_sink_b,
+        "complex": blocks.vector_sink_c,
+        "real": blocks.vector_sink_f,
+        "ushort": blocks.vector_sink_s,
+    }
+    sinks = [kinds[o["type"]](o.get("vlen", 1)) for o in out_specs]
 
     chain = [make_block(b, env) for b in case["gnuradio"]]
     tb = gr.top_block()
@@ -184,6 +190,8 @@ def run_case(case):
     outs = []
     for spec, sink in zip(out_specs, sinks):
         out = np.asarray(sink.data())
+        if spec["type"] == "ushort":
+            out = out.astype(np.float32)
         if spec["type"] == "bytes":
             outs.append(out.astype(np.uint8))
         else:
@@ -201,7 +209,10 @@ def run_case(case):
                 found.append({"offset": int(t.offset), "key": key, "value": pmt.to_python(t.value)})
         extra["tags"] = found
     if case.get("probe"):
-        extra["probe"] = {m: getattr(chain[-1], m)() for m in case["probe"]}
+        values = {m: getattr(chain[-1], m)() for m in case["probe"]}
+        extra["probe"] = {
+            m: [v.real, v.imag] if isinstance(v, complex) else float(v) for m, v in values.items()
+        }
     return x16, outs, extra
 
 
@@ -219,6 +230,9 @@ def write_case(case, raw, out_dir):
             ref.tofile(os.path.join(case_dir, stem + ".u8"))
         else:
             ref.astype("<f4").tofile(os.path.join(case_dir, stem + ".f32le"))
+    if not outs:
+        # a probe without output ports: an empty reference keeps the loader happy
+        open(os.path.join(case_dir, "gnuradio.f32le"), "wb").close()
     if extra:
         with open(os.path.join(case_dir, "tags.json"), "w") as f:
             json.dump(extra, f, indent=1, sort_keys=True)

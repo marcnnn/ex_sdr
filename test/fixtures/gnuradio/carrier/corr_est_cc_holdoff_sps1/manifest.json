@@ -1,0 +1,6 @@
+{
+  "case": "corr_est_cc_holdoff_sps1",
+  "case_sha256": "38ea66b1c9f980658601eb839a72f89b7008c573af4533b7b7793d8f8ede8ddb",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

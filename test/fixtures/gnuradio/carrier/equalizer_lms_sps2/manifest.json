@@ -1,0 +1,6 @@
+{
+  "case": "equalizer_lms_sps2",
+  "case_sha256": "c210e754fa245dd25ae74ef7023e000d00c3061dd7e329811b5fc8d8b0be7ac4",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

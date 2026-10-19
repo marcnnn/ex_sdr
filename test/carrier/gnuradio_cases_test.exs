@@ -17,7 +17,9 @@ defmodule ExSdr.Carrier.GnuRadioCasesTest do
     3. a stream cut in pieces gives the output of the whole: bit-exact for
        fixed point, float within rounding;
     4. for loops, the GNU Radio output itself shows lock (`"lock"`): the
-       frequency port settles on the true offset (mean over the tail).
+       frequency port settles on the true offset (mean over the tail); for
+       equalizers, its output converges (`"evm"`: error vector magnitude
+       against the constellation, relative to its mean power, over the tail).
 
   Bounds and the reasoning behind them are in the case files (`"rationale"`).
   A bound is a number per output port: the largest absolute difference (complex:
@@ -96,6 +98,29 @@ defmodule ExSdr.Carrier.GnuRadioCasesTest do
 
         split_float = H.run_split(case, data, NxFixed.Num.float(), [div(n, 3)])
         assert_ports(float, split_float, case, %{"bounds" => 1.0e-4}, "#{@name} float split")
+      end
+    end
+
+    if case["evm"] do
+      test "#{case["name"]}: GNU Radio's equalizer converges (error vector magnitude)", %{
+        runs: runs
+      } do
+        %{case: case, data: data} = runs[@name]
+        %{"after" => from, "max" => max} = case["evm"]
+        c = H.constellation(case["block"]["opts"]["constellation"])
+        power = Enum.sum(for {a, b} <- c.points, do: a * a + b * b) / length(c.points)
+
+        tail = data.ports |> hd() |> Enum.drop(from)
+
+        evm =
+          Enum.sum(
+            for {re, im} <- tail do
+              {pr, pi} = Enum.at(c.points, ExSdr.Digital.Constellation.decide(c, {re, im}))
+              (re - pr) * (re - pr) + (im - pi) * (im - pi)
+            end
+          ) / length(tail) / power
+
+        assert evm < max, "EVM #{evm} after #{from} outputs"
       end
     end
 

@@ -1,0 +1,72 @@
+{
+  "compare": "probe_snr",
+  "description": "probe_mpsk_snr_est_c, M2M4",
+  "samples": 3000,
+  "seed": 2350,
+  "input": {
+    "type": "complex",
+    "source": {
+      "constellation": "scaled(digital.constellation_qpsk(), 0.25)",
+      "sps": 1,
+      "rms": 0.5,
+      "noise_rms": 0.0707
+    }
+  },
+  "params": {
+    "type": "m2m4",
+    "alpha": 0.01,
+    "n": 1000
+  },
+  "block": {
+    "name": "probe_mpsk_snr_est_c",
+    "opts": {
+      "type": "m2m4",
+      "alpha": 0.01
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.probe_mpsk_snr_est_c",
+      "args": [
+        "digital.SNR_EST_M2M4",
+        "n",
+        "alpha"
+      ]
+    }
+  ],
+  "outputs": [],
+  "probe": [
+    "snr",
+    "signal",
+    "noise"
+  ],
+  "name": "probe_mpsk_snr_est_m2m4",
+  "float_vs_gnuradio": {
+    "db": 0.003,
+    "rationale": "As snr_est_*: f32 registers against doubles, measured below 1e-4 dB; the probe reports at the end of the run, after all items."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "db": 0.002,
+      "rationale": "As the snr cases."
+    },
+    {
+      "variant": "q17_lut14_nearest",
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "rounding": "nearest",
+        "lut_bits": 14
+      },
+      "db": 0.002,
+      "rationale": "As the snr cases."
+    }
+  ]
+}

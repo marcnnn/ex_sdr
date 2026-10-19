@@ -1,0 +1,6 @@
+{
+  "case": "corr_est_cc_sync32",
+  "case_sha256": "fb0280aa83820c79dfafe49653f1d16fea5e491ad2da758222198a183a06bcb8",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}
