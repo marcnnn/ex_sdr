@@ -1,0 +1,39 @@
+{
+  "name": "generic_mod_dqpsk_sps2",
+  "description": "generic_mod with constellation_dqpsk (pre-differential code applied)",
+  "samples": 240,
+  "seed": 112,
+  "input": {
+    "type": "bytes",
+    "modulus": 256
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {},
+  "block": {
+    "name": "generic_mod",
+    "opts": {
+      "constellation": "dqpsk",
+      "differential": true,
+      "samples_per_symbol": 2,
+      "excess_bw": 0.35
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.generic_mod",
+      "args": [
+        "digital.constellation_dqpsk().base()",
+        true,
+        2,
+        true,
+        0.35
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_abs": 3e-06,
+    "rationale": "GNU Radio shapes with pfb_arb_resampler_ccf; at an integer samples per symbol dividing 32 its arms hit the same taps as an interpolating FIR (every 32/sps-th prototype tap), so only float32 summation order differs: about 33 terms of values below 1.2 (ulp 1.2e-7), measured 1e-6."
+  }
+}

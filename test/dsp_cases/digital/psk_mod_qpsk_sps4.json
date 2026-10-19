@@ -1,0 +1,54 @@
+{
+  "name": "psk_mod_qpsk_sps4",
+  "description": "psk_mod: differential Gray QPSK, 4 samples per symbol, RRC 0.35",
+  "samples": 240,
+  "seed": 107,
+  "input": {
+    "type": "bytes",
+    "modulus": 256
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {},
+  "block": {
+    "name": "psk_mod",
+    "opts": {
+      "constellation_points": 4,
+      "mod_code": "gray",
+      "differential": true,
+      "samples_per_symbol": 4,
+      "excess_bw": 0.35
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.psk_mod",
+      "args": [
+        4,
+        "'gray'",
+        true,
+        4,
+        true,
+        0.35
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_abs": 3e-06,
+    "rationale": "GNU Radio shapes with pfb_arb_resampler_ccf; at an integer samples per symbol dividing 32 its arms hit the same taps as an interpolating FIR (every 32/sps-th prototype tap), so only float32 summation order differs: about 33 terms of values below 1.2 (ulp 1.2e-7), measured 1e-6."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q16_14",
+      "format": {
+        "bits": 16,
+        "frac": 14,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_abs": 0.002,
+      "rationale": "RRC taps (prototype of gain 32 decimated, peak 1.09, so Q2.14) rounded: error 2^-15 per tap, 45 taps per output, symbols below 0.71 per component for QPSK: 45 * 2^-15 * 0.71 = 1e-3 per component and 1.4e-3 in magnitude; the Q14 constellation points (2^-15) and output rounding (2^-15) add 1e-4 per component. Bound 2e-3."
+    }
+  ]
+}

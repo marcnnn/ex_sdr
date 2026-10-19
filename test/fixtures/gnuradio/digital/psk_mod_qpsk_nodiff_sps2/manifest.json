@@ -1,0 +1,6 @@
+{
+  "case": "psk_mod_qpsk_nodiff_sps2",
+  "case_sha256": "8c97fd26d6005cf9eb04b962669bdddf16e75eaa8f7348930569882da33e4489",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

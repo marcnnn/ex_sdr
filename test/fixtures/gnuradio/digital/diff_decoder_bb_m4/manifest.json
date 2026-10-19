@@ -1,0 +1,6 @@
+{
+  "case": "diff_decoder_bb_m4",
+  "case_sha256": "b2a795ba01b1470e40819027fe2f453e858804c8a7e9d9ddf3283751b71cfd73",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

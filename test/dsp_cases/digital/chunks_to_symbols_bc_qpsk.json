@@ -1,0 +1,58 @@
+{
+  "name": "chunks_to_symbols_bc_qpsk",
+  "description": "chunks_to_symbols_bc with the points of constellation_qpsk",
+  "samples": 2048,
+  "seed": 11,
+  "input": {
+    "type": "bytes",
+    "modulus": 4
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {},
+  "block": {
+    "name": "chunks_to_symbols_bc",
+    "opts": {
+      "table": {
+        "constellation": "qpsk"
+      }
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.chunks_to_symbols_bc",
+      "args": [
+        "digital.constellation_qpsk().points()"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_abs": 5e-07,
+    "rationale": "Table lookup: GNU Radio holds the points as complex<float> computed in float32, ours are float32 roundings of float64 values. Per component the two differ by a few float32 ulps of a value below 1.5 (ulp 1.2e-7), so the complex magnitude differs by under 5e-7 (measured 3.5e-7)."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q16_14",
+      "format": {
+        "bits": 16,
+        "frac": 14,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_abs": 4.415837287515549e-05,
+      "rationale": "Constants rounded to the nearest multiple of 2^-14: error at most 2^-15 per component, sqrt(2) times that in magnitude; the lookup adds none."
+    },
+    {
+      "variant": "q12_10_truncate_ignored",
+      "format": {
+        "bits": 12,
+        "frac": 10,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_abs": 0.0006915339660024879,
+      "rationale": "Constants rounded to the nearest multiple of 2^-10 (table values are always rounded, whatever the rounding option says): error at most 2^-11 per component, sqrt(2) times that in magnitude."
+    }
+  ]
+}

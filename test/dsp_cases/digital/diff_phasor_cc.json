@@ -1,0 +1,57 @@
+{
+  "name": "diff_phasor_cc",
+  "description": "diff_phasor_cc on a noisy tone",
+  "samples": 2048,
+  "seed": 40,
+  "input": {
+    "type": "complex",
+    "tones": [
+      {
+        "freq": 0.02,
+        "amp": 0.8,
+        "phase": 0.1
+      }
+    ],
+    "noise_rms": 0.02
+  },
+  "params": {},
+  "block": {
+    "name": "diff_phasor_cc",
+    "opts": {}
+  },
+  "gnuradio": [
+    {
+      "block": "digital.diff_phasor_cc",
+      "args": []
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_error_lsb": 0.01,
+    "max_abs": 1e-06,
+    "rationale": "One complex product per sample in float32 on both sides: difference below 1e-7 (rounding of 4 products)."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_abs": 6.103515625e-05,
+      "rationale": "Exact products at Q30 rounded once to Q15 (at most 2^-16 per component, plus the half LSB of the saturation edge); inputs are Q15 exactly, so the float side is exact too up to float32 rounding. Bound 2^-14 covers the 2 LSB worst case."
+    },
+    {
+      "variant": "q15_truncate",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "truncate",
+        "lut_bits": 10
+      },
+      "max_abs": 6.103515625e-05,
+      "rationale": "As q15_nearest but truncation: up to one LSB (2^-15) below the float value per component."
+    }
+  ]
+}

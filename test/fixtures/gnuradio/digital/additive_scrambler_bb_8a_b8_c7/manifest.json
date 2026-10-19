@@ -1,0 +1,6 @@
+{
+  "case": "additive_scrambler_bb_8a_b8_c7",
+  "case_sha256": "3fd3b312812f4ceaa93daef6195aa2c22df3b36dd8849c93fa31e007485aafe8",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

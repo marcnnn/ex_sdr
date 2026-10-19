@@ -1,0 +1,28 @@
+{
+  "name": "diff_encoder_bb_m8",
+  "description": "diff_encoder_bb modulus 8",
+  "samples": 2048,
+  "seed": 28,
+  "input": {
+    "type": "bytes",
+    "modulus": 8
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {},
+  "block": {
+    "name": "diff_encoder_bb",
+    "opts": {
+      "modulus": 8
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.diff_encoder_bb",
+      "args": [
+        8
+      ]
+    }
+  ]
+}

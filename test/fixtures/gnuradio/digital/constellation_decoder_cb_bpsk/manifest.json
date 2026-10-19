@@ -1,0 +1,6 @@
+{
+  "case": "constellation_decoder_cb_bpsk",
+  "case_sha256": "bba4ac35d1f46f5100f63e6f051efb9b1ca9ace1ba9662bbf9126d8c27658e00",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

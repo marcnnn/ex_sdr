@@ -1,0 +1,28 @@
+{
+  "name": "diff_decoder_bb_m4",
+  "description": "diff_decoder_bb modulus 4",
+  "samples": 2048,
+  "seed": 34,
+  "input": {
+    "type": "bytes",
+    "modulus": 4
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {},
+  "block": {
+    "name": "diff_decoder_bb",
+    "opts": {
+      "modulus": 4
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.diff_decoder_bb",
+      "args": [
+        4
+      ]
+    }
+  ]
+}

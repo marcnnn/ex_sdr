@@ -1,0 +1,6 @@
+{
+  "case": "frequency_modulator_fc",
+  "case_sha256": "cb0201629d58d44d733a2bca6de713a587f1c686bd7a2cdcd684de15ebe1dadf",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

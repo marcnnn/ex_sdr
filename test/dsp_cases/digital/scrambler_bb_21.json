@@ -1,0 +1,36 @@
+{
+  "name": "scrambler_bb_21",
+  "description": "scrambler_bb mask 0x21 seed 0x1 length 5",
+  "samples": 2048,
+  "seed": 55,
+  "input": {
+    "type": "bytes",
+    "modulus": 2
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {
+    "mask": 33,
+    "seed": 1,
+    "len": 5
+  },
+  "block": {
+    "name": "scrambler_bb",
+    "opts": {
+      "mask": "$mask",
+      "seed": "$seed",
+      "len": "$len"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.scrambler_bb",
+      "args": [
+        "mask",
+        "seed",
+        "len"
+      ]
+    }
+  ]
+}

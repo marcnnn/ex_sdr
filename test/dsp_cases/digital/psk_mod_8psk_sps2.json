@@ -1,0 +1,41 @@
+{
+  "name": "psk_mod_8psk_sps2",
+  "description": "psk_mod: differential Gray 8-PSK, 2 samples per symbol, RRC 0.2",
+  "samples": 240,
+  "seed": 107,
+  "input": {
+    "type": "bytes",
+    "modulus": 256
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {},
+  "block": {
+    "name": "psk_mod",
+    "opts": {
+      "constellation_points": 8,
+      "mod_code": "gray",
+      "differential": true,
+      "samples_per_symbol": 2,
+      "excess_bw": 0.2
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.psk_mod",
+      "args": [
+        8,
+        "'gray'",
+        true,
+        2,
+        true,
+        0.2
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_abs": 3e-06,
+    "rationale": "GNU Radio shapes with pfb_arb_resampler_ccf; at an integer samples per symbol dividing 32 its arms hit the same taps as an interpolating FIR (every 32/sps-th prototype tap), so only float32 summation order differs: about 33 terms of values below 1.2 (ulp 1.2e-7), measured 1e-6."
+  }
+}

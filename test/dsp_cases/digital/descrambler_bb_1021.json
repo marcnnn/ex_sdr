@@ -1,0 +1,36 @@
+{
+  "name": "descrambler_bb_1021",
+  "description": "descrambler_bb mask 0x1021 seed 0xace1 length 15",
+  "samples": 2048,
+  "seed": 75,
+  "input": {
+    "type": "bytes",
+    "modulus": 2
+  },
+  "output": {
+    "type": "bytes"
+  },
+  "params": {
+    "mask": 4129,
+    "seed": 44257,
+    "len": 15
+  },
+  "block": {
+    "name": "descrambler_bb",
+    "opts": {
+      "mask": "$mask",
+      "seed": "$seed",
+      "len": "$len"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "digital.descrambler_bb",
+      "args": [
+        "mask",
+        "seed",
+        "len"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "case": "psk_mod_bpsk_sps8",
+  "case_sha256": "f184fb094c4787d7aceac88f84ae310f8d9fce2e0de17aeb9f2877accd864511",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

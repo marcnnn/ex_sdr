@@ -1,0 +1,65 @@
+{
+  "name": "frequency_modulator_fc",
+  "description": "frequency_modulator_fc, sensitivity 0.4 rad per unit",
+  "samples": 2048,
+  "seed": 82,
+  "input": {
+    "type": "real",
+    "tones": [
+      {
+        "freq": 0.011,
+        "amp": 0.6,
+        "phase": 0.2
+      }
+    ],
+    "noise_rms": 0.2
+  },
+  "output": {
+    "type": "complex"
+  },
+  "params": {
+    "sens": 0.4
+  },
+  "block": {
+    "name": "frequency_modulator_fc",
+    "opts": {
+      "sensitivity": "$sens"
+    }
+  },
+  "gnuradio": [
+    {
+      "block": "analog.frequency_modulator_fc",
+      "args": [
+        "sens"
+      ]
+    }
+  ],
+  "float_vs_gnuradio": {
+    "max_abs": 5e-05,
+    "rationale": "Both accumulate the phase in float32 wrapped to [-pi, pi) and take cos/sin: they differ by float32 rounding of the accumulated phase (ulp of pi is 2.4e-7) and of the sine evaluation, a random walk over 2048 samples (measured 6e-6)."
+  },
+  "fixed_vs_float": [
+    {
+      "variant": "q15_lut10_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 10
+      },
+      "max_abs": 0.0045,
+      "rationale": "The 32-bit phase accumulator makes the increment error negligible; the 1024 entry table rounds the phase to the nearest entry: phase error at most pi/1024 = 3.1e-3 rad, i.e. 3.1e-3 per component and 4.4e-3 as magnitude, plus amplitude 2^15 - 1 and rounding 2^-15."
+    },
+    {
+      "variant": "q15_lut12_nearest",
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "rounding": "nearest",
+        "lut_bits": 12
+      },
+      "max_abs": 0.0012,
+      "rationale": "As above with a 4096 entry table: phase error at most pi/4096 = 7.7e-4 rad, 1.1e-3 as magnitude."
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "case": "chunks_to_symbols_bc_16qam",
+  "case_sha256": "04b64b81d07f9f6704cebff35417bf5bd769bb74b3db9d59782d9275fa837617",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

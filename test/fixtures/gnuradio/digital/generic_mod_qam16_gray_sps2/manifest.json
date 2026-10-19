@@ -1,0 +1,6 @@
+{
+  "case": "generic_mod_qam16_gray_sps2",
+  "case_sha256": "b7e2fd327f1067b978bc8d9d98cef6a854c3ed0e5c287499406b7f8303f48e01",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}
