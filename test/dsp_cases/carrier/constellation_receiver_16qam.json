@@ -1,0 +1,130 @@
+{
+  "block": {
+    "name": "constellation_receiver_cb",
+    "opts": {
+      "constellation": {
+        "name": "qam16",
+        "scale": 0.7
+      },
+      "fmax": "fmax",
+      "fmin": "fmin",
+      "loop_bw": "loop_bw",
+      "outputs": [
+        "error",
+        "phase",
+        "freq",
+        "symbol"
+      ]
+    }
+  },
+  "description": "constellation_receiver_cb phase loop, 16-QAM at 0.7 scale",
+  "fixed_vs_float": [
+    {
+      "bounds": [
+        76,
+        2.0,
+        0.3,
+        0.003,
+        0.2
+      ],
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 12,
+        "rounding": "nearest"
+      },
+      "rationale": "Sine table of the NCO and the CORDIC arctangent (16 iterations, residual 3e-5 rad): the derotated samples differ by the table error; a decision may differ only where the quantised sample is within that of a decision boundary.",
+      "skip": 0,
+      "variant": "q15_lut12"
+    },
+    {
+      "bounds": [
+        6,
+        1.0,
+        0.05,
+        0.0006,
+        0.03
+      ],
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 14,
+        "rounding": "nearest"
+      },
+      "rationale": "Sine table of the NCO and the CORDIC arctangent (16 iterations, residual 3e-5 rad): the derotated samples differ by the table error; a decision may differ only where the quantised sample is within that of a decision boundary.",
+      "skip": 0,
+      "variant": "q17_lut14"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "bounds": [
+      0,
+      1e-05,
+      1e-05,
+      1e-05,
+      1e-05
+    ],
+    "rationale": "Same recurrence; the phase error is atan2 in f32 on both sides, the decisions equal.",
+    "skip": 0
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "scaled(digital.constellation_16qam(), 0.7)",
+        "loop_bw",
+        "fmin",
+        "fmax"
+      ],
+      "block": "digital.constellation_receiver_cb"
+    }
+  ],
+  "input": {
+    "source": {
+      "constellation": "scaled(digital.constellation_16qam(), 0.7)",
+      "freq_offset": 0.0005,
+      "noise_rms": 0.01,
+      "phase": 0.1,
+      "rms": 0.5,
+      "sps": 1
+    },
+    "type": "complex"
+  },
+  "lock": {
+    "after": 1000,
+    "expect": -0.0031415926535897933,
+    "port": 3,
+    "tol": 0.0008
+  },
+  "name": "constellation_receiver_16qam",
+  "output": {
+    "type": "bytes"
+  },
+  "outputs": [
+    {
+      "type": "bytes"
+    },
+    {
+      "type": "real",
+      "word": true
+    },
+    {
+      "circular": true,
+      "type": "real",
+      "word": true
+    },
+    {
+      "type": "real",
+      "word": true
+    },
+    {
+      "type": "complex"
+    }
+  ],
+  "params": {
+    "fmax": 0.2,
+    "fmin": -0.2,
+    "loop_bw": 0.01
+  },
+  "samples": 2000,
+  "seed": 52
+}

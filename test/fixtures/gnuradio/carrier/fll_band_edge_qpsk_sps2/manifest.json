@@ -1,0 +1,6 @@
+{
+  "case": "fll_band_edge_qpsk_sps2",
+  "case_sha256": "432b90635aaf13b1282b0968caee531846db85c1fc4a34ecfbaf38e8b956a5cd",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

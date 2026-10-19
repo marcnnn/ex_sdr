@@ -1,0 +1,6 @@
+{
+  "case": "constellation_receiver_qpsk",
+  "case_sha256": "2aae458adf2362b5ed79e8abfd90d0b45b01d2fe8bb5a299bc6b029d5d3fdad8",
+  "gnuradio": "3.10.12.0",
+  "numpy": "2.3.5"
+}

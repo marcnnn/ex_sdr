@@ -1,0 +1,122 @@
+{
+  "block": {
+    "name": "fll_band_edge_cc",
+    "opts": {
+      "filter_size": "filter_size",
+      "loop_bw": "bw",
+      "outputs": [
+        "freq",
+        "phase",
+        "error"
+      ],
+      "rolloff": "rolloff",
+      "samples_per_symbol": "sps"
+    }
+  },
+  "description": "fll_band_edge_cc on RRC shaped QPSK, 4 samples per symbol, frequency offset 0.005 cycles per sample",
+  "fixed_vs_float": [
+    {
+      "bounds": [
+        0.008,
+        3e-05,
+        0.02,
+        0.0003
+      ],
+      "format": {
+        "bits": 16,
+        "frac": 15,
+        "lut_bits": 12,
+        "rounding": "nearest"
+      },
+      "rationale": "Sine table of the NCO plus rounding of the filter outputs to 24 fractional bits and the taps to 20; the output differs by the table error of the NCO phase times the amplitude.",
+      "skip": 0,
+      "variant": "q15_lut12"
+    },
+    {
+      "bounds": [
+        0.005,
+        7e-06,
+        0.007,
+        4e-05
+      ],
+      "format": {
+        "bits": 18,
+        "frac": 17,
+        "lut_bits": 14,
+        "rounding": "nearest"
+      },
+      "rationale": "Sine table of the NCO plus rounding of the filter outputs to 24 fractional bits and the taps to 20; the output differs by the table error of the NCO phase times the amplitude.",
+      "skip": 0,
+      "variant": "q17_lut14"
+    }
+  ],
+  "float_vs_gnuradio": {
+    "bounds": [
+      5e-05,
+      1e-05,
+      7e-05,
+      1e-05
+    ],
+    "rationale": "Same recurrence in f32; the band-edge filters run in f32 on both sides, differences below 1e-4 (the error signal is a difference of two powers, 1e-7 absolute).",
+    "skip": 0
+  },
+  "gnuradio": [
+    {
+      "args": [
+        "sps",
+        "rolloff",
+        "filter_size",
+        "bw"
+      ],
+      "block": "digital.fll_band_edge_cc"
+    }
+  ],
+  "input": {
+    "source": {
+      "constellation": "digital.constellation_qpsk().base()",
+      "freq_offset": 0.005,
+      "noise_rms": 0.01,
+      "phase": 0.4,
+      "rms": 0.5,
+      "rolloff": 0.35,
+      "sps": 4
+    },
+    "type": "complex"
+  },
+  "lock": {
+    "after": 2500,
+    "expect": -0.031415926535897934,
+    "port": 1,
+    "tol": 0.003
+  },
+  "name": "fll_band_edge_qpsk_sps4",
+  "output": {
+    "type": "complex"
+  },
+  "outputs": [
+    {
+      "type": "complex"
+    },
+    {
+      "type": "real",
+      "word": true
+    },
+    {
+      "circular": true,
+      "type": "real",
+      "word": true
+    },
+    {
+      "scale": true,
+      "type": "real"
+    }
+  ],
+  "params": {
+    "bw": 0.06,
+    "filter_size": 45,
+    "rolloff": 0.35,
+    "sps": 4
+  },
+  "samples": 4000,
+  "seed": 31
+}
