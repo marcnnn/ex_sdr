@@ -18,14 +18,18 @@
     }
   },
   "description": "constellation_receiver_cb phase loop, 16-QAM at 0.7 scale",
+  "fixed_skip": {
+    "skip": 1000,
+    "why": "At loop bandwidth 0.01 the phase error of the 16-QAM loop needs about 1000 symbols to settle; until then decisions near a boundary are ambiguous, the rounding of the fixed-point samples flips 37 of them (symbols 270-604, none after) and the two loops follow different paths to the same lock. Compared from symbol 1000."
+  },
   "fixed_vs_float": [
     {
       "bounds": [
-        76,
-        2.0,
-        0.3,
-        0.003,
-        0.2
+        0,
+        0.002,
+        0.0005,
+        5e-06,
+        0.002
       ],
       "format": {
         "bits": 16,
@@ -33,17 +37,17 @@
         "lut_bits": 12,
         "rounding": "nearest"
       },
-      "rationale": "Sine table of the NCO and the CORDIC arctangent (16 iterations, residual 3e-5 rad): the derotated samples differ by the table error; a decision may differ only where the quantised sample is within that of a decision boundary.",
-      "skip": 0,
+      "rationale": "Sine table of the NCO and the CORDIC arctangent (16 iterations, residual 3e-5 rad): the derotated samples differ by the table error; a decision may differ only where the quantised sample is within that of a decision boundary. At loop bandwidth 0.01 the phase error of the 16-QAM loop needs about 1000 symbols to settle; until then decisions near a boundary are ambiguous, the rounding of the fixed-point samples flips 37 of them (symbols 270-604, none after) and the two loops follow different paths to the same lock. Compared from symbol 1000.",
+      "skip": 1000,
       "variant": "q15_lut12"
     },
     {
       "bounds": [
-        6,
-        1.0,
-        0.05,
+        0,
         0.0006,
-        0.03
+        0.0002,
+        4e-06,
+        0.0004
       ],
       "format": {
         "bits": 18,
@@ -51,8 +55,8 @@
         "lut_bits": 14,
         "rounding": "nearest"
       },
-      "rationale": "Sine table of the NCO and the CORDIC arctangent (16 iterations, residual 3e-5 rad): the derotated samples differ by the table error; a decision may differ only where the quantised sample is within that of a decision boundary.",
-      "skip": 0,
+      "rationale": "Sine table of the NCO and the CORDIC arctangent (16 iterations, residual 3e-5 rad): the derotated samples differ by the table error; a decision may differ only where the quantised sample is within that of a decision boundary. At loop bandwidth 0.01 the phase error of the 16-QAM loop needs about 1000 symbols to settle; until then decisions near a boundary are ambiguous, the rounding of the fixed-point samples flips 37 of them (symbols 270-604, none after) and the two loops follow different paths to the same lock. Compared from symbol 1000.",
+      "skip": 1000,
       "variant": "q17_lut14"
     }
   ],
