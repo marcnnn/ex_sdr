@@ -232,8 +232,23 @@ defmodule ExSdr.Comm.Convolutional do
     {out, %{dec | state: state, pending: <<>>}}
   end
 
-  defp step(%{code: code, state: state}, rx, flush),
-    do: ExSdr.NIF.viterbi_stream(state, rx, code.k, code.polynomials, flush)
+  # Calls up to this many steps (and a retained-decision state up to
+  # @small_state bytes, which bounds the traceback of a flush) run on a
+  # regular scheduler. Measured on the dev host (aarch64, k = 7, SIMD):
+  # about 37 ns per step plus a few us of state copying, so 8192 steps are
+  # about 0.3 ms, under the BEAM's 1 ms rule for regular NIFs.
+  @small_steps 8192
+  @small_state 65_536
+
+  defp step(%{code: code, state: state}, rx, flush) do
+    small? =
+      div(byte_size(rx), length(code.polynomials)) <= @small_steps and
+        byte_size(state) <= @small_state
+
+    if small?,
+      do: ExSdr.NIF.viterbi_stream_small(state, rx, code.k, code.polynomials, flush),
+      else: ExSdr.NIF.viterbi_stream(state, rx, code.k, code.polynomials, flush)
+  end
 
   @doc "Native decoding of a depunctured binary (see `depunctured_binary/2`)."
   def run_native(code, rx, opts, simd) do

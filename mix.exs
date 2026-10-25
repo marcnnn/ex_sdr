@@ -31,6 +31,7 @@ defmodule ExSdr.MixProject do
       {:fine, "~> 0.1.6", runtime: false},
       {:elixir_make, "~> 0.9", runtime: false},
       {:exla, "~> 1.0", optional: true},
+      {:nx_simd, path: "../nx_simd", optional: true},
       {:stream_data, "~> 1.1", only: [:dev, :test]}
     ]
   end

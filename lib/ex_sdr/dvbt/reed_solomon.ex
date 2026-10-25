@@ -7,8 +7,18 @@ defmodule ExSdr.DVBT.ReedSolomon do
   """
   alias ExSdr.Comm.ReedSolomon, as: RS
 
-  @doc "The DVB code."
-  def code, do: RS.new(m: 8, field_poly: 0x11D, n: 255, k: 239, fcr: 0, prim: 1, shortening: 51)
+  @doc "The DVB code (built once: the generator polynomial costs about 20 us)."
+  def code do
+    case :persistent_term.get({__MODULE__, :code}, nil) do
+      nil ->
+        code = RS.new(m: 8, field_poly: 0x11D, n: 255, k: 239, fcr: 0, prim: 1, shortening: 51)
+        :persistent_term.put({__MODULE__, :code}, code)
+        code
+
+      code ->
+        code
+    end
+  end
 
   def generator, do: code().generator
 

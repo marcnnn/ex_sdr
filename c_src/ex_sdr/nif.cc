@@ -1,6 +1,10 @@
 // Erlang NIF bindings for the SIMD kernels (module ExSdr.NIF).
 // Inputs are read zero-copy from binaries; outputs are written directly
-// into new binaries. All functions run on dirty CPU schedulers.
+// into new binaries. Unless noted, functions run on dirty CPU schedulers;
+// the byte-level channel-coding ones are also registered as `<name>_small`
+// on regular schedulers (same code), for calls that stay well under the
+// BEAM's 1 ms rule, where a dirty scheduler round trip costs more than the
+// work and its wake latency dominates the tail.
 
 #include <erl_nif.h>
 
@@ -31,6 +35,15 @@ const T* view(const ErlNifBinary& bin, const char* what) {
 }
 
 }  // namespace
+
+// Registers `name` a second time as `name_small` on a regular scheduler.
+#define FINE_NIF_SMALL(name)                                                                  \
+  static ERL_NIF_TERM name##_small_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) { \
+    return fine::nif(env, argc, argv, name);                                                  \
+  }                                                                                           \
+  auto __nif_registration_##name##_small = fine::Registration::register_nif(                 \
+      {#name "_small", fine::nif_arity(name), name##_small_nif, 0});                          \
+  static_assert(true, "require a semicolon after the macro")
 
 std::tuple<fine::Term, fine::Term, int64_t> ddc_q15(ErlNifEnv* env, ErlNifBinary in_i, ErlNifBinary in_q,
                                                     int64_t phase, int64_t phase_inc, int64_t gain,
@@ -206,6 +219,7 @@ std::tuple<fine::Term, fine::Term> viterbi_stream(ErlNifEnv* env, ErlNifBinary s
   return {bits_term, encode_state(env, code, st)};
 }
 FINE_NIF(viterbi_stream, ERL_NIF_DIRTY_JOB_CPU_BOUND);
+FINE_NIF_SMALL(viterbi_stream);
 
 fine::Term conv_interleave(ErlNifEnv* env, ErlNifBinary in, int64_t branches, int64_t depth, bool inverse) {
   if (branches < 1 || depth < 0) throw std::invalid_argument("conv_interleave: needs branches >= 1, depth >= 0");
@@ -234,6 +248,7 @@ std::tuple<fine::Term, fine::Term> conv_interleave_stream(ErlNifEnv* env, ErlNif
   return {out_term, hist_term};
 }
 FINE_NIF(conv_interleave_stream, ERL_NIF_DIRTY_JOB_CPU_BOUND);
+FINE_NIF_SMALL(conv_interleave_stream);
 
 std::tuple<fine::Term, int64_t, int64_t> rs_decode(ErlNifEnv* env, ErlNifBinary in, int64_t field_poly, int64_t n, int64_t k,
                                                      int64_t fcr, int64_t prim, int64_t shortening) {
@@ -250,6 +265,7 @@ std::tuple<fine::Term, int64_t, int64_t> rs_decode(ErlNifEnv* env, ErlNifBinary 
   return {out_term, static_cast<int64_t>(corrected), static_cast<int64_t>(failed)};
 }
 FINE_NIF(rs_decode, ERL_NIF_DIRTY_JOB_CPU_BOUND);
+FINE_NIF_SMALL(rs_decode);
 
 fine::Term byte_affine(ErlNifEnv* env, ErlNifBinary in, ErlNifBinary keep, ErlNifBinary mask, int64_t phase) {
   if (keep.size != mask.size || mask.size == 0 || phase < 0)
@@ -259,6 +275,17 @@ fine::Term byte_affine(ErlNifEnv* env, ErlNifBinary in, ErlNifBinary keep, ErlNi
   return out_term;
 }
 FINE_NIF(byte_affine, ERL_NIF_DIRTY_JOB_CPU_BOUND);
+FINE_NIF_SMALL(byte_affine);
+
+// 0/1 bytes -> bytes, MSB first; a trailing partial byte is dropped.
+fine::Term bits_pack(ErlNifEnv* env, ErlNifBinary bits) {
+  const size_t n = bits.size / 8;
+  auto [out_term, out] = new_binary<uint8_t>(env, n);
+  exhdl::BitPack(bits.data, n, out);
+  return out_term;
+}
+FINE_NIF(bits_pack, ERL_NIF_DIRTY_JOB_CPU_BOUND);
+FINE_NIF_SMALL(bits_pack);
 
 std::string simd_target(ErlNifEnv*) { return exhdl::SimdTarget(); }
 FINE_NIF(simd_target, 0);

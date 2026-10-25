@@ -30,12 +30,21 @@ defmodule ExSdr.Comm.ConvInterleaver do
   """
   def stream_state(%__MODULE__{} = c), do: {:binary.copy(<<0>>, delay(c)), 0}
 
+  # Streaming calls up to this many bytes run on a regular scheduler:
+  # measured on the dev host (aarch64) at about 1.5 ns per byte, so 200 kB
+  # is about 0.3 ms, under the BEAM's 1 ms rule for regular NIFs.
+  @small_bytes 200_000
+
   @doc "`{out, state}`; `direction` is `:interleave` or `:deinterleave`. Option `:native`."
   def stream(%__MODULE__{branches: i, depth: m} = c, direction, bytes, {history, pos}, opts \\ []) do
     inverse? = direction == :deinterleave
 
     if Keyword.get_lazy(opts, :native, &ExSdr.SIMD.available?/0) do
-      {out, history} = ExSdr.NIF.conv_interleave_stream(history, bytes, i, m, inverse?, pos)
+      {out, history} =
+        if byte_size(bytes) <= @small_bytes,
+          do: ExSdr.NIF.conv_interleave_stream_small(history, bytes, i, m, inverse?, pos),
+          else: ExSdr.NIF.conv_interleave_stream(history, bytes, i, m, inverse?, pos)
+
       {out, {history, pos + byte_size(bytes)}}
     else
       hist = delay(c)

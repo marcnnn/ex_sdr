@@ -11,6 +11,9 @@
 
 #include <algorithm>
 #include <cstring>
+#include <memory>
+#include <mutex>
+#include <utility>
 #include <vector>
 
 HWY_BEFORE_NAMESPACE();
@@ -467,10 +470,13 @@ void ViterbiStream(const ConvCode& code, ViterbiStreamState& st, const uint8_t* 
 void ConvInterleaveStream(const uint8_t* ext, size_t n, int branches, int depth, bool inverse, uint64_t phase,
                           uint8_t* out) {
   const size_t I = branches, hist = I * (I - 1) * depth;
+  // I * delay of every branch, then the branch counter walks without a modulo
+  std::vector<size_t> back(I);
+  for (size_t j = 0; j < I; ++j) back[j] = I * (inverse ? I - 1 - j : j) * depth;
+  size_t j = phase % I;
   for (size_t k = 0; k < n; ++k) {
-    const size_t j = (phase + k) % I;
-    const size_t delay = (inverse ? I - 1 - j : j) * depth;
-    out[k] = ext[hist + k - I * delay];
+    out[k] = ext[hist + k - back[j]];
+    if (++j == I) j = 0;
   }
 }
 
@@ -512,6 +518,30 @@ struct GF {
   uint8_t pow(long i) const { return exp[((i % 255) + 255) % 255]; }
 };
 
+// Per-code constants, built once and shared by all decodes of that code:
+// mulx[i][a] = a * x_i for the syndrome roots x_i = beta^(fcr + i).
+struct RsTables {
+  GF gf;
+  std::vector<uint8_t> mulx;
+  explicit RsTables(const RsParams& c) : gf(c.field_poly), mulx(static_cast<size_t>(c.n - c.k) * 256) {
+    for (int i = 0; i < c.n - c.k; ++i) {
+      const uint8_t x = gf.pow(static_cast<long>(c.prim) * (c.fcr + i));
+      for (int a = 0; a < 256; ++a) mulx[i * 256 + a] = gf.mul(static_cast<uint8_t>(a), x);
+    }
+  }
+};
+
+std::shared_ptr<const RsTables> rs_tables(const RsParams& c) {
+  static std::mutex mu;
+  static std::vector<std::pair<RsParams, std::shared_ptr<const RsTables>>> cache;
+  std::lock_guard<std::mutex> lock(mu);
+  for (const auto& e : cache)
+    if (std::memcmp(&e.first, &c, sizeof c) == 0) return e.second;
+  if (cache.size() >= 16) cache.erase(cache.begin());
+  cache.emplace_back(c, std::make_shared<const RsTables>(c));
+  return cache.back().second;
+}
+
 uint8_t eval_low(const GF& gf, const uint8_t* p, int len, uint8_t x) {
   uint8_t acc = 0;
   for (int i = len - 1; i >= 0; --i) acc = gf.mul(acc, x) ^ p[i];
@@ -520,20 +550,24 @@ uint8_t eval_low(const GF& gf, const uint8_t* p, int len, uint8_t x) {
 
 // Same algorithm and failure rules as ExSdr.Comm.ReedSolomon.decode/2.
 // cw: n - shortening symbols; out: k - shortening symbols. -1 on failure.
-int rs_decode(const GF& gf, const RsParams& c, const uint8_t* cw, uint8_t* out) {
+int rs_decode(const RsTables& tab, const RsParams& c, const uint8_t* cw, uint8_t* out) {
+  const GF& gf = tab.gf;
   const int n = c.n, parity = c.n - c.k, len = c.n - c.shortening, msg = c.k - c.shortening;
   uint8_t r[255] = {0};
   std::memcpy(r + c.shortening, cw, len);
 
-  uint8_t syn[255];
-  bool zero = true;
-  for (int i = 0; i < parity; ++i) {
-    const uint8_t x = gf.pow(static_cast<long>(c.prim) * (c.fcr + i));
-    uint8_t acc = 0;
-    for (int k = 0; k < n; ++k) acc = gf.mul(acc, x) ^ r[k];
-    syn[i] = acc;
-    zero = zero && acc == 0;
+  // Horner per root over the received bytes; the shortening prefix is all
+  // zeros and leaves the accumulators at zero. The roots form independent
+  // chains, so the table lookups overlap.
+  uint8_t syn[255] = {0};
+  for (int k = 0; k < len; ++k) {
+    const uint8_t b = cw[k];
+    const uint8_t* t = tab.mulx.data();
+    for (int i = 0; i < parity; ++i, t += 256) syn[i] = t[syn[i]] ^ b;
   }
+  uint8_t any = 0;
+  for (int i = 0; i < parity; ++i) any |= syn[i];
+  const bool zero = any == 0;
   std::memcpy(out, cw, msg);
   if (zero) return 0;
 
@@ -563,10 +597,27 @@ int rs_decode(const GF& gf, const RsParams& c, const uint8_t* cw, uint8_t* out) 
   int deg = parity;
   while (deg > 0 && lam[deg] == 0) --deg;
 
+  // Chien search: lam(alpha^(-prim p)) for every position p, each term
+  // kept as a discrete log that steps by -prim * i per position.
   int roots[256];
   int nroots = 0;
-  for (int p = 0; p < n; ++p)
-    if (eval_low(gf, lam, deg + 1, gf.pow(-static_cast<long>(c.prim) * p)) == 0) roots[nroots++] = p;
+  {
+    int lg[256], step[256], terms = 0;
+    for (int i = 1; i <= deg; ++i)
+      if (lam[i]) {
+        lg[terms] = gf.log[lam[i]];
+        step[terms++] = static_cast<int>((255 - (static_cast<long>(c.prim) * i) % 255) % 255);
+      }
+    for (int p = 0; p < n; ++p) {
+      uint8_t v = lam[0];
+      for (int j = 0; j < terms; ++j) {
+        v ^= gf.exp[lg[j]];
+        lg[j] += step[j];
+        if (lg[j] >= 255) lg[j] -= 255;
+      }
+      if (v == 0) roots[nroots++] = p;
+    }
+  }
   if (nroots != deg || deg > parity / 2) return -1;
   for (int i = 0; i < nroots; ++i)
     if (roots[i] >= n - c.shortening) return -1;
@@ -591,12 +642,12 @@ int rs_decode(const GF& gf, const RsParams& c, const uint8_t* cw, uint8_t* out) 
 }  // namespace
 
 void RsDecode(const RsParams& c, const uint8_t* in, size_t count, uint8_t* out, size_t* corrected, size_t* failed) {
-  const GF gf(c.field_poly);
+  const auto tab = rs_tables(c);
   const size_t len = c.n - c.shortening, msg = c.k - c.shortening;
   *corrected = 0;
   *failed = 0;
   for (size_t i = 0; i < count; ++i) {
-    const int r = rs_decode(gf, c, in + len * i, out + msg * i);
+    const int r = rs_decode(*tab, c, in + len * i, out + msg * i);
     if (r < 0) ++*failed; else *corrected += static_cast<size_t>(r);
   }
 }
@@ -609,6 +660,14 @@ void ByteAffine(const uint8_t* in, size_t n, const uint8_t* keep, const uint8_t*
   for (; k + period <= n; k += period)
     for (size_t q = 0; q < period; ++q) out[k + q] = (in[k + q] & keep[q]) ^ mask[q];
   for (size_t q = 0; k < n; ++k, ++q) out[k] = (in[k] & keep[q]) ^ mask[q];
+}
+
+void BitPack(const uint8_t* bits, size_t n, uint8_t* out) {
+  for (size_t i = 0; i < n; ++i, bits += 8) {
+    uint32_t v = 0;
+    for (int j = 0; j < 8; ++j) v |= static_cast<uint32_t>(bits[j]) << (7 - j);
+    out[i] = static_cast<uint8_t>(v);
+  }
 }
 
 }  // namespace exhdl

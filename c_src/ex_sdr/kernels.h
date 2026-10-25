@@ -112,6 +112,9 @@ void RsDecode(const RsParams& code, const uint8_t* in, size_t count, uint8_t* ou
 // position `phase` of the period.
 void ByteAffine(const uint8_t* in, size_t n, const uint8_t* keep, const uint8_t* mask, size_t period, size_t phase,
                 uint8_t* out);
+// Packs 8 * n bytes into n bytes, MSB first, as the Elixir comprehension
+// does: bit values are OR-ed after shifting, then truncated to a byte.
+void BitPack(const uint8_t* bits, size_t n, uint8_t* out);
 
 // Name of the SIMD target chosen at runtime (e.g. "NEON", "SVE2", "AVX2").
 const char* SimdTarget();

@@ -39,4 +39,17 @@ defmodule ExSdr.NIF do
     do: :erlang.nif_error(:not_loaded)
 
   def byte_affine(_bytes, _keep, _mask, _phase), do: :erlang.nif_error(:not_loaded)
+  def bits_pack(_bits), do: :erlang.nif_error(:not_loaded)
+
+  # The same functions on regular schedulers, for calls well under 1 ms.
+  def viterbi_stream_small(_state, _rx, _k, _polys, _flush), do: :erlang.nif_error(:not_loaded)
+
+  def conv_interleave_stream_small(_history, _bytes, _branches, _depth, _inverse, _phase),
+    do: :erlang.nif_error(:not_loaded)
+
+  def rs_decode_small(_bytes, _field_poly, _n, _k, _fcr, _prim, _shortening),
+    do: :erlang.nif_error(:not_loaded)
+
+  def byte_affine_small(_bytes, _keep, _mask, _phase), do: :erlang.nif_error(:not_loaded)
+  def bits_pack_small(_bits), do: :erlang.nif_error(:not_loaded)
 end

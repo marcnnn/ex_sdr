@@ -25,6 +25,11 @@ defmodule ExSdr.Comm.Scrambler do
       when rem(byte_size(data), byte_size(mask)) == 0,
       do: apply_at(s, data, 0, opts)
 
+  # Calls up to this many bytes run on a regular scheduler: measured on the
+  # dev host (aarch64) at about 0.15 ns per byte, so 1 MiB is about 0.15 ms,
+  # under the BEAM's 1 ms rule for regular NIFs.
+  @small_bytes 1_048_576
+
   @doc """
   Streaming form: `data` of any length whose first byte sits at position
   `phase` of the period (e.g. the number of bytes before it). Same options.
@@ -34,7 +39,9 @@ defmodule ExSdr.Comm.Scrambler do
     phase = rem(phase, p)
 
     if Keyword.get_lazy(opts, :native, &ExSdr.SIMD.available?/0) do
-      ExSdr.NIF.byte_affine(data, keep, mask, phase)
+      if byte_size(data) <= @small_bytes,
+        do: ExSdr.NIF.byte_affine_small(data, keep, mask, phase),
+        else: ExSdr.NIF.byte_affine(data, keep, mask, phase)
     else
       # rotate the masks to the phase and repeat them over the data
       n = byte_size(data)

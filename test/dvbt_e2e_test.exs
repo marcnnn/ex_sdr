@@ -169,15 +169,16 @@ defmodule ExSdr.DVBT.EndToEndTest do
   end
 
   @tag :dvbt
-  test "streaming receiver: the batch receiver's TS, whatever the piece sizes", %{
-    ts: ts,
-    impaired: x
-  } do
+  test "streaming receiver (float front end): the batch receiver's TS, whatever the piece sizes",
+       %{
+         ts: ts,
+         impaired: x
+       } do
     batch = Receiver.receive_sync(x, @opts)
 
     outs =
       for sizes <- [[2112 * 8], [1, 7777, 300_001, 45_000, 2111]] do
-        out = stream(x, sizes)
+        out = stream(x, sizes, front_end: :float)
         assert out.sync.start == batch.sync.start
         assert out.rs_failed == 0
         assert binary_part(out.ts, 0, byte_size(batch.ts)) == batch.ts
@@ -190,9 +191,103 @@ defmodule ExSdr.DVBT.EndToEndTest do
     assert Enum.uniq(outs) |> length() == 1
   end
 
-  # pushes x in pieces of the given sizes (cycled), then flushes
-  defp stream(x, sizes) do
-    total = Nx.size(x)
+  @tag :dvbt
+  test "streaming receiver (fixed-point front end): the batch receiver's TS, whatever the piece sizes",
+       %{ts: ts, impaired: x} do
+    batch = Receiver.receive_sync(x, @opts)
+    fixed = [front_end: :fixed, fixed_opts: [fallback: false]]
+
+    outs =
+      for sizes <- [[2112 * 8], [1, 7777, 300_001, 45_000, 2111]] do
+        out = stream(x, sizes, fixed)
+        assert out.sync.start == batch.sync.start
+        assert out.rs_failed == 0
+        # same Reed-Solomon corrected output as the float batch receiver
+        assert binary_part(out.ts, 0, byte_size(batch.ts)) == batch.ts
+        assert byte_size(out.ts) - byte_size(batch.ts) < 8 * 188
+        assert_source(ts, out.ts)
+        out
+      end
+
+    assert Enum.uniq(outs) |> length() == 1
+
+    # sc16 input (as a radio delivers it) is the same as complex input
+    # converted with the default gain
+    sc16 = ExSdr.Comm.OFDM.FixedFrontEnd.to_sc16(x, 0.47)
+    raw = stream(x, [1, 7777, 300_001, 45_000, 2111], fixed ++ [input: :sc16], sc16)
+    assert raw.ts == hd(outs).ts
+  end
+
+  @tag :dvbt
+  test "pipeline (two processes) gives the stream's TS, whatever the piece sizes", %{
+    impaired: x
+  } do
+    fixed = [front_end: :fixed, fixed_opts: [fallback: false]]
+    expected = stream(x, [2112 * 8], fixed)
+
+    for sizes <- [[2112 * 8], [1, 7777, 300_001, 45_000, 2111]], credits <- [1, 3] do
+      {out, pipe, summary} = pipeline(x, sizes, fixed ++ [credits: credits])
+      assert out.ts == expected.ts
+      assert summary.sync == expected.sync
+      assert {summary.rs_corrected, summary.rs_failed} == {expected.rs_corrected, 0}
+      # the pieces' indices are chunk starts, in order, and latency is measured
+      # (the tail from the flush has none)
+      indices = out.pieces |> Enum.map(& &1.index) |> Enum.reject(&is_nil/1)
+      assert indices == Enum.sort(indices)
+      assert Enum.all?(indices, &(rem(&1 - expected.sync.start, 2112 * 8) == 0))
+      assert Enum.all?(out.pieces, &(&1.latency_us >= 0))
+      # the credit bound holds (and 1 chunk in flight at least)
+      stats = ExSdr.DVBT.Receiver.Pipeline.stats(pipe)
+      assert %{dropped: 0, pending: 0} = stats
+      assert stats.max_in_flight in 1..credits
+    end
+
+    # also with the float front end, sc16 input and the batch receiver
+    batch = Receiver.receive_sync(x, @opts)
+    {out, _, _} = pipeline(x, [7777, 123_457], front_end: :float)
+    assert binary_part(out.ts, 0, byte_size(batch.ts)) == batch.ts
+    sc16 = ExSdr.Comm.OFDM.FixedFrontEnd.to_sc16(x, 0.47)
+    {raw, _, _} = pipeline(x, [7777, 123_457], fixed ++ [input: :sc16], sc16)
+    assert raw.ts == expected.ts
+  end
+
+  @tag :dvbt
+  test "pipeline with overflow: :drop discards and counts pushes the front cannot take", %{
+    impaired: x
+  } do
+    alias ExSdr.DVBT.Receiver.Pipeline
+    {:ok, pipe} = Pipeline.start_link(@opts ++ [overflow: :drop, max_pending: 1])
+    results = for piece <- pieces(x, [div(Nx.size(x), 40)]), do: Pipeline.push(pipe, piece)
+    errors = Enum.count(results, &(&1 == {:error, :overflow}))
+    assert errors > 0 and errors < length(results)
+    assert Pipeline.stats(pipe).dropped == errors
+    assert {:ok, _} = Pipeline.flush(pipe)
+  end
+
+  # pushes x through a Pipeline in pieces, collects its output
+  defp pipeline(x, sizes, extra, pushed \\ nil) do
+    alias ExSdr.DVBT.Receiver.Pipeline
+    pieces = pieces(pushed || x, sizes, if(pushed, do: 2, else: 1))
+    {:ok, pipe} = Pipeline.start_link(@opts ++ extra)
+    for piece <- pieces, do: :ok = Pipeline.push(pipe, piece)
+    {:ok, summary} = Pipeline.flush(pipe)
+    out = collect(pipe.ref, [])
+    ts = out |> Enum.map(& &1.bytes) |> IO.iodata_to_binary()
+    {%{ts: ts, pieces: out}, pipe, summary}
+  end
+
+  defp collect(ref, acc) do
+    receive do
+      {:ex_sdr_ts, ^ref, piece} -> collect(ref, [piece | acc])
+    after
+      0 -> Enum.reverse(acc)
+    end
+  end
+
+  # x cut into pieces of the given sizes (cycled); sc16 input is a flat s16
+  # tensor with two values per sample
+  defp pieces(x, sizes, per \\ 1) do
+    total = div(Nx.size(x), per)
 
     {pieces, _} =
       sizes
@@ -200,14 +295,20 @@ defmodule ExSdr.DVBT.EndToEndTest do
       |> Enum.reduce_while({[], 0}, fn n, {acc, pos} ->
         if pos >= total,
           do: {:halt, {acc, pos}},
-          else: {:cont, {[Nx.slice(x, [pos], [min(n, total - pos)]) | acc], pos + n}}
+          else: {:cont, {[Nx.slice(x, [pos * per], [per * min(n, total - pos)]) | acc], pos + n}}
       end)
 
-    st = Receiver.Stream.new(@opts)
+    Enum.reverse(pieces)
+  end
+
+  # pushes x in pieces of the given sizes (cycled), then flushes
+  defp stream(x, sizes, extra, pushed \\ nil) do
+    pieces = pieces(pushed || x, sizes, if(pushed, do: 2, else: 1))
+
+    st = Receiver.Stream.new(@opts ++ extra)
 
     {out, st} =
       pieces
-      |> Enum.reverse()
       |> Enum.reduce({[], st}, fn piece, {out, st} ->
         {ts, st} = Receiver.Stream.push(st, piece)
         {[out, ts], st}

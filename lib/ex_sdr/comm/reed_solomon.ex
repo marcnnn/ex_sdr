@@ -154,6 +154,13 @@ defmodule ExSdr.Comm.ReedSolomon do
     end
   end
 
+  # Batches up to this many codewords run on a regular scheduler. Measured on
+  # the dev host (aarch64) for the DVB-T code: about 2.5 us per clean
+  # codeword and up to about 8 us with 8 errors or uncorrectable, so 48
+  # codewords are at most about 0.4 ms, under the BEAM's 1 ms rule for
+  # regular NIFs.
+  @small_codewords 48
+
   @doc """
   Decodes a binary of whole codewords (GF(256) codes): returns
   `{messages, corrected_symbols, failed_codewords}`, failed codewords
@@ -161,7 +168,10 @@ defmodule ExSdr.Comm.ReedSolomon do
   """
   def decode_all_bytes(%__MODULE__{field: %{m: 8}} = code, codewords, opts \\ []) do
     if Keyword.get_lazy(opts, :native, &ExSdr.SIMD.available?/0) do
-      ExSdr.NIF.rs_decode(
+      small? = byte_size(codewords) <= @small_codewords * __MODULE__.length(code)
+      nif = if small?, do: &ExSdr.NIF.rs_decode_small/7, else: &ExSdr.NIF.rs_decode/7
+
+      nif.(
         codewords,
         code.field.poly,
         code.n,
