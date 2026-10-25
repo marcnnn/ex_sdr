@@ -93,7 +93,10 @@ defmodule ExSdr.Comm.ReedSolomon do
 
   @doc """
   Decodes a list of `n - shortening` symbols. Returns `{:ok, message,
-  corrected}` or `{:error, :uncorrectable, message}` (uncorrected).
+  corrected}` or `{:error, :uncorrectable, message}` (uncorrected). A word
+  fails when the Berlekamp-Massey register length exceeds `t = parity / 2`,
+  when the locator degree does, or when its roots are not all transmitted
+  positions.
   """
   def decode(code, received) when is_list(received) do
     f = code.field
@@ -106,14 +109,14 @@ defmodule ExSdr.Comm.ReedSolomon do
     if Enum.all?(syndromes, &(&1 == 0)) do
       {:ok, message, 0}
     else
-      locator = berlekamp_massey(f, syndromes)
+      {locator, reg} = berlekamp_massey(f, syndromes)
       errors = Kernel.length(locator) - 1
       beta = fn e -> GF.pow(f, code.prim * e) end
       # X = beta^p for an error at the coefficient of x^p
       positions = for p <- 0..(n - 1), GF.eval_low(f, locator, beta.(-p)) == 0, do: p
 
       cond do
-        Kernel.length(positions) != errors or errors > t ->
+        Kernel.length(positions) != errors or errors > t or reg > t ->
           {:error, :uncorrectable, message}
 
         Enum.any?(positions, &(&1 >= n - code.shortening)) ->
@@ -196,11 +199,12 @@ defmodule ExSdr.Comm.ReedSolomon do
     end
   end
 
-  # Error locator (lowest degree first) from the syndromes.
+  # Error locator (lowest degree first) and the register length L from the
+  # syndromes. L can exceed the locator degree.
   defp berlekamp_massey(f, s) do
     s = List.to_tuple(s)
 
-    {lambda, _, _, _, _} =
+    {lambda, _, l, _, _} =
       Enum.reduce(0..(tuple_size(s) - 1), {[1], [1], 0, 1, 1}, fn r, {c, b, l, m, bb} ->
         d =
           Enum.reduce(0..l, 0, fn i, acc ->
@@ -214,7 +218,7 @@ defmodule ExSdr.Comm.ReedSolomon do
         end
       end)
 
-    lambda |> Enum.reverse() |> Enum.drop_while(&(&1 == 0)) |> Enum.reverse()
+    {lambda |> Enum.reverse() |> Enum.drop_while(&(&1 == 0)) |> Enum.reverse(), l}
   end
 
   defp sub_shift(f, c, b, coef, m) do

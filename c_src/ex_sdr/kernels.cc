@@ -618,7 +618,7 @@ int rs_decode(const RsTables& tab, const RsParams& c, const uint8_t* cw, uint8_t
       if (v == 0) roots[nroots++] = p;
     }
   }
-  if (nroots != deg || deg > parity / 2) return -1;
+  if (nroots != deg || deg > parity / 2 || l > parity / 2) return -1;
   for (int i = 0; i < nroots; ++i)
     if (roots[i] >= n - c.shortening) return -1;
 
