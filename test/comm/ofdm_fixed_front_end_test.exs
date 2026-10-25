@@ -72,6 +72,27 @@ defmodule ExSdr.Comm.OFDM.FixedFrontEndTest do
     end
   end
 
+  describe "stages" do
+    test "the stage outputs compose to run/4", %{impaired: x, spec: spec} do
+      {y, freq} = acquired(x, 8)
+      sc16 = FixedFrontEnd.to_sc16(y, @gain)
+      fe = FixedFrontEnd.prepare(spec, 8)
+      st = FixedFrontEnd.stages(fe, sc16, freq, 0)
+
+      assert st.bits == FixedFrontEnd.run(fe, sc16, freq)
+      assert {re, _im} = st.spectrum
+      assert Nx.shape(re.t) == {8, 2048}
+      assert {rc, _} = st.corrected
+      assert Nx.shape(rc.t) == {8 * @sym}
+      assert Nx.shape(st.words) == Nx.shape(st.cells)
+      assert Nx.type(st.words) == {:u, 8}
+
+      # the stages also hold with a start offset
+      assert FixedFrontEnd.stages(fe, sc16, freq, 5 * @sym).bits ==
+               FixedFrontEnd.run(fe, sc16, freq, 5 * @sym)
+    end
+  end
+
   describe "against the float front end" do
     test "clean signal: decisions agree", %{clean: clean, spec: spec} do
       y = Nx.slice(clean, [0], [8 * @sym])

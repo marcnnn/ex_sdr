@@ -93,7 +93,7 @@ defmodule ExSdr.Comm.OFDM.FixedFrontEnd do
     fun =
       Nx.Defn.compile(&front_end/5, templates ++ [static], [compiler: compiler] ++ compiler_opts)
 
-    %{fun: fun, tables: t, samples: symbols * sym, fft: o.fft}
+    %{fun: fun, tables: t, samples: symbols * sym, fft: o.fft, symbols: symbols, static: static}
   end
 
   defp default_compiler(%Num.Format{kind: :fixed}) do
@@ -121,6 +121,54 @@ defmodule ExSdr.Comm.OFDM.FixedFrontEnd do
     inc = phase_increment(freq_offset, fft)
     phase0 = inc * start &&& 0xFFFFFFFF
     f.(x, Nx.tensor(phase0, type: :s64), Nx.tensor(inc, type: :s64), t) |> Nx.to_binary()
+  end
+
+  @doc """
+  The intermediate results of `run/4` on the same input, for checking a
+  hardware implementation stage by stage. Runs the stage functions of this
+  module (`correct/5`, `transform/2`, `equalise/3`, `deinterleave_cells/3`,
+  `code_bits/3`) on the Nx evaluator, so it is slow; `run/4` is the fast
+  path and gives the same `:bits`, bit for bit.
+
+  Returns a map with
+
+    * `:corrected`: `{re, im}` after frequency correction, `{symbols *
+      (fft + cp)}` samples in the data format (`NxFixed.Fixed` for fixed
+      point), cyclic prefix still in
+    * `:spectrum`: `{re, im}` FFT output, `{symbols, fft}` (all bins)
+    * `:words`: `{symbols, data carriers}` `u8` constellation words in
+      carrier order, after the equaliser's hard decisions
+    * `:cells`: the words after cell deinterleaving (equal to `:words`
+      without a cell deinterleaver)
+    * `:bits`: the code bits as a binary of 0/1 bytes
+  """
+  def stages(%{tables: t, samples: n, fft: fft, static: static}, samples, freq_offset, start \\ 0) do
+    x = if is_binary(samples), do: Nx.from_binary(samples, :s16), else: samples
+    ^n = div(Nx.size(x), 2)
+    inc = phase_increment(freq_offset, fft)
+    phase0 = inc * start &&& 0xFFFFFFFF
+    jit = fn fun, args -> Nx.Defn.jit_apply(fun, args, compiler: Nx.Defn.Evaluator) end
+
+    corrected =
+      jit.(fn x, p, i, t -> correct(x, p, i, t, static) end, [
+        x,
+        Nx.tensor(phase0, type: :s64),
+        Nx.tensor(inc, type: :s64),
+        t
+      ])
+
+    spectrum = jit.(fn c -> transform(c, static) end, [corrected])
+    words = jit.(fn s, t -> equalise(s, t, static) end, [spectrum, t])
+    cells = jit.(fn w, t -> deinterleave_cells(w, t, static) end, [words, t])
+    bits = jit.(fn w, t -> code_bits(w, t, static) end, [cells, t])
+
+    %{
+      corrected: corrected,
+      spectrum: spectrum,
+      words: words,
+      cells: cells,
+      bits: Nx.to_binary(bits)
+    }
   end
 
   @doc "Complex float samples to `sc16` (s16 interleaved), scaled by `gain` and saturated."
@@ -251,6 +299,20 @@ defmodule ExSdr.Comm.OFDM.FixedFrontEnd do
   end
 
   deftransformp graph(x, phase0, inc, t, opts) do
+    correct(x, phase0, inc, t, opts)
+    |> transform(opts)
+    |> equalise(t, opts)
+    |> deinterleave_cells(t, opts)
+    |> code_bits(t, opts)
+  end
+
+  @doc """
+  Stage 1: `sc16` samples to the frequency-corrected `{re, im}` in the data
+  format. `opts` is the static option list of a prepared front end
+  (`fe.static`). Traces Nx operations: call it inside `Nx.Defn` or
+  `Nx.Defn.jit`.
+  """
+  def correct(x, phase0, inc, t, opts) do
     f = opts[:format]
     coef = opts[:coef]
     fft = opts[:fft]
@@ -274,27 +336,45 @@ defmodule ExSdr.Comm.OFDM.FixedFrontEnd do
       |> Nx.add(Nx.bitwise_and(phase0, mask))
       |> Nx.bitwise_and(mask)
 
-    mixed = input |> Num.cmul(nco(phase, coef)) |> Num.rescale(f) |> Num.quantize(f)
-
-    # symbols without the cyclic prefix, FFT
-    {re, im} =
-      mixed
-      |> map2(&(&1 |> Nx.reshape({n, sym}) |> Nx.slice_along_axis(opts[:cp], fft, axis: 1)))
-      |> FFT.fft(format: f, twiddle: coef, shifts: opts[:shifts])
-
-    flat = map2({re, im}, &Nx.flatten/1)
-
-    words =
-      for p <- 0..(opts[:period] - 1) do
-        class_words(flat, t, p, f, coef, opts[:constellation])
-      end
-      |> Enum.map(&Nx.new_axis(&1, 1))
-      |> Nx.concatenate(axis: 1)
-      |> Nx.reshape({n, :auto})
-
-    words = if opts[:cells?], do: take_in(Nx.flatten(words), t.cells), else: words
-    code_bits(words, t.bits, opts[:constellation].bits, opts[:bits?])
+    input |> Num.cmul(nco(phase, coef)) |> Num.rescale(f) |> Num.quantize(f)
   end
+
+  @doc """
+  Stage 2: drops the cyclic prefix of the corrected samples and runs the
+  FFT; `{re, im}` of shape `{symbols, fft}`.
+  """
+  def transform(mixed, opts) do
+    sym = opts[:fft] + opts[:cp]
+    n = div(Nx.size(elem(mixed, 0) |> value()), sym)
+
+    mixed
+    |> map2(&(&1 |> Nx.reshape({n, sym}) |> Nx.slice_along_axis(opts[:cp], opts[:fft], axis: 1)))
+    |> FFT.fft(format: opts[:format], twiddle: opts[:coef], shifts: opts[:shifts])
+  end
+
+  @doc """
+  Stage 3: channel estimate, interpolation and hard decisions of every
+  data carrier; `{symbols, data carriers}` `u8` words in carrier order.
+  """
+  def equalise({re, _} = spectrum, t, opts) do
+    n = Nx.axis_size(value(re), 0)
+    flat = map2(spectrum, &Nx.flatten/1)
+
+    for p <- 0..(opts[:period] - 1) do
+      class_words(flat, t, p, opts[:format], opts[:coef], opts[:constellation])
+    end
+    |> Enum.map(&Nx.new_axis(&1, 1))
+    |> Nx.concatenate(axis: 1)
+    |> Nx.reshape({n, :auto})
+  end
+
+  @doc "Stage 4: the cell deinterleaver (identity without one in the spec)."
+  def deinterleave_cells(words, t, opts),
+    do: if(opts[:cells?], do: take_in(Nx.flatten(words), t.cells), else: words)
+
+  @doc "Stage 5: unpacks the words to bits (MSB first) and applies the bit deinterleaver."
+  def code_bits(words, t, opts),
+    do: unpack_bits(words, t.bits, opts[:constellation].bits, opts[:bits?])
 
   defp real_in(pairs, column, f) do
     s = pairs |> Nx.slice_along_axis(column, 1, axis: 1) |> Nx.squeeze(axes: [1])
@@ -305,8 +385,8 @@ defmodule ExSdr.Comm.OFDM.FixedFrontEnd do
     end
   end
 
-  # exp(i * 2 pi * phase / 2^32)
-  defp nco(phase, %Num.Format{kind: :fixed} = c) do
+  @doc "The NCO: `exp(i * 2 pi * phase / 2^32)` as `{cos, sin}` (phase words as s64 below 2^32; sine table of the `:coef` format)."
+  def nco(phase, %Num.Format{kind: :fixed} = c) do
     {cos, sin} =
       phase
       |> Nx.right_shift(16)
@@ -316,13 +396,19 @@ defmodule ExSdr.Comm.OFDM.FixedFrontEnd do
     {%Fixed{t: cos, frac: c.frac}, %Fixed{t: sin, frac: c.frac}}
   end
 
-  defp nco(phase, _) do
+  def nco(phase, _) do
     angle = phase |> Nx.as_type(:f64) |> Nx.multiply(2 * :math.pi() / 4_294_967_296)
     {angle |> Nx.cos() |> Nx.as_type(:f32), angle |> Nx.sin() |> Nx.as_type(:f32)}
   end
 
-  # hard decisions of the symbols of class p: {groups, data carriers} words
-  defp class_words(flat, t, p, f, coef, constellation) do
+  @doc """
+  Hard decisions of the symbols of class `p` (position in the pilot
+  period): `{groups, data carriers}` words. `flat` is the `{re, im}` FFT
+  output flattened, `t` the tables of the prepared front end (`fe.tables`):
+  `pilot`, `data`, `left`, `weight`, `inv_re`, `inv_im` hold one entry per
+  class (tuples), see `prepare/3`.
+  """
+  def class_words(flat, t, p, f, coef, constellation) do
     take = fn idx -> map2(flat, &take_in(&1, idx)) end
     inv = {coef_value(elem(t.inv_re, p), coef), coef_value(elem(t.inv_im, p), coef)}
     {groups, pilots} = Nx.shape(elem(t.pilot, p))
@@ -361,9 +447,12 @@ defmodule ExSdr.Comm.OFDM.FixedFrontEnd do
     words
   end
 
-  # level index 0..L-1: the number of boundaries b (-(L-2), ..., L-2) with
-  # a * scale >= b * |h|^2 (ties to the larger level, as Constellation)
-  defp axis_index(a, energy, %{levels: l, scale: scale}) do
+  @doc """
+  Level index 0..L-1 of one axis: the number of boundaries b (-(L-2), ...,
+  L-2) with `a * scale >= b * |h|^2` (ties to the larger level, as
+  `Constellation`). `energy` is a function returning `|h|^2`.
+  """
+  def axis_index(a, energy, %{levels: l, scale: scale}) do
     bounds = Enum.to_list(-(l - 2)..(l - 2)//2)
 
     if bounds == [0] do
@@ -384,7 +473,7 @@ defmodule ExSdr.Comm.OFDM.FixedFrontEnd do
 
   defp scaled(a, e, scale), do: {Nx.multiply(a, scale), e, 1}
 
-  defp code_bits(words, t, v, apply?) do
+  defp unpack_bits(words, t, v, apply?) do
     shifts = Nx.tensor(Enum.to_list((v - 1)..0//-1), type: :u8, backend: Nx.BinaryBackend)
 
     bits =
