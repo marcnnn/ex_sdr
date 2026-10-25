@@ -96,9 +96,13 @@ defmodule ExSdr.Comm.OFDM.FixedFrontEnd do
     %{fun: fun, tables: t, samples: symbols * sym, fft: o.fft, symbols: symbols, static: static}
   end
 
+  @doc "Whether nx_simd (an optional dependency) is loaded and can compile."
+  # called through apply: without nx_simd the module is unknown at compile time
+  def simd?, do: Code.ensure_loaded?(NxSimd) and apply(NxSimd, :available?, [])
+
   defp default_compiler(%Num.Format{kind: :fixed}) do
     cond do
-      Code.ensure_loaded?(NxSimd) and NxSimd.available?() -> NxSimd.Compiler
+      simd?() -> NxSimd.Compiler
       Code.ensure_loaded?(EXLA) -> EXLA
       true -> Nx.Defn.Evaluator
     end

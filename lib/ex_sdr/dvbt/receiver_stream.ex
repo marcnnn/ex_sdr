@@ -119,7 +119,7 @@ defmodule ExSdr.DVBT.Receiver.Stream do
 
     front_end =
       Keyword.get_lazy(opts, :front_end, fn ->
-        if Code.ensure_loaded?(NxSimd) and NxSimd.available?(), do: :fixed, else: :float
+        if FixedFrontEnd.simd?(), do: :fixed, else: :float
       end)
 
     input = Keyword.get(opts, :input, :complex)
