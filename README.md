@@ -5,7 +5,7 @@ exact Elixir reference and a fast form (native Highway SIMD kernel or a
 compiled Nx computation) that property tests prove equal to it.
 
 - **DSP** (`ExSdr.DSP.Blocks`): DDC, complex FIR, one-pole IIR, defined
-  once over [nx_fixed](../nx_fixed) number formats; float reference or Q15,
+  once over [nx_fixed](https://github.com/marcnnn/nx_fixed) number formats; float reference or Q15,
   compared with GNU Radio 3.10.
 - **Channel coding and modulation** (`ExSdr.Comm`): Reed-Solomon over
   GF(2^m), LFSRs and scramblers, Forney interleaver, convolutional codes
