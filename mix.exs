@@ -13,7 +13,8 @@ defmodule ExSdr.MixProject do
       make_env: fn -> %{"FINE_INCLUDE_DIR" => Fine.include_dir()} end,
       make_clean: ["clean"],
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      package: [licenses: ["Apache-2.0"]]
     ]
   end
 

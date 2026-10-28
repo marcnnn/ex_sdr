@@ -154,8 +154,9 @@ waterfall slope, and the 6-bit decoder to 0.1 dB of float min-sum.
       python3 test/gnuradio/fec_ldpc_golden.py dvb \
         lib/ex_sdr/fec/ldpc/dvb_s2_tables.txt test/fixtures/gnuradio/fec/ldpc_dvb_s2/dvb.json
 
-The alist files in `test/fixtures/gnuradio/fec/ldpc_alist` are copied
-from GNU Radio (`/usr/share/gnuradio/fec/ldpc`, GPL-3.0-or-later like
-the rest of GNU Radio; the files carry no header of their own). The
-DVB address tables are the standard's (ETSI EN 302 307-1 annexes B and
-C, EN 302 307-2), as tabulated in gr-dtv.
+The alist files in `test/fixtures/gnuradio/fec/ldpc_alist` are GNU Radio's
+(gr-fec, GPL-3.0-or-later) and not part of this repository: `test_helper.exs`
+downloads them from a pinned GNU Radio release and checks their SHA-256
+(`ExSdr.Test.GnuRadioAlist`); without network the `:ldpc_alist` tests are
+skipped. The DVB address tables are the standard's (ETSI EN 302 307-1
+annexes B and C, EN 302 307-2).

@@ -1,6 +1,6 @@
 # DVB-S2 and DVB-S2X LDPC codes: parity bit accumulator addresses per group of
-# 360 information bits (ETSI EN 302 307-1 annexes B and C, EN 302 307-2), as in
-# GNU Radio gr-dtv's dvb_ldpc_bb (v3.10.12.0). Punctured or shortened VL-SNR
+# 360 information bits (ETSI EN 302 307-1 annexes B and C, EN 302 307-2), checked against
+# GNU Radio gr-dtv (v3.10.12.0) by test/gnuradio/fec_ldpc_golden.py. Punctured or shortened VL-SNR
 # codes are left out.
 #
 # code <frame> <rate> <standard> <n> <k> <q>, then one line per table row.

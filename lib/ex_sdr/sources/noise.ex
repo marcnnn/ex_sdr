@@ -47,6 +47,7 @@ defmodule ExSdr.Sources.Noise do
 
   @mask 0xFFFFFFFF
 
+  # The seed hash is the finaliser of MurmurHash3 (Austin Appleby, public domain).
   @doc "The generator state for `seed`: a hashed, nonzero `u32` tensor."
   def seed_state(seed) when is_integer(seed) do
     x = seed + 0x9E3779B9 &&& @mask

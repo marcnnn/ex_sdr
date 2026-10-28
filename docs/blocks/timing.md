@@ -1,14 +1,14 @@
 # Timing: symbol timing recovery and arbitrary resampling
 
 Module `ExSdr.Timing` (`block/2`), kernels in `ExSdr.Timing.Kernels`,
-interpolators in `ExSdr.Timing.Interp` (GNU Radio's tables in
+interpolators in `ExSdr.Timing.Interp` (MMSE tables computed in
 `ExSdr.Timing.Tables`), loop arithmetic in `ExSdr.Timing.Loop`.
 
 ## Coverage
 
 | GNU Radio | ExSdr | Status | Hardware |
 |---|---|---|---|
-| `filter.mmse_fir_interpolator_cc/ff` (kernel) | `Interp.mmse/0`, `:fractional_delay_cc/ff` | done, GNU Radio's 129 x 8 table | feed_forward |
+| `filter.mmse_fir_interpolator_cc/ff` (kernel) | `Interp.mmse/0`, `:fractional_delay_cc/ff` | done, 129 x 8 MMSE table (computed, within 5e-7 of GNU Radio's) | feed_forward |
 | `filter.mmse_interp_differentiator_cc/ff` (kernel) | `Interp.mmse/0` (`drows`) | done, used by symbol_sync | - |
 | polyphase fractional delay | `:fractional_delay_*` with `interpolator: {:pfb_mf, taps, n}`, `{:pfb_no_mf, n}`, `{:polyphase, taps, n}` | done | feed_forward |
 | `filter.mmse_resampler_cc/ff` | `:mmse_resampler_cc/ff` | done; the second input (ratio per item) and the message port are not modelled | feedback |

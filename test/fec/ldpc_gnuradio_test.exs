@@ -6,6 +6,7 @@ defmodule ExSdr.FEC.LDPCGnuRadioTest do
   decoded bits.
   """
   use ExUnit.Case, async: true
+  @moduletag :ldpc_alist
 
   alias ExSdr.FEC.LDPC
 

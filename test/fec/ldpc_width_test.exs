@@ -5,6 +5,7 @@ defmodule ExSdr.FEC.LDPCWidthTest do
   every backend and the hardware agree bit for bit.
   """
   use ExUnit.Case, async: true
+  @moduletag :ldpc_alist
 
   alias ExSdr.FEC.LDPC
   alias NxFixed.{Fixed, Num}

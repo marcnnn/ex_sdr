@@ -1,6 +1,7 @@
 # Sources and channel models
 
-Port of the signal sources of gr-analog, the sources of gr-blocks and gr-channels.
+Reimplementation of the signal sources of gr-analog, the sources of gr-blocks and
+gr-channels, compatible with GNU Radio.
 Code in `lib/ex_sdr/sources.ex` and `lib/ex_sdr/sources/`, tests in
 `test/sources/`, GNU Radio cases in `test/dsp_cases/sources/` with their output in
 `test/fixtures/gnuradio/sources/`.

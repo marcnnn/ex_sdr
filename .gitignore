@@ -7,3 +7,4 @@ erl_crash.dump
 ex_sdr-*.tar
 /tmp/
 /priv/native/
+/test/fixtures/gnuradio/fec/ldpc_alist/

@@ -48,3 +48,11 @@ stale reference data fails the tests.
 
 Requires Elixir 1.18+, a C++17 compiler, `make` and `curl` (the NIF
 fetches Google Highway on first build).
+
+## License
+
+Apache-2.0, see `LICENSE`. GNU Radio (GPL-3.0-or-later) is only used as a
+reference: the tests compare against output it produced, and the LDPC test
+codes from gr-fec are downloaded at test time rather than kept here. Google
+Highway (Apache-2.0 or BSD-3-Clause) is downloaded and linked into the NIF
+when it is built.

@@ -13,8 +13,8 @@ Reads test/dsp_cases/fec/ldpc/ldpc_*.json and writes, per case, a directory
   gnuradio.u8 (the block's output, one bit per byte),
   manifest.json (case file hash, versions).
 
-Run it in the podman image (gr-fec ships the alist files used here, they
-are copied to test/fixtures/gnuradio/fec/ldpc_alist):
+Run it in the podman image (gr-fec ships the alist files used here;
+test_helper.exs downloads the same files to test/fixtures/gnuradio/fec/ldpc_alist):
 
   podman run --rm -v "$PWD/test:/work/test:Z" -w /work exhdl-gnuradio \
     python3 test/gnuradio/fec_ldpc_golden.py test/dsp_cases/fec/ldpc \

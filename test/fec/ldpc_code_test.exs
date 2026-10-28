@@ -5,6 +5,7 @@ defmodule ExSdr.FEC.LDPCCodeTest do
   their positions, tensor encoder equal to the host reference.
   """
   use ExUnit.Case, async: true
+  @moduletag :ldpc_alist
   use ExUnitProperties
 
   import Bitwise

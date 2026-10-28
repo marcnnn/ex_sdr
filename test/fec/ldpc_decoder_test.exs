@@ -6,6 +6,7 @@ defmodule ExSdr.FEC.LDPCDecoderTest do
   against the float sum-product reference.
   """
   use ExUnit.Case, async: true
+  @moduletag :ldpc_alist
 
   alias ExSdr.FEC.LDPC
   alias ExSdr.FEC.LDPC.Kernels
