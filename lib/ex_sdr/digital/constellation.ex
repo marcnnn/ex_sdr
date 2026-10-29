@@ -209,7 +209,7 @@ defmodule ExSdr.Digital.Constellation do
   defp rotate90({x, y}, n), do: rotate90({-y, x}, n - 1)
 
   # `width` bits of `x` starting at bit `from`
-  defp field(x, from, width), do: (x >>> from) &&& (1 <<< width) - 1
+  defp field(x, from, width), do: x >>> from &&& (1 <<< width) - 1
 
   # the position whose Gray code is `g`
   defp gray_decode(0), do: 0

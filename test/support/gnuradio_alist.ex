@@ -20,8 +20,7 @@ defmodule ExSdr.Test.GnuRadioAlist do
       "0338efb43d9653c0394e75ed25beb10203feab93a01a8403b16d3f5017eba3b7",
     "n_1800_k_0902_gap_28.alist" =>
       "8aa5f87db3a4e05d5137cf49cb3604ae9e6eaea1ca53868afe37f6d328329172",
-    "simple_g_matrix.alist" =>
-      "91d7e86a961d34029845e62d051ff2f455862a18a4fcbece68ad9bf3710cde23"
+    "simple_g_matrix.alist" => "91d7e86a961d34029845e62d051ff2f455862a18a4fcbece68ad9bf3710cde23"
   }
 
   def dir, do: @dir
@@ -41,12 +40,14 @@ defmodule ExSdr.Test.GnuRadioAlist do
 
   defp fetch(name, sha, path) do
     {:ok, _} = Application.ensure_all_started([:inets, :ssl])
+
     ssl = [
       verify: :verify_peer,
       cacerts: :public_key.cacerts_get(),
       depth: 3,
       customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
     ]
+
     request = {~c"#{@base}#{name}", []}
 
     case :httpc.request(:get, request, [ssl: ssl, timeout: 30_000], body_format: :binary) do
